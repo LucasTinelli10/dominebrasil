@@ -12,7 +12,7 @@ const features = [
   {
     icon: Users,
     title: 'Escolha seu Instrutor',
-    description: 'Veja fotos, avaliações e escolha alguém que entenda você. Instrutores pacientes e preparados para amaxofobia.',
+    description: 'Veja fotos, avaliações e escolha alguém calmo e paciente. Instrutores preparados para quem está inseguro.',
     color: 'text-teal-500',
     bgColor: 'bg-teal-500/10',
   },
@@ -37,7 +37,7 @@ const testimonials = [
     name: 'Maria Silva',
     role: 'Aluna - São Paulo',
     image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop',
-    text: 'Depois de 15 anos com medo, finalmente estou dirigindo. O instrutor teve toda paciência do mundo.',
+    text: 'Tirei minha CNH há 10 anos e nunca mais dirigi. Com o instrutor certo, voltei a ter confiança.',
     rating: 5,
   },
   {
@@ -92,11 +92,11 @@ export const StudentSection: React.FC<StudentSectionProps> = ({ onOpenAuth }) =>
             </span>
             <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 mb-4">
               Você não desaprendeu.{' '}
-              <span className="text-teal-600">Você só precisa de paciência.</span>
+              <span className="text-teal-600">Você só precisa de prática.</span>
             </h2>
             <p className="text-lg text-slate-600">
-              Entendemos o medo. Por isso conectamos você a instrutores especializados em 
-              ajudar pessoas com amaxofobia a recuperar a confiança no volante.
+              Sabemos como é difícil voltar a dirigir depois de anos parado. 
+              Conectamos você a instrutores pacientes e preparados para te ajudar.
             </p>
           </motion.div>
 
@@ -110,11 +110,11 @@ export const StudentSection: React.FC<StudentSectionProps> = ({ onOpenAuth }) =>
                 </div>
                 <div>
                   <h3 className="text-2xl md:text-3xl font-bold mb-3">
-                    Amaxofobia afeta 30% dos brasileiros com CNH
+                    Mais de 20 milhões de brasileiros têm CNH mas não dirigem
                   </h3>
                   <p className="text-teal-100 text-lg">
-                    Você não está sozinho. Milhares de pessoas têm medo de dirigir — e isso tem solução.
-                    Com o instrutor certo e ambiente acolhedor, você vai voltar a dirigir.
+                    Você não está sozinho. Seja por medo, falta de prática ou insegurança no trânsito — 
+                    com o instrutor certo, você vai reconquistar sua liberdade.
                   </p>
                 </div>
               </div>
