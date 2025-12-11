@@ -78,6 +78,54 @@ export type Database = {
           },
         ]
       }
+      car_rentals: {
+        Row: {
+          car_id: string
+          created_at: string | null
+          date: string
+          id: string
+          instructor_id: string
+          status: Database["public"]["Enums"]["car_rental_status"] | null
+          time_slot: string
+          updated_at: string | null
+        }
+        Insert: {
+          car_id: string
+          created_at?: string | null
+          date: string
+          id?: string
+          instructor_id: string
+          status?: Database["public"]["Enums"]["car_rental_status"] | null
+          time_slot: string
+          updated_at?: string | null
+        }
+        Update: {
+          car_id?: string
+          created_at?: string | null
+          date?: string
+          id?: string
+          instructor_id?: string
+          status?: Database["public"]["Enums"]["car_rental_status"] | null
+          time_slot?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "car_rentals_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "car_rentals_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cars: {
         Row: {
           available: boolean | null
@@ -129,7 +177,12 @@ export type Database = {
         Row: {
           badges: string[] | null
           bio: string | null
+          cnh_category: string | null
+          cnh_expiry_date: string | null
+          cnh_number: string | null
           created_at: string | null
+          credential_number: string | null
+          documents_url: Json | null
           id: string
           price_per_hour: number | null
           profile_id: string | null
@@ -140,7 +193,12 @@ export type Database = {
         Insert: {
           badges?: string[] | null
           bio?: string | null
+          cnh_category?: string | null
+          cnh_expiry_date?: string | null
+          cnh_number?: string | null
           created_at?: string | null
+          credential_number?: string | null
+          documents_url?: Json | null
           id?: string
           price_per_hour?: number | null
           profile_id?: string | null
@@ -151,7 +209,12 @@ export type Database = {
         Update: {
           badges?: string[] | null
           bio?: string | null
+          cnh_category?: string | null
+          cnh_expiry_date?: string | null
+          cnh_number?: string | null
           created_at?: string | null
+          credential_number?: string | null
+          documents_url?: Json | null
           id?: string
           price_per_hour?: number | null
           profile_id?: string | null
@@ -175,33 +238,69 @@ export type Database = {
           balance: number | null
           city: string | null
           created_at: string | null
+          fraud_score: number | null
           full_name: string | null
           id: string
-          role: Database["public"]["Enums"]["app_role"]
+          neighborhood: string | null
           status: Database["public"]["Enums"]["profile_status"] | null
           updated_at: string | null
+          verification_reason: string | null
+          verification_status:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
         }
         Insert: {
           avatar_url?: string | null
           balance?: number | null
           city?: string | null
           created_at?: string | null
+          fraud_score?: number | null
           full_name?: string | null
           id: string
-          role?: Database["public"]["Enums"]["app_role"]
+          neighborhood?: string | null
           status?: Database["public"]["Enums"]["profile_status"] | null
           updated_at?: string | null
+          verification_reason?: string | null
+          verification_status?:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
         }
         Update: {
           avatar_url?: string | null
           balance?: number | null
           city?: string | null
           created_at?: string | null
+          fraud_score?: number | null
           full_name?: string | null
           id?: string
-          role?: Database["public"]["Enums"]["app_role"]
+          neighborhood?: string | null
           status?: Database["public"]["Enums"]["profile_status"] | null
           updated_at?: string | null
+          verification_reason?: string | null
+          verification_status?:
+            | Database["public"]["Enums"]["verification_status"]
+            | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
         }
         Relationships: []
       }
@@ -210,13 +309,29 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      check_availability: {
+        Args: { check_date: string; check_time: string; instr_id: string }
+        Returns: boolean
+      }
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "student" | "instructor" | "investor"
       booking_status: "pending" | "confirmed" | "completed" | "cancelled"
+      car_rental_status: "pending" | "confirmed" | "completed" | "cancelled"
       profile_status: "pending" | "approved"
       transmission_type: "manual" | "auto"
+      verification_status: "pending" | "analyzing" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -346,8 +461,10 @@ export const Constants = {
     Enums: {
       app_role: ["student", "instructor", "investor"],
       booking_status: ["pending", "confirmed", "completed", "cancelled"],
+      car_rental_status: ["pending", "confirmed", "completed", "cancelled"],
       profile_status: ["pending", "approved"],
       transmission_type: ["manual", "auto"],
+      verification_status: ["pending", "analyzing", "approved", "rejected"],
     },
   },
 } as const

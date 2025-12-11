@@ -35,11 +35,27 @@ const StudentDashboard: React.FC = () => {
 
   const fetchInstructors = async () => {
     try {
+      // First get instructor user IDs from user_roles
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'instructor');
+
+      if (roleError) throw roleError;
+
+      const instructorIds = (roleData || []).map(r => r.user_id);
+
+      if (instructorIds.length === 0) {
+        setInstructors([]);
+        setLoading(false);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('profiles')
         .select(`*, instructors_details(*)`)
-        .eq('role', 'instructor')
-        .eq('status', 'approved');
+        .in('id', instructorIds)
+        .eq('verification_status', 'approved');
 
       if (error) throw error;
 
