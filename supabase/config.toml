@@ -1,4 +1,7 @@
 project_id = "yecacgdfdlytkxcwfqpx"
 
+[functions.inspect-vehicle]
+verify_jwt = true
+
 [functions.verify-official-docs]
 verify_jwt = true
