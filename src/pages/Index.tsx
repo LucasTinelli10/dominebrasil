@@ -33,9 +33,9 @@ const Index = () => {
       <Header onOpenAuth={handleOpenAuth} />
       <main>
         <HeroSection onOpenAuth={handleOpenAuth} />
+        <StudentSection onOpenAuth={handleOpenAuth} />
         <InstructorSection onOpenAuth={handleOpenAuth} />
         <InvestorSection onOpenAuth={handleOpenAuth} />
-        <StudentSection onOpenAuth={handleOpenAuth} />
         <TrustSection />
       </main>
       <FooterNew />
