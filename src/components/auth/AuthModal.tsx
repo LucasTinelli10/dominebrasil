@@ -166,7 +166,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ open, onOpenChange }) => {
                   className="w-full"
                   onClick={() => handleRoleSelect(option.role)}
                 >
-                  <option.icon className="h-8 w-8 text-primary" />
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                    <option.icon className="h-6 w-6 text-primary" />
+                  </div>
                   <span className="text-lg font-semibold">{option.title}</span>
                   <span className="text-sm text-muted-foreground">{option.description}</span>
                 </Button>

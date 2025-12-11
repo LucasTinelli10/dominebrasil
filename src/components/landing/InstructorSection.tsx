@@ -75,27 +75,27 @@ export const InstructorSection: React.FC<InstructorSectionProps> = ({ onOpenAuth
                 <div className="flex items-center justify-between py-3 border-b border-slate-100">
                   <div className="flex items-center gap-3">
                     <DollarSign className="w-5 h-5 text-slate-400" />
-                    <span className="text-slate-600">Salário Fixo</span>
+                    <span className="text-slate-600">Salário Mensal</span>
                   </div>
-                  <span className="font-bold text-slate-800">R$ 1.800,00</span>
+                  <span className="font-bold text-slate-800">R$ 2.500 - 3.500</span>
                 </div>
                 <div className="flex items-center justify-between py-3 border-b border-slate-100">
                   <div className="flex items-center gap-3">
                     <Clock className="w-5 h-5 text-slate-400" />
-                    <span className="text-slate-600">Chefe e Horário Fixo</span>
+                    <span className="text-slate-600">Horário</span>
                   </div>
-                  <span className="font-bold text-red-600">Sim</span>
+                  <span className="font-bold text-red-600">Fixo (8h/dia)</span>
                 </div>
                 <div className="flex items-center justify-between py-3 border-b border-slate-100">
                   <div className="flex items-center gap-3">
                     <UserCheck className="w-5 h-5 text-slate-400" />
-                    <span className="text-slate-600">Lucro por Aula</span>
+                    <span className="text-slate-600">Autonomia</span>
                   </div>
-                  <span className="font-bold text-slate-800">R$ 15,00</span>
+                  <span className="font-bold text-red-600">Zero</span>
                 </div>
                 <div className="pt-4 text-center">
                   <span className="inline-block px-6 py-3 bg-red-100 text-red-700 rounded-xl font-bold text-lg">
-                    😔 Escravidão Financeira
+                    Sem liberdade
                   </span>
                 </div>
               </CardContent>
@@ -119,28 +119,27 @@ export const InstructorSection: React.FC<InstructorSectionProps> = ({ onOpenAuth
                 <div className="flex items-center justify-between py-3 border-b border-teal-100">
                   <div className="flex items-center gap-3">
                     <DollarSign className="w-5 h-5 text-teal-500" />
-                    <span className="text-slate-600">Faturamento</span>
+                    <span className="text-slate-600">Ganho por Aula</span>
                   </div>
-                  <span className="font-bold text-teal-600">Você define</span>
+                  <span className="font-bold text-teal-600">R$ 120,00</span>
                 </div>
                 <div className="flex items-center justify-between py-3 border-b border-teal-100">
                   <div className="flex items-center gap-3">
-                    <Clock className="w-5 h-5 text-teal-500" />
-                    <span className="text-slate-600">Horário</span>
+                    <Car className="w-5 h-5 text-teal-500" />
+                    <span className="text-slate-600">Aluguel do Carro</span>
                   </div>
-                  <span className="font-bold text-teal-600">100% Flexível</span>
+                  <span className="font-bold text-slate-600">- R$ 50/hora</span>
                 </div>
                 <div className="flex items-center justify-between py-3 border-b border-teal-100">
                   <div className="flex items-center gap-3">
                     <UserCheck className="w-5 h-5 text-teal-500" />
-                    <span className="text-slate-600">Lucro por Aula</span>
+                    <span className="text-slate-600">Lucro Líquido/Aula</span>
                   </div>
-                  <span className="font-bold text-2xl text-teal-600">R$ 40 - R$ 60</span>
+                  <span className="font-bold text-2xl text-teal-600">R$ 70,00</span>
                 </div>
-                <div className="pt-4 text-center">
-                  <span className="inline-block px-6 py-3 bg-teal-500 text-white rounded-xl font-bold text-lg shadow-lg">
-                    🚀 Liberdade Financeira
-                  </span>
+                <div className="pt-4 bg-teal-50 rounded-xl p-4 text-center">
+                  <p className="text-sm text-slate-600 mb-1">Trabalhando 4h/dia, 22 dias/mês:</p>
+                  <span className="text-2xl font-bold text-teal-600">R$ 6.160/mês líquido</span>
                 </div>
               </CardContent>
             </Card>
