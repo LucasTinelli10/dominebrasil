@@ -9,7 +9,9 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import StudentDashboard from "./pages/student/Dashboard";
 import InstructorDashboard from "./pages/instructor/Dashboard";
+import InstructorOnboarding from "./pages/instructor/Onboarding";
 import InvestorDashboard from "./pages/investor/Dashboard";
+import AdminVerifications from "./pages/admin/Verifications";
 
 const queryClient = new QueryClient();
 
@@ -39,10 +41,26 @@ const App = () => (
               }
             />
             <Route
+              path="/onboarding"
+              element={
+                <ProtectedRoute allowedRoles={['instructor']}>
+                  <InstructorOnboarding />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/investor/dashboard"
               element={
                 <ProtectedRoute allowedRoles={['investor']}>
                   <InvestorDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin/verifications"
+              element={
+                <ProtectedRoute allowedRoles={['admin', 'investor']}>
+                  <AdminVerifications />
                 </ProtectedRoute>
               }
             />
