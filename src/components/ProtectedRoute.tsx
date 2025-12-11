@@ -3,9 +3,11 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
+type UserRole = 'student' | 'instructor' | 'investor';
+
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: ('student' | 'instructor' | 'investor')[];
+  allowedRoles?: UserRole[];
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 

@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
 
 type UserRole = 'student' | 'instructor' | 'investor';
 
@@ -10,9 +9,12 @@ interface Profile {
   role: UserRole;
   full_name: string | null;
   city: string | null;
+  neighborhood: string | null;
   avatar_url: string | null;
   balance: number;
-  status: string;
+  verification_status: 'pending' | 'analyzing' | 'approved' | 'rejected';
+  fraud_score: number;
+  verification_reason: string | null;
 }
 
 interface AuthContextType {
@@ -44,15 +46,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchProfile = async (userId: string) => {
     try {
-      const { data, error } = await supabase
+      // Fetch profile data
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .maybeSingle();
 
-      if (error) throw error;
-      if (data) {
-        setProfile(data as Profile);
+      if (profileError) throw profileError;
+
+      // Fetch role from user_roles table
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (roleError) throw roleError;
+
+      if (profileData && roleData) {
+        setProfile({
+          id: profileData.id,
+          role: roleData.role as UserRole,
+          full_name: profileData.full_name,
+          city: profileData.city,
+          neighborhood: profileData.neighborhood,
+          avatar_url: profileData.avatar_url,
+          balance: profileData.balance ?? 0,
+          verification_status: profileData.verification_status ?? 'pending',
+          fraud_score: profileData.fraud_score ?? 0,
+          verification_reason: profileData.verification_reason,
+        });
       }
     } catch (error) {
       console.error('Error fetching profile:', error);

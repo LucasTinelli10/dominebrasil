@@ -3,7 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, Calendar, DollarSign, Clock, AlertCircle } from 'lucide-react';
+import { LogOut, Calendar, DollarSign, Clock, AlertCircle, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const InstructorDashboard: React.FC = () => {
@@ -47,7 +47,27 @@ const InstructorDashboard: React.FC = () => {
       </header>
 
       <main className="container mx-auto px-4 py-8">
-        {pendingBookings.length > 0 && (
+        {/* Verification Status Blocking */}
+        {profile?.verification_status !== 'approved' && (
+          <Card className="mb-6 border-destructive bg-destructive/5">
+            <CardContent className="py-6 flex flex-col items-center gap-3 text-center">
+              <AlertCircle className="h-8 w-8 text-destructive" />
+              <div>
+                <h3 className="font-semibold text-lg">Perfil em Análise</h3>
+                <p className="text-muted-foreground">
+                  {profile?.verification_status === 'pending' && 'Seu perfil está pendente de verificação. Complete seu cadastro para começar a dar aulas.'}
+                  {profile?.verification_status === 'analyzing' && 'Seus documentos estão sendo analisados pela nossa equipe. Aguarde a aprovação.'}
+                  {profile?.verification_status === 'rejected' && `Seu cadastro foi recusado: ${profile?.verification_reason || 'Motivo não informado'}`}
+                </p>
+              </div>
+              {profile?.verification_status === 'pending' && (
+                <Button onClick={() => navigate('/onboarding')}>Completar Cadastro</Button>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {pendingBookings.length > 0 && profile?.verification_status === 'approved' && (
           <Card className="mb-6 border-warning bg-warning/5">
             <CardContent className="py-4 flex items-center gap-3">
               <AlertCircle className="h-5 w-5 text-warning" />
