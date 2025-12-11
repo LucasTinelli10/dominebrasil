@@ -26,8 +26,8 @@ export const Hero: React.FC<HeroProps> = ({ onOpenAuth }) => {
             </div>
             
             <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold leading-tight text-foreground">
-              Vença o medo de dirigir com{' '}
-              <span className="text-gradient">instrutores especializados</span>
+              Sua CNH na mão{' '}
+              <span className="text-gradient">sem medo e sem burocracia</span>
             </h1>
             
             <p className="text-lg md:text-xl text-muted-foreground max-w-xl">
@@ -42,15 +42,16 @@ export const Hero: React.FC<HeroProps> = ({ onOpenAuth }) => {
                 onClick={onOpenAuth}
                 className="group"
               >
-                Começar Agora
+                Sou Aluno
                 <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
               </Button>
               <Button 
                 size="xl" 
                 variant="outline"
-                onClick={() => document.getElementById('como-funciona')?.scrollIntoView({ behavior: 'smooth' })}
+                onClick={onOpenAuth}
+                className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
               >
-                Saiba Mais
+                Sou Instrutor
               </Button>
             </div>
 
