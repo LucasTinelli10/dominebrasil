@@ -48,10 +48,8 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAuth }) => {
             <div className="h-9 w-9 rounded-xl bg-gradient-hero flex items-center justify-center">
               <span className="text-primary-foreground font-display font-bold text-lg">D</span>
             </div>
-            <span className={`font-display font-bold text-xl ${
-              isScrolled ? 'text-foreground' : 'text-foreground'
-            }`}>
-              Domine<span className="text-primary">Brasil</span>
+            <span className="font-display font-bold text-xl text-white drop-shadow-md">
+              Domine<span className="text-teal-300">Brasil</span>
             </span>
           </a>
 
@@ -59,16 +57,16 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAuth }) => {
           <nav className="hidden md:flex items-center gap-8">
             <a 
               href="#como-funciona" 
-              className={`text-sm font-medium transition-colors hover:text-primary ${
-                isScrolled ? 'text-foreground' : 'text-foreground'
+              className={`text-sm font-medium transition-colors ${
+                isScrolled ? 'text-foreground hover:text-primary' : 'text-white/90 hover:text-white drop-shadow-sm'
               }`}
             >
               Como Funciona
             </a>
             <a 
               href="#depoimentos" 
-              className={`text-sm font-medium transition-colors hover:text-primary ${
-                isScrolled ? 'text-foreground' : 'text-foreground'
+              className={`text-sm font-medium transition-colors ${
+                isScrolled ? 'text-foreground hover:text-primary' : 'text-white/90 hover:text-white drop-shadow-sm'
               }`}
             >
               Depoimentos
