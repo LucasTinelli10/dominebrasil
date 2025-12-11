@@ -44,7 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (userId: string, userMetadata?: Record<string, unknown>) => {
     try {
       // Fetch profile data
       const { data: profileData, error: profileError } = await supabase
@@ -64,10 +64,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (roleError) throw roleError;
 
-      if (profileData && roleData) {
+      // Get role from user_roles, fallback to user_metadata
+      const userRole = roleData?.role as UserRole || 
+        (userMetadata?.role as UserRole) || 
+        'student';
+
+      if (profileData) {
         setProfile({
           id: profileData.id,
-          role: roleData.role as UserRole,
+          role: userRole,
           full_name: profileData.full_name,
           city: profileData.city,
           neighborhood: profileData.neighborhood,
@@ -99,7 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Defer profile fetch to avoid deadlock
         if (session?.user) {
           setTimeout(() => {
-            fetchProfile(session.user.id);
+            fetchProfile(session.user.id, session.user.user_metadata);
           }, 0);
         } else {
           setProfile(null);
@@ -115,7 +120,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        fetchProfile(session.user.id);
+        fetchProfile(session.user.id, session.user.user_metadata);
       }
       
       setLoading(false);
