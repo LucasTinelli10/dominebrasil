@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/landing/Header';
-import { Hero } from '@/components/landing/Hero';
-import { HowItWorks } from '@/components/landing/HowItWorks';
-import { Testimonials } from '@/components/landing/Testimonials';
-import { Footer } from '@/components/landing/Footer';
+import { HeroSection } from '@/components/landing/HeroSection';
+import { InstructorSection } from '@/components/landing/InstructorSection';
+import { InvestorSection } from '@/components/landing/InvestorSection';
+import { StudentSection } from '@/components/landing/StudentSection';
+import { TrustSection } from '@/components/landing/TrustSection';
+import { FooterNew } from '@/components/landing/FooterNew';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -25,17 +27,18 @@ const Index = () => {
   }, [user, profile, loading, navigate]);
 
   const handleOpenAuth = () => setIsAuthModalOpen(true);
-  const handleCloseAuth = () => setIsAuthModalOpen(false);
 
   return (
     <div className="min-h-screen bg-background">
       <Header onOpenAuth={handleOpenAuth} />
       <main>
-        <Hero onOpenAuth={handleOpenAuth} />
-        <HowItWorks />
-        <Testimonials />
+        <HeroSection onOpenAuth={handleOpenAuth} />
+        <InstructorSection onOpenAuth={handleOpenAuth} />
+        <InvestorSection onOpenAuth={handleOpenAuth} />
+        <StudentSection onOpenAuth={handleOpenAuth} />
+        <TrustSection />
       </main>
-      <Footer />
+      <FooterNew />
       <AuthModal open={isAuthModalOpen} onOpenChange={setIsAuthModalOpen} />
     </div>
   );
