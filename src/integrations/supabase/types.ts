@@ -128,40 +128,58 @@ export type Database = {
       }
       cars: {
         Row: {
+          ai_analysis_report: Json | null
           available: boolean | null
           created_at: string | null
+          crlv_url: string | null
           id: string
           image_url: string | null
           location_hub: string | null
           model: string
           owner_id: string | null
+          photo_exterior_front: string | null
+          photo_exterior_side: string | null
+          photo_interior_passenger: string | null
           plate: string
           price_per_hour: number | null
           transmission: Database["public"]["Enums"]["transmission_type"] | null
+          verification_status: string | null
         }
         Insert: {
+          ai_analysis_report?: Json | null
           available?: boolean | null
           created_at?: string | null
+          crlv_url?: string | null
           id?: string
           image_url?: string | null
           location_hub?: string | null
           model: string
           owner_id?: string | null
+          photo_exterior_front?: string | null
+          photo_exterior_side?: string | null
+          photo_interior_passenger?: string | null
           plate: string
           price_per_hour?: number | null
           transmission?: Database["public"]["Enums"]["transmission_type"] | null
+          verification_status?: string | null
         }
         Update: {
+          ai_analysis_report?: Json | null
           available?: boolean | null
           created_at?: string | null
+          crlv_url?: string | null
           id?: string
           image_url?: string | null
           location_hub?: string | null
           model?: string
           owner_id?: string | null
+          photo_exterior_front?: string | null
+          photo_exterior_side?: string | null
+          photo_interior_passenger?: string | null
           plate?: string
           price_per_hour?: number | null
           transmission?: Database["public"]["Enums"]["transmission_type"] | null
+          verification_status?: string | null
         }
         Relationships: [
           {
