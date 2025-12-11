@@ -1,1 +1,4 @@
 project_id = "yecacgdfdlytkxcwfqpx"
+
+[functions.verify-official-docs]
+verify_jwt = true

@@ -175,12 +175,15 @@ export type Database = {
       }
       instructors_details: {
         Row: {
+          background_check_status: string | null
           badges: string[] | null
           bio: string | null
           cnh_category: string | null
           cnh_expiry_date: string | null
           cnh_number: string | null
+          cnh_qrcode_raw: string | null
           created_at: string | null
+          credential_expiry: string | null
           credential_number: string | null
           documents_url: Json | null
           id: string
@@ -191,12 +194,15 @@ export type Database = {
           years_experience: number | null
         }
         Insert: {
+          background_check_status?: string | null
           badges?: string[] | null
           bio?: string | null
           cnh_category?: string | null
           cnh_expiry_date?: string | null
           cnh_number?: string | null
+          cnh_qrcode_raw?: string | null
           created_at?: string | null
+          credential_expiry?: string | null
           credential_number?: string | null
           documents_url?: Json | null
           id?: string
@@ -207,12 +213,15 @@ export type Database = {
           years_experience?: number | null
         }
         Update: {
+          background_check_status?: string | null
           badges?: string[] | null
           bio?: string | null
           cnh_category?: string | null
           cnh_expiry_date?: string | null
           cnh_number?: string | null
+          cnh_qrcode_raw?: string | null
           created_at?: string | null
+          credential_expiry?: string | null
           credential_number?: string | null
           documents_url?: Json | null
           id?: string
@@ -326,7 +335,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "student" | "instructor" | "investor"
+      app_role: "student" | "instructor" | "investor" | "admin"
       booking_status: "pending" | "confirmed" | "completed" | "cancelled"
       car_rental_status: "pending" | "confirmed" | "completed" | "cancelled"
       profile_status: "pending" | "approved"
@@ -459,7 +468,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["student", "instructor", "investor"],
+      app_role: ["student", "instructor", "investor", "admin"],
       booking_status: ["pending", "confirmed", "completed", "cancelled"],
       car_rental_status: ["pending", "confirmed", "completed", "cancelled"],
       profile_status: ["pending", "approved"],
