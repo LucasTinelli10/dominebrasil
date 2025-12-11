@@ -18,7 +18,7 @@ const buttonVariants = cva(
         hero: "bg-gradient-hero text-primary-foreground shadow-lg hover:shadow-xl hover:shadow-primary/20 active:scale-[0.98] font-bold",
         "hero-outline": "border-2 border-primary-foreground/30 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20 backdrop-blur-sm",
         success: "bg-success text-success-foreground hover:bg-success/90 shadow-md",
-        "role-select": "border-2 border-border bg-card text-card-foreground hover:border-primary hover:bg-accent shadow-card hover:shadow-card-hover p-6 h-auto flex-col gap-3 transition-all duration-300",
+        "role-select": "border-2 border-border bg-card text-card-foreground hover:border-primary hover:bg-accent shadow-card hover:shadow-card-hover p-6 h-auto flex-col gap-3 transition-all duration-300 [&_svg]:size-8",
       },
       size: {
         default: "h-11 px-5 py-2",
