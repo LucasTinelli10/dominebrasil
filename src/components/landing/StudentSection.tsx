@@ -91,34 +91,56 @@ export const StudentSection: React.FC<StudentSectionProps> = ({ onOpenAuth }) =>
               Para Alunos
             </span>
             <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold text-slate-900 mb-4">
-              Você não desaprendeu.{' '}
-              <span className="text-teal-600">Você só precisa de prática.</span>
+              Aprenda a dirigir{' '}
+              <span className="text-teal-600">do jeito certo.</span>
             </h2>
             <p className="text-lg text-slate-600">
-              Sabemos como é difícil voltar a dirigir depois de anos parado. 
-              Conectamos você a instrutores pacientes e preparados para te ajudar.
+              Seja para tirar sua primeira CNH ou recuperar a confiança no volante, 
+              conectamos você a instrutores pacientes e preparados.
             </p>
           </motion.div>
 
-          {/* Empathy Banner */}
-          <motion.div variants={itemVariants} className="max-w-4xl mx-auto mb-16">
-            <div className="bg-gradient-to-r from-teal-500 to-teal-600 rounded-3xl p-8 md:p-12 text-white relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
-              <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
-                <div className="w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center shrink-0">
-                  <Heart className="w-10 h-10 text-white" />
+          {/* Two Audience Cards */}
+          <motion.div variants={itemVariants} className="max-w-4xl mx-auto mb-16 grid md:grid-cols-2 gap-6">
+            {/* Card 1 - CNH mas não dirige */}
+            <Card className="border-2 border-teal-200 bg-gradient-to-br from-white to-teal-50 shadow-xl overflow-hidden group hover:border-teal-400 transition-colors cursor-pointer" onClick={onOpenAuth}>
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 bg-teal-100 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-teal-200 transition-colors">
+                  <Heart className="w-8 h-8 text-teal-600" />
                 </div>
-                <div>
-                  <h3 className="text-2xl md:text-3xl font-bold mb-3">
-                    Mais de 20 milhões de brasileiros têm CNH mas não dirigem
-                  </h3>
-                  <p className="text-teal-100 text-lg">
-                    Você não está sozinho. Seja por medo, falta de prática ou insegurança no trânsito — 
-                    com o instrutor certo, você vai reconquistar sua liberdade.
-                  </p>
+                <h3 className="text-xl font-bold text-slate-900 mb-2">
+                  Tem CNH mas não dirige?
+                </h3>
+                <p className="text-slate-600 mb-4">
+                  Você não desaprendeu. Só precisa de alguém paciente ao seu lado 
+                  para recuperar a confiança que o trânsito tirou.
+                </p>
+                <Button variant="outline" className="border-teal-500 text-teal-600 hover:bg-teal-50 group-hover:bg-teal-500 group-hover:text-white transition-colors">
+                  Quero voltar a dirigir
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Card 2 - Primeira Habilitação */}
+            <Card className="border-2 border-blue-200 bg-gradient-to-br from-white to-blue-50 shadow-xl overflow-hidden group hover:border-blue-400 transition-colors cursor-pointer" onClick={onOpenAuth}>
+              <CardContent className="p-8 text-center">
+                <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-200 transition-colors">
+                  <Star className="w-8 h-8 text-blue-600" />
                 </div>
-              </div>
-            </div>
+                <h3 className="text-xl font-bold text-slate-900 mb-2">
+                  Sua primeira habilitação?
+                </h3>
+                <p className="text-slate-600 mb-4">
+                  Aprenda com os melhores instrutores da região. 
+                  Aulas práticas no seu ritmo, sem pressão, com carros seguros.
+                </p>
+                <Button variant="outline" className="border-blue-500 text-blue-600 hover:bg-blue-50 group-hover:bg-blue-500 group-hover:text-white transition-colors">
+                  Quero minha CNH
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </CardContent>
+            </Card>
           </motion.div>
 
           {/* Features */}
