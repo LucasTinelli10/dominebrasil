@@ -56,8 +56,10 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAuth }) => {
             <div className="h-9 w-9 rounded-xl bg-gradient-hero flex items-center justify-center">
               <span className="text-primary-foreground font-display font-bold text-lg">D</span>
             </div>
-            <span className="font-display font-bold text-xl text-white drop-shadow-md">
-              Domine<span className="text-teal-300">Brasil</span>
+            <span className={`font-display font-bold text-xl drop-shadow-md transition-colors ${
+              isScrolled ? 'text-foreground' : 'text-white'
+            }`}>
+              Domine<span className="text-primary">Brasil</span>
             </span>
           </a>
 
@@ -102,7 +104,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAuth }) => {
               </>
             ) : (
               <Button onClick={onOpenAuth} variant="default">
-                Entrar / Cadastrar
+                Login
               </Button>
             )}
           </div>
