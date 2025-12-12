@@ -61,7 +61,7 @@ interface JornadaCNHSectionProps {
 
 export const JornadaCNHSection: React.FC<JornadaCNHSectionProps> = ({ onOpenAuth }) => {
   return (
-    <section id="jornada-cnh" className="py-20 bg-gradient-to-b from-amber-50 to-background">
+    <section id="jornada-cnh" className="py-20 bg-gradient-to-b from-primary/5 to-background">
       <div className="container mx-auto px-4">
         {/* Header */}
         <motion.div
@@ -71,7 +71,7 @@ export const JornadaCNHSection: React.FC<JornadaCNHSectionProps> = ({ onOpenAuth
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <span className="inline-block px-4 py-2 bg-amber-100 text-amber-700 rounded-full text-sm font-medium mb-4">
+          <span className="inline-block px-4 py-2 bg-primary/10 text-primary rounded-full text-sm font-medium mb-4">
             Guia Oficial
           </span>
           <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
@@ -85,7 +85,7 @@ export const JornadaCNHSection: React.FC<JornadaCNHSectionProps> = ({ onOpenAuth
         {/* Timeline */}
         <div className="relative max-w-3xl mx-auto">
           {/* Vertical Line */}
-          <div className="absolute left-8 md:left-12 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary via-amber-400 to-primary/30" />
+          <div className="absolute left-8 md:left-12 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary via-primary/50 to-primary/20" />
 
           {/* Steps */}
           <div className="space-y-8">
@@ -100,14 +100,14 @@ export const JornadaCNHSection: React.FC<JornadaCNHSectionProps> = ({ onOpenAuth
               >
                 {/* Icon Circle */}
                 <div className="relative z-10 flex-shrink-0">
-                  <div className="w-16 h-16 md:w-24 md:h-24 rounded-full bg-white shadow-lg border-2 border-amber-200 flex items-center justify-center">
+                  <div className="w-16 h-16 md:w-24 md:h-24 rounded-full bg-card shadow-lg border-2 border-primary/20 flex items-center justify-center">
                     <step.icon className="w-8 h-8 md:w-10 md:h-10 text-primary" />
                   </div>
                 </div>
 
                 {/* Content Card */}
-                <div className="flex-1 bg-white rounded-2xl p-6 shadow-md border border-border/50 hover:shadow-lg transition-shadow">
-                  <span className="text-xs font-semibold text-amber-600 uppercase tracking-wider">
+                <div className="flex-1 bg-card rounded-2xl p-6 shadow-md border border-border/50 hover:shadow-lg transition-shadow">
+                  <span className="text-xs font-semibold text-primary uppercase tracking-wider">
                     Etapa {step.step}
                   </span>
                   <h3 className="text-xl font-bold text-foreground mt-1 mb-2">
@@ -133,7 +133,7 @@ export const JornadaCNHSection: React.FC<JornadaCNHSectionProps> = ({ onOpenAuth
                         variant="outline"
                         size="sm"
                         asChild
-                        className="border-amber-500 text-amber-700 hover:bg-amber-50"
+                        className="border-primary/50 text-primary hover:bg-primary/10"
                       >
                         <a href={step.link!} target="_blank" rel="noopener noreferrer">
                           {step.linkText}
