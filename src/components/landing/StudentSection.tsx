@@ -3,10 +3,7 @@ import { motion, Variants, Easing } from 'framer-motion';
 import { Heart, Users, Shield, Calendar, Star, ArrowRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-
-interface StudentSectionProps {
-  onOpenAuth: () => void;
-}
+import { useNavigate } from 'react-router-dom';
 
 const features = [
   {
@@ -73,7 +70,13 @@ const itemVariants: Variants = {
   },
 };
 
-export const StudentSection: React.FC<StudentSectionProps> = ({ onOpenAuth }) => {
+export const StudentSection: React.FC = () => {
+  const navigate = useNavigate();
+
+  const handleSearchInstructor = () => {
+    navigate('/buscar-instrutor');
+  };
+
   return (
     <section className="py-24 bg-gradient-to-b from-white to-slate-50 relative overflow-hidden">
       <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-teal-100 rounded-full blur-[150px] opacity-50" />
@@ -103,7 +106,7 @@ export const StudentSection: React.FC<StudentSectionProps> = ({ onOpenAuth }) =>
           {/* Two Audience Cards */}
           <motion.div variants={itemVariants} className="max-w-4xl mx-auto mb-16 grid md:grid-cols-2 gap-6">
             {/* Card 1 - CNH mas não dirige */}
-            <Card className="border-2 border-teal-200 bg-gradient-to-br from-white to-teal-50 shadow-xl overflow-hidden group hover:border-teal-400 transition-colors cursor-pointer" onClick={onOpenAuth}>
+            <Card className="border-2 border-teal-200 bg-gradient-to-br from-white to-teal-50 shadow-xl overflow-hidden group hover:border-teal-400 transition-colors cursor-pointer" onClick={handleSearchInstructor}>
               <CardContent className="p-8 text-center">
                 <div className="w-16 h-16 bg-teal-100 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-teal-200 transition-colors">
                   <Heart className="w-8 h-8 text-teal-600" />
@@ -123,7 +126,7 @@ export const StudentSection: React.FC<StudentSectionProps> = ({ onOpenAuth }) =>
             </Card>
 
             {/* Card 2 - Primeira Habilitação */}
-            <Card className="border-2 border-blue-200 bg-gradient-to-br from-white to-blue-50 shadow-xl overflow-hidden group hover:border-blue-400 transition-colors cursor-pointer" onClick={onOpenAuth}>
+            <Card className="border-2 border-blue-200 bg-gradient-to-br from-white to-blue-50 shadow-xl overflow-hidden group hover:border-blue-400 transition-colors cursor-pointer" onClick={handleSearchInstructor}>
               <CardContent className="p-8 text-center">
                 <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-200 transition-colors">
                   <Star className="w-8 h-8 text-blue-600" />
@@ -165,7 +168,7 @@ export const StudentSection: React.FC<StudentSectionProps> = ({ onOpenAuth }) =>
           </motion.div>
 
           {/* Testimonials */}
-          <motion.div variants={itemVariants} className="max-w-4xl mx-auto mb-12">
+          <motion.div variants={itemVariants} id="depoimentos" className="max-w-4xl mx-auto mb-12 scroll-mt-24">
             <h3 className="text-center text-2xl font-bold text-slate-900 mb-8">
               Histórias de Superação
             </h3>
@@ -199,7 +202,7 @@ export const StudentSection: React.FC<StudentSectionProps> = ({ onOpenAuth }) =>
           {/* CTA */}
           <motion.div variants={itemVariants} className="text-center">
             <Button 
-              onClick={onOpenAuth}
+              onClick={handleSearchInstructor}
               size="lg"
               className="bg-teal-600 hover:bg-teal-700 text-white font-bold px-8"
             >

@@ -1,36 +1,14 @@
 import React from 'react';
 import { motion, Variants, Easing } from 'framer-motion';
-import { User, ShieldCheck, TrendingUp, ArrowRight } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { User, ShieldCheck, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 interface HeroSectionProps {
   onOpenAuth: () => void;
+  onOpenInstructorAuth: () => void;
+  onOpenInvestorAuth: () => void;
 }
-
-const personas = [
-  {
-    id: 'student',
-    icon: User,
-    title: 'Quero Perder o Medo',
-    subtitle: 'Para Alunos Habilitados',
-    variant: 'primary' as const,
-  },
-  {
-    id: 'instructor',
-    icon: ShieldCheck,
-    title: 'Sou Instrutor',
-    subtitle: 'Quero dar aulas',
-    variant: 'outline' as const,
-  },
-  {
-    id: 'investor',
-    icon: TrendingUp,
-    title: 'Tenho Frota',
-    subtitle: 'Quero investir',
-    variant: 'ghost' as const,
-  },
-];
 
 const easeOut: Easing = [0.4, 0, 0.2, 1];
 
@@ -56,7 +34,17 @@ const itemVariants: Variants = {
   },
 };
 
-export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth }) => {
+export const HeroSection: React.FC<HeroSectionProps> = ({ 
+  onOpenAuth, 
+  onOpenInstructorAuth, 
+  onOpenInvestorAuth 
+}) => {
+  const navigate = useNavigate();
+
+  const handleStudentClick = () => {
+    navigate('/buscar-instrutor');
+  };
+
   return (
     <section className="relative min-h-screen flex items-center pt-24 pb-16 overflow-hidden">
       {/* Background */}
@@ -115,78 +103,55 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth }) => {
             variants={itemVariants}
             className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-2xl mx-auto"
           >
-            {personas.map((persona) => {
-              const Icon = persona.icon;
-              
-              if (persona.variant === 'primary') {
-                return (
-                  <motion.div
-                    key={persona.id}
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="w-full sm:w-auto"
-                  >
-                    <Button
-                      onClick={onOpenAuth}
-                      size="lg"
-                      className="w-full sm:w-auto bg-teal-600 hover:bg-teal-700 text-white px-8 py-6 h-auto flex flex-col items-center gap-1 shadow-lg shadow-teal-500/25"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Icon className="w-5 h-5" />
-                        <span className="font-semibold text-base">{persona.title}</span>
-                      </div>
-                      <span className="text-xs text-teal-200 font-normal">{persona.subtitle}</span>
-                    </Button>
-                  </motion.div>
-                );
-              }
-              
-              if (persona.variant === 'outline') {
-                return (
-                  <motion.div
-                    key={persona.id}
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="w-full sm:w-auto"
-                  >
-                    <Button
-                      onClick={onOpenAuth}
-                      variant="outline"
-                      size="lg"
-                      className="w-full sm:w-auto border-white/30 bg-white/5 hover:bg-white/10 text-white px-8 py-6 h-auto flex flex-col items-center gap-1"
-                    >
-                      <div className="flex items-center gap-2">
-                        <Icon className="w-5 h-5" />
-                        <span className="font-semibold text-base">{persona.title}</span>
-                      </div>
-                      <span className="text-xs text-slate-300 font-normal">{persona.subtitle}</span>
-                    </Button>
-                  </motion.div>
-                );
-              }
-              
-              return (
-                <motion.div
-                  key={persona.id}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="w-full sm:w-auto"
-                >
-                  <Button
-                    onClick={onOpenAuth}
-                    variant="ghost"
-                    size="lg"
-                    className="w-full sm:w-auto text-slate-300 hover:text-white hover:bg-white/5 px-8 py-6 h-auto flex flex-col items-center gap-1"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Icon className="w-5 h-5" />
-                      <span className="font-semibold text-base">{persona.title}</span>
-                    </div>
-                    <span className="text-xs text-slate-400 font-normal">{persona.subtitle}</span>
-                  </Button>
-                </motion.div>
-              );
-            })}
+            {/* Student Button - Primary */}
+            <motion.div
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full sm:w-auto"
+            >
+              <Button
+                onClick={handleStudentClick}
+                size="lg"
+                className="w-full sm:w-auto bg-teal-600 hover:bg-teal-700 text-white px-8 py-5 h-auto flex items-center gap-2 shadow-lg shadow-teal-500/25"
+              >
+                <User className="w-5 h-5" />
+                <span className="font-semibold text-base">Quero Perder o Medo</span>
+              </Button>
+            </motion.div>
+
+            {/* Instructor Button - Outline */}
+            <motion.div
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full sm:w-auto"
+            >
+              <Button
+                onClick={onOpenInstructorAuth}
+                variant="outline"
+                size="lg"
+                className="w-full sm:w-auto border-white/30 bg-white/5 hover:bg-white/10 text-white px-8 py-5 h-auto flex items-center gap-2"
+              >
+                <ShieldCheck className="w-5 h-5" />
+                <span className="font-semibold text-base">Sou Instrutor</span>
+              </Button>
+            </motion.div>
+
+            {/* Investor Button - Ghost */}
+            <motion.div
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full sm:w-auto"
+            >
+              <Button
+                onClick={onOpenInvestorAuth}
+                variant="ghost"
+                size="lg"
+                className="w-full sm:w-auto text-slate-300 hover:text-white hover:bg-white/5 px-8 py-5 h-auto flex items-center gap-2"
+              >
+                <TrendingUp className="w-5 h-5" />
+                <span className="font-semibold text-base">Tenho Frota</span>
+              </Button>
+            </motion.div>
           </motion.div>
 
           {/* Trust Badge */}
