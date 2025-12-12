@@ -12,29 +12,78 @@ interface Message {
   timestamp: Date;
 }
 
-const autoResponses: Record<string, string> = {
-  'preco': 'Ótima pergunta! Para Alunos, a plataforma é 100% gratuita. Você paga apenas pela aula do instrutor. Instrutores pagam R$10/hora de taxa de sistema, e podem alugar carros por R$50/hora. Investidores recebem 75% do lucro líquido!',
-  'preço': 'Ótima pergunta! Para Alunos, a plataforma é 100% gratuita. Você paga apenas pela aula do instrutor. Instrutores pagam R$10/hora de taxa de sistema, e podem alugar carros por R$50/hora. Investidores recebem 75% do lucro líquido!',
-  'cadastro': 'Cadastrar-se é simples! Clique em "Login" no topo da página, selecione seu perfil (Aluno, Instrutor ou Investidor) e siga o passo a passo. Para Instrutores, há uma verificação de documentos que leva até 24h.',
-  'material': 'Temos o Kit Aprovação Premium com PDFs exclusivos para a prova teórica! Inclui dicas de estudo, macetes de memorização e conteúdo alinhado com o DETRAN. Disponível gratuitamente após criar sua conta.',
-  'estudo': 'Temos o Kit Aprovação Premium com PDFs exclusivos para a prova teórica! Inclui dicas de estudo, macetes de memorização e conteúdo alinhado com o DETRAN. Disponível gratuitamente após criar sua conta.',
-  'aula': 'Para agendar uma aula, pesquise instrutores na sua cidade, veja avaliações e fotos do veículo, escolha um horário disponível e confirme! Você receberá confirmação por e-mail e WhatsApp.',
-  'instrutor': 'Nossos instrutores são verificados pelo sistema! Analisamos CNH, credencial DETRAN e fazemos verificação de identidade. Você pode ver avaliações, experiência e taxa de aprovação de cada um.',
-  'cancelar': 'Você pode cancelar aulas com antecedência: até 24h = reembolso total, entre 24h e 2h = 50% reembolso, menos de 2h = sem reembolso. Acesse "Meus Agendamentos" para cancelar.',
-  'pagamento': 'Aceitamos Cartão de Crédito, Débito e Pix! Todas as transações são seguras e criptografadas. Instrutores recebem os pagamentos semanalmente.',
-  'carro': 'Instrutores podem usar carro próprio ou alugar da frota Domine (R$50/hora). Todos os carros têm duplo comando e são regularizados. Investidores podem cadastrar seus veículos para aluguel!',
+const autoResponses: Record<string, string[]> = {
+  'gratis|gratuito|gratuita|free': [
+    'Sim! A plataforma é 100% GRATUITA para alunos. Você não paga nenhuma taxa - apenas o valor da aula diretamente ao instrutor. Sem mensalidades, sem taxas escondidas!'
+  ],
+  'preco|preço|quanto custa|valor': [
+    'Ótima pergunta! Para Alunos: R$0 (totalmente grátis). Para Instrutores: R$10/hora de taxa do sistema + R$50/hora de aluguel de carro (opcional, se não tiver carro próprio). Para Investidores: divisão 75% para você e 25% para a Domine do lucro gerado pelo veículo.'
+  ],
+  'cadastro|cadastrar|criar conta|registro': [
+    'Cadastrar-se é super simples! Clique em "Login" no topo, escolha seu perfil (Aluno, Instrutor ou Investidor) e siga o passo a passo. Para Alunos é instantâneo! Para Instrutores, há uma verificação de documentos (CNH e credencial DETRAN) que leva até 24h.'
+  ],
+  'instrutor|professor|aula pratica': [
+    'Nossos instrutores são rigorosamente verificados com IA! Analisamos CNH, credencial do DETRAN e fazemos verificação de identidade. Você pode ver avaliações reais, taxa de aprovação, experiência e fotos do veículo de cada um antes de escolher. Só os melhores aparecem na plataforma!'
+  ],
+  'medo|insegurança|nao dirijo|ansiedade': [
+    'Você não está sozinho! Milhares de pessoas têm CNH mas não dirigem por insegurança. Nossos instrutores são especializados e MUITO pacientes. Todos os carros têm duplo comando, então você está 100% seguro. Já ajudamos milhares a retomar a confiança!'
+  ],
+  'carro|veiculo|aluguel|frota': [
+    'Para Instrutores: você pode usar seu próprio carro OU alugar da frota Domine por R$50/hora, apenas quando tiver aula. Sem compromisso fixo! Para Investidores: cadastre seu veículo regularizado com duplo comando e receba 75% do lucro. Nós cuidamos de tudo!'
+  ],
+  'ganho|ganhar|lucro|salario|renda': [
+    'Instrutores na Domine ganham MUITO mais que em autoescola! Exemplo: R$120/aula - R$50 (carro) - R$10 (taxa) = R$60 líquido/hora. Com 4 aulas/dia, 22 dias/mês = mais de R$5.000! Se usar carro próprio, R$110 líquido/hora. Compare com os R$1.800 CLT...'
+  ],
+  'pagamento|pagar|cartao|pix': [
+    'Aceitamos Cartão de Crédito, Débito e PIX! Todas as transações são seguras e criptografadas. Instrutores recebem os pagamentos semanalmente direto na conta bancária. Tudo transparente e rastreável!'
+  ],
+  'cancelar|cancelamento|reembolso': [
+    'Política clara: cancelamento com mais de 24h = 100% de reembolso. Entre 24h e 2h = 50% reembolso. Menos de 2h = sem reembolso. Acesse "Meus Agendamentos" no painel para cancelar. Simples assim!'
+  ],
+  'seguro|segurança|verificacao|verificado': [
+    'Segurança é nossa prioridade #1! Todos os instrutores passam por verificação com IA: análise de CNH, credencial DETRAN, e reconhecimento facial. Carros têm duplo comando obrigatório. Só profissionais APROVADOS aparecem na plataforma.'
+  ],
+  'investidor|investir|frota|renda passiva': [
+    'Para Investidores é ótimo! Você entra com o veículo (regularizado, com duplo comando) e nós cuidamos de TUDO: captação de clientes, gestão, suporte. Divisão justa: 75% do lucro para você, 25% para a Domine. Muito melhor que Uber/99!'
+  ],
+  'material|estudo|teorica|prova': [
+    'Temos o Kit Aprovação Premium GRATUITO! PDFs exclusivos com dicas de estudo, macetes de memorização e conteúdo 100% alinhado com as exigências do DETRAN. Disponível após criar sua conta. Muitos alunos passam de primeira!'
+  ],
+  'contato|falar|humano|atendente': [
+    'Precisa falar com nossa equipe? Email: suporte@dominebrasil.com ou acesse a Central de Ajuda no site. Respondemos em até 24h úteis! Também pode me perguntar sobre qualquer dúvida aqui no chat.'
+  ],
+  'cnh|habilitacao|primeira habilitacao': [
+    'Quer tirar sua primeira CNH? A Domine te ajuda na etapa 5 (aulas práticas)! Temos um Guia Oficial completo com todas as etapas da habilitação. Clique em "Jornada CNH" no menu para ver o passo a passo completo.'
+  ],
+  'domine|plataforma|como funciona': [
+    'A DomineBrasil conecta Alunos que querem aprender a dirigir com Instrutores credenciados independentes. Investidores disponibilizam carros para aluguel. É como um Uber/Airbnb para aulas de direção! Alunos escolhem o melhor instrutor, e todo mundo ganha.'
+  ]
 };
 
 const getAutoResponse = (message: string): string => {
-  const lowerMessage = message.toLowerCase();
+  const lowerMessage = message.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   
-  for (const [keyword, response] of Object.entries(autoResponses)) {
-    if (lowerMessage.includes(keyword)) {
-      return response;
+  for (const [keywords, responses] of Object.entries(autoResponses)) {
+    const keywordList = keywords.split('|');
+    for (const keyword of keywordList) {
+      if (lowerMessage.includes(keyword)) {
+        return responses[Math.floor(Math.random() * responses.length)];
+      }
     }
   }
   
-  return 'Obrigado pela sua mensagem! Para dúvidas mais específicas, visite nossa Central de Ajuda ou entre em contato pelo e-mail suporte@dominebrasil.com. Posso ajudar com informações sobre Preços, Cadastro, Material de Estudo, Aulas, Instrutores, Pagamentos ou Carros!';
+  return `Obrigado pela sua mensagem! 😊 
+
+Posso te ajudar com informações sobre:
+• Preços - custos para alunos, instrutores e investidores
+• Cadastro - como criar sua conta
+• Instrutores - como escolher e como funciona a verificação
+• Carros - aluguel de veículos da frota
+• Pagamentos - formas aceitas e prazos
+• Material de Estudo - Kit Aprovação Premium
+• CNH - etapas da habilitação
+
+Digite uma dessas palavras ou faça sua pergunta! Se preferir falar com um humano: suporte@dominebrasil.com`;
 };
 
 export const AIChatWidget: React.FC = () => {
