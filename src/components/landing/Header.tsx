@@ -33,6 +33,14 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAuth }) => {
     navigate('/');
   };
 
+  const scrollToSection = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+    setIsMobileMenuOpen(false);
+  };
+
   return (
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -55,22 +63,30 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAuth }) => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
-            <a 
-              href="#como-funciona" 
+            <button 
+              onClick={() => scrollToSection('como-funciona')}
               className={`text-sm font-medium transition-colors ${
                 isScrolled ? 'text-foreground hover:text-primary' : 'text-white/90 hover:text-white drop-shadow-sm'
               }`}
             >
               Como Funciona
-            </a>
-            <a 
-              href="#depoimentos" 
+            </button>
+            <button 
+              onClick={() => scrollToSection('jornada-cnh')}
+              className={`text-sm font-medium transition-colors ${
+                isScrolled ? 'text-foreground hover:text-primary' : 'text-white/90 hover:text-white drop-shadow-sm'
+              }`}
+            >
+              Jornada CNH
+            </button>
+            <button 
+              onClick={() => scrollToSection('depoimentos')}
               className={`text-sm font-medium transition-colors ${
                 isScrolled ? 'text-foreground hover:text-primary' : 'text-white/90 hover:text-white drop-shadow-sm'
               }`}
             >
               Depoimentos
-            </a>
+            </button>
           </nav>
 
           {/* Desktop Auth Buttons */}
@@ -106,20 +122,24 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAuth }) => {
         {isMobileMenuOpen && (
           <div className="md:hidden bg-card border-t border-border py-4 animate-fade-in">
             <nav className="flex flex-col gap-2">
-              <a 
-                href="#como-funciona" 
-                className="px-4 py-2 text-sm font-medium hover:bg-accent rounded-lg"
-                onClick={() => setIsMobileMenuOpen(false)}
+              <button 
+                onClick={() => scrollToSection('como-funciona')}
+                className="px-4 py-2 text-sm font-medium hover:bg-accent rounded-lg text-left"
               >
                 Como Funciona
-              </a>
-              <a 
-                href="#depoimentos" 
-                className="px-4 py-2 text-sm font-medium hover:bg-accent rounded-lg"
-                onClick={() => setIsMobileMenuOpen(false)}
+              </button>
+              <button 
+                onClick={() => scrollToSection('jornada-cnh')}
+                className="px-4 py-2 text-sm font-medium hover:bg-accent rounded-lg text-left"
+              >
+                Jornada CNH
+              </button>
+              <button 
+                onClick={() => scrollToSection('depoimentos')}
+                className="px-4 py-2 text-sm font-medium hover:bg-accent rounded-lg text-left"
               >
                 Depoimentos
-              </a>
+              </button>
               <div className="px-4 pt-2 border-t border-border mt-2">
                 {user ? (
                   <div className="flex flex-col gap-2">

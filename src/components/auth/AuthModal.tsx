@@ -20,37 +20,41 @@ type AuthMode = 'login' | 'signup';
 interface AuthModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  preselectedRole?: UserRole;
 }
 
 const roleOptions = [
   {
     role: 'student' as UserRole,
     title: 'Sou Aluno',
-    description: 'Quero aprender a dirigir com confiança',
-    icon: GraduationCap,
   },
   {
     role: 'instructor' as UserRole,
     title: 'Sou Instrutor',
-    description: 'Quero oferecer aulas particulares',
-    icon: Car,
   },
   {
     role: 'investor' as UserRole,
     title: 'Sou Investidor/Autoescola',
-    description: 'Quero disponibilizar veículos',
-    icon: Building2,
   },
 ];
 
-export const AuthModal: React.FC<AuthModalProps> = ({ open, onOpenChange }) => {
-  const [step, setStep] = useState<AuthStep>('select-role');
-  const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
+export const AuthModal: React.FC<AuthModalProps> = ({ open, onOpenChange, preselectedRole }) => {
+  const [step, setStep] = useState<AuthStep>(preselectedRole ? 'auth-form' : 'select-role');
+  const [selectedRole, setSelectedRole] = useState<UserRole | null>(preselectedRole || null);
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Update when preselectedRole changes
+  React.useEffect(() => {
+    if (preselectedRole) {
+      setSelectedRole(preselectedRole);
+      setStep('auth-form');
+    }
+  }, [preselectedRole]);
   
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
@@ -61,10 +65,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({ open, onOpenChange }) => {
   };
 
   const handleBack = () => {
+    if (preselectedRole) {
+      onOpenChange(false);
+      return;
+    }
     setStep('select-role');
     setSelectedRole(null);
     setEmail('');
     setPassword('');
+    setConfirmPassword('');
     setFullName('');
   };
 
@@ -76,9 +85,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({ open, onOpenChange }) => {
       return;
     }
 
-    if (authMode === 'signup' && !fullName) {
-      toast.error('Preencha seu nome completo');
-      return;
+    if (authMode === 'signup') {
+      if (!fullName) {
+        toast.error('Preencha seu nome completo');
+        return;
+      }
+      if (password !== confirmPassword) {
+        toast.error('As senhas não coincidem');
+        return;
+      }
+      if (password.length < 6) {
+        toast.error('A senha deve ter pelo menos 6 caracteres');
+        return;
+      }
     }
 
     setIsLoading(true);
@@ -125,11 +144,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ open, onOpenChange }) => {
   };
 
   const resetModal = () => {
-    setStep('select-role');
-    setSelectedRole(null);
+    setStep(preselectedRole ? 'auth-form' : 'select-role');
+    setSelectedRole(preselectedRole || null);
     setAuthMode('login');
     setEmail('');
     setPassword('');
+    setConfirmPassword('');
     setFullName('');
   };
 
@@ -167,7 +187,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ open, onOpenChange }) => {
                   onClick={() => handleRoleSelect(option.role)}
                 >
                   <span className="text-lg font-semibold">{option.title}</span>
-                  <span className="text-sm text-muted-foreground">{option.description}</span>
                 </Button>
               ))}
             </div>
@@ -221,6 +240,20 @@ export const AuthModal: React.FC<AuthModalProps> = ({ open, onOpenChange }) => {
                     disabled={isLoading}
                   />
                 </div>
+
+                {authMode === 'signup' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Confirmar Senha</Label>
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      placeholder="••••••••"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      disabled={isLoading}
+                    />
+                  </div>
+                )}
 
                 <Button 
                   type="submit" 

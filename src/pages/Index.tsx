@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Header } from '@/components/landing/Header';
 import { HeroSection } from '@/components/landing/HeroSection';
+import { HowItWorksSection } from '@/components/landing/HowItWorksSection';
 import { InstructorSection } from '@/components/landing/InstructorSection';
 import { InvestorSection } from '@/components/landing/InvestorSection';
 import { StudentSection } from '@/components/landing/StudentSection';
@@ -11,8 +12,11 @@ import { FooterNew } from '@/components/landing/FooterNew';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { useAuth } from '@/contexts/AuthContext';
 
+type PreselectedRole = 'student' | 'instructor' | 'investor' | undefined;
+
 const Index = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [preselectedRole, setPreselectedRole] = useState<PreselectedRole>(undefined);
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
 
@@ -27,21 +31,50 @@ const Index = () => {
     }
   }, [user, profile, loading, navigate]);
 
-  const handleOpenAuth = () => setIsAuthModalOpen(true);
+  const handleOpenAuth = () => {
+    setPreselectedRole(undefined);
+    setIsAuthModalOpen(true);
+  };
+
+  const handleOpenInstructorAuth = () => {
+    setPreselectedRole('instructor');
+    setIsAuthModalOpen(true);
+  };
+
+  const handleOpenInvestorAuth = () => {
+    setPreselectedRole('investor');
+    setIsAuthModalOpen(true);
+  };
+
+  const handleCloseAuth = (open: boolean) => {
+    setIsAuthModalOpen(open);
+    if (!open) {
+      setPreselectedRole(undefined);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <Header onOpenAuth={handleOpenAuth} />
       <main>
-        <HeroSection onOpenAuth={handleOpenAuth} />
-        <StudentSection onOpenAuth={handleOpenAuth} />
-        <JornadaCNHSection onOpenAuth={handleOpenAuth} />
-        <InstructorSection onOpenAuth={handleOpenAuth} />
-        <InvestorSection onOpenAuth={handleOpenAuth} />
+        <HeroSection 
+          onOpenAuth={handleOpenAuth} 
+          onOpenInstructorAuth={handleOpenInstructorAuth}
+          onOpenInvestorAuth={handleOpenInvestorAuth}
+        />
+        <StudentSection />
+        <HowItWorksSection />
+        <JornadaCNHSection />
+        <InstructorSection onOpenAuth={handleOpenInstructorAuth} />
+        <InvestorSection onOpenAuth={handleOpenInvestorAuth} />
         <TrustSection />
       </main>
       <FooterNew />
-      <AuthModal open={isAuthModalOpen} onOpenChange={setIsAuthModalOpen} />
+      <AuthModal 
+        open={isAuthModalOpen} 
+        onOpenChange={handleCloseAuth} 
+        preselectedRole={preselectedRole}
+      />
     </div>
   );
 };
