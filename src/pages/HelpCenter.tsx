@@ -16,68 +16,72 @@ type Category = 'all' | 'alunos' | 'instrutores' | 'financeiro';
 const faqData = {
   alunos: [
     {
-      question: 'Como agendar uma aula prática?',
-      answer: 'Para agendar, pesquise instrutores na sua cidade, escolha o que mais combina com você, selecione o horário disponível e confirme o agendamento. Você receberá uma confirmação por e-mail e WhatsApp.'
+      question: 'É verdade que a plataforma é GRATUITA para alunos?',
+      answer: 'Sim, 100% verdade! Você não paga NADA para usar a Domine. Sem taxa de cadastro, sem mensalidade, sem taxas escondidas. Você paga apenas o valor da aula diretamente ao instrutor. Invista 100% do seu dinheiro no seu aprendizado, não em burocracia.'
     },
     {
-      question: 'Como baixar o PDF de estudo para a prova teórica?',
-      answer: 'Após criar sua conta, acesse a seção "Material de Estudo" no seu painel. Lá você encontrará o Kit Aprovação Premium com todos os materiais em PDF para download.'
+      question: 'Tenho CNH mas não dirijo por medo. Vocês podem me ajudar?',
+      answer: 'Com certeza! Esse é um dos nossos públicos principais. Nossos instrutores são especializados e PACIENTES. Carros com duplo comando garantem sua segurança total. Milhares de pessoas como você já retomaram a confiança conosco. Você não desaprendeu, só precisa de paciência!'
     },
     {
-      question: 'Posso cancelar uma aula agendada?',
-      answer: 'Sim! Cancelamentos com mais de 24h de antecedência têm reembolso integral. Entre 24h e 2h, reembolso de 50%. Com menos de 2h, não há reembolso.'
+      question: 'Como escolho o instrutor certo para mim?',
+      answer: 'Você tem o PODER DA ESCOLHA! Veja o perfil completo: taxa de aprovação real, anos de experiência, fotos do veículo, tipo de transmissão (manual ou automático), avaliações de outros alunos. Compare e escolha com confiança.'
     },
     {
-      question: 'Como escolho o melhor instrutor?',
-      answer: 'Analise o perfil do instrutor: veja avaliações de outros alunos, taxa de aprovação, anos de experiência, fotos do veículo e a bio pessoal. Assim você toma uma decisão informada.'
+      question: 'E se eu não gostar do instrutor?',
+      answer: 'Sem problemas! Você escolhe outro instrutor sem qualquer penalidade. Cancelamentos com mais de 24h de antecedência têm reembolso integral. Você está sempre no controle.'
     },
     {
-      question: 'A plataforma é gratuita para alunos?',
-      answer: 'Sim! O uso da plataforma é 100% gratuito para alunos. Você paga apenas o valor da aula diretamente ao instrutor. Sem taxas escondidas.'
+      question: 'Os instrutores são realmente verificados?',
+      answer: 'Absolutamente! Usamos Inteligência Artificial para verificar CNH, credencial do DETRAN, e fazemos checagem de identidade com selfie. Só instrutores APROVADOS aparecem na plataforma. Sua segurança é prioridade máxima.'
+    },
+    {
+      question: 'Vocês oferecem material de estudo para a prova teórica?',
+      answer: 'Sim! O Kit Aprovação Premium é GRATUITO para alunos cadastrados. PDFs exclusivos com dicas, macetes de memorização e conteúdo 100% alinhado com exigências do DETRAN. Tudo para você passar de primeira!'
     }
   ],
   instrutores: [
     {
-      question: 'Como recebo meus pagamentos?',
-      answer: 'Os pagamentos são processados semanalmente e depositados na conta bancária cadastrada. Você pode acompanhar todos os ganhos no painel "Financeiro" da sua dashboard.'
+      question: 'Quanto posso ganhar como instrutor na Domine?',
+      answer: 'Muito mais do que em autoescola tradicional! Cobrando R$120/aula, descontando R$50 do aluguel do carro e R$10 de taxa do sistema, seu lucro líquido é R$60/hora. Com 4 aulas/dia, 22 dias/mês = mais de R$5.000 líquidos! Se usar carro próprio, ganha ainda mais.'
     },
     {
-      question: 'Como funciona o aluguel do carro?',
-      answer: 'Ao aceitar uma aula, você pode usar seu próprio veículo ou alugar da frota Domine. O valor do aluguel (R$50/hora) é descontado automaticamente dos seus ganhos.'
+      question: 'Qual a diferença real entre CLT e ser parceiro Domine?',
+      answer: 'Na CLT você ganha ~R$1.800 fixo, sem autonomia, horários rígidos. Na Domine: você define seus horários, seus preços, atende quem quiser. Instrutores ativos ganham 3-4x mais com liberdade total. Seja DONO do seu negócio!'
     },
     {
-      question: 'Quanto custa usar a plataforma?',
-      answer: 'A taxa do sistema é de R$10 por hora de aula. Se você alugar um carro da frota, há uma taxa adicional de R$50/hora. O restante do valor da aula é seu lucro.'
+      question: 'Não tenho carro. Posso trabalhar mesmo assim?',
+      answer: 'SIM! Esse é nosso diferencial. Alugue carros da frota por R$50/hora apenas quando tiver aula. Sem compromisso fixo, sem financiamento, sem dor de cabeça. Modelo Asset-Light: você trabalha, não se endivida.'
     },
     {
-      question: 'Como funciona a verificação de instrutor?',
-      answer: 'Enviamos seus documentos (CNH, credencial DETRAN, selfie) para verificação por IA. O processo leva até 24h. Após aprovação, seu perfil fica visível para alunos.'
+      question: 'Como funciona a verificação do instrutor?',
+      answer: 'Processo 100% digital e rápido: envie CNH, credencial DETRAN e selfie. Nossa IA verifica autenticidade em até 24h. Após aprovação, seu perfil fica visível e você começa a receber alunos imediatamente!'
     },
     {
-      question: 'Posso definir meus próprios horários?',
-      answer: 'Sim! Você tem total autonomia para definir sua agenda. Configure os dias e horários disponíveis no seu painel e aceite apenas as aulas que deseja.'
+      question: 'Como e quando recebo meus pagamentos?',
+      answer: 'Pagamentos semanais direto na sua conta! Acompanhe tudo em tempo real no painel financeiro. Transparência total: veja cada aula, cada desconto, seu saldo disponível. Dinheiro na mão toda semana.'
     }
   ],
   financeiro: [
     {
+      question: 'Como funciona a divisão para investidores (75/25)?',
+      answer: 'Simples e justo: você entra com o veículo regularizado, nós cuidamos de TUDO (captação, gestão, suporte). Do lucro líquido gerado pelo seu carro: 75% vai para você, 25% fica com a Domine. Renda passiva de verdade!'
+    },
+    {
+      question: 'Por que investir na Domine é melhor que Uber/99?',
+      answer: 'Compare: Uber = 5.000km/mês de desgaste, motoristas amadores, alto risco de inadimplência. Domine = máximo 1.500km/mês, instrutores CREDENCIADOS pelo DETRAN, zero inadimplência (retenção automática). Seu carro rende mais e dura mais!'
+    },
+    {
       question: 'Quais formas de pagamento são aceitas?',
-      answer: 'Aceitamos cartão de crédito, débito e Pix. Todas as transações são processadas por gateways seguros e certificados.'
+      answer: 'Cartão de crédito, débito e PIX. Processamento seguro e criptografado. Alunos pagam online, instrutores recebem semanalmente. Tudo rastreável e transparente.'
     },
     {
-      question: 'Como funciona o reembolso?',
-      answer: 'Reembolsos são processados em até 7 dias úteis. O valor retorna para a mesma forma de pagamento utilizada na compra.'
+      question: 'Existe alguma taxa escondida?',
+      answer: 'NENHUMA! Transparência é nosso valor. Alunos: R$0 (grátis). Instrutores: R$10/hora + R$50 aluguel (opcional). Investidores: apenas a divisão 75/25 do lucro. Tudo claro desde o primeiro dia.'
     },
     {
-      question: 'Existe mensalidade ou taxa de cadastro?',
-      answer: 'Não! A plataforma não cobra mensalidade nem taxa de cadastro. Alunos usam gratuitamente. Instrutores pagam apenas taxa por aula realizada.'
-    },
-    {
-      question: 'Como funciona a divisão para investidores?',
-      answer: 'Investidores recebem 75% do lucro líquido gerado pelo veículo. Os outros 25% ficam com a Domine para administração, suporte e captação de clientes.'
-    },
-    {
-      question: 'Posso emitir nota fiscal?',
-      answer: 'Sim! Instrutores podem emitir NFS-e pelos seus serviços. Disponibilizamos relatórios detalhados para facilitar sua contabilidade.'
+      question: 'Posso emitir nota fiscal dos meus serviços?',
+      answer: 'Claro! Instrutores podem emitir NFS-e normalmente. Disponibilizamos relatórios detalhados mensais que facilitam sua contabilidade. Trabalhe legalizado e tranquilo.'
     }
   ]
 };

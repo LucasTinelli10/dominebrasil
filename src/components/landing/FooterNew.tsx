@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { Mail, Phone, MapPin, Instagram, Facebook, Linkedin, Youtube } from 'lucide-react';
 
 export const FooterNew: React.FC = () => {
@@ -40,11 +41,10 @@ export const FooterNew: React.FC = () => {
           <div>
             <h4 className="font-bold text-lg mb-4">Para Você</h4>
             <ul className="space-y-3 text-sm text-slate-400">
-              <li><a href="#" className="hover:text-teal-400 transition-colors">Sou Aluno</a></li>
-              <li><a href="#" className="hover:text-teal-400 transition-colors">Sou Instrutor</a></li>
-              <li><a href="#" className="hover:text-teal-400 transition-colors">Sou Investidor de Frota</a></li>
-              <li><a href="#" className="hover:text-teal-400 transition-colors">Como Funciona</a></li>
-              <li><a href="#" className="hover:text-teal-400 transition-colors">Preços</a></li>
+              <li><Link to="/buscar-instrutor" className="hover:text-teal-400 transition-colors">Sou Aluno</Link></li>
+              <li><a href="/#como-funciona" className="hover:text-teal-400 transition-colors">Como Funciona</a></li>
+              <li><a href="/#precos" className="hover:text-teal-400 transition-colors">Preços</a></li>
+              <li><a href="/#jornada-cnh" className="hover:text-teal-400 transition-colors">Jornada CNH</a></li>
             </ul>
           </div>
 
@@ -52,11 +52,11 @@ export const FooterNew: React.FC = () => {
           <div>
             <h4 className="font-bold text-lg mb-4">Suporte</h4>
             <ul className="space-y-3 text-sm text-slate-400">
-              <li><a href="#" className="hover:text-teal-400 transition-colors">Central de Ajuda</a></li>
-              <li><a href="#" className="hover:text-teal-400 transition-colors">Termos de Uso</a></li>
-              <li><a href="#" className="hover:text-teal-400 transition-colors">Política de Privacidade</a></li>
-              <li><a href="#" className="hover:text-teal-400 transition-colors">FAQ</a></li>
-              <li><a href="#" className="hover:text-teal-400 transition-colors">Fale Conosco</a></li>
+              <li><Link to="/ajuda" className="hover:text-teal-400 transition-colors">Central de Ajuda</Link></li>
+              <li><Link to="/termos" className="hover:text-teal-400 transition-colors">Termos de Uso</Link></li>
+              <li><Link to="/privacidade" className="hover:text-teal-400 transition-colors">Política de Privacidade</Link></li>
+              <li><Link to="/ajuda" className="hover:text-teal-400 transition-colors">FAQ</Link></li>
+              <li><Link to="/ajuda#contato" className="hover:text-teal-400 transition-colors">Fale Conosco</Link></li>
             </ul>
           </div>
 

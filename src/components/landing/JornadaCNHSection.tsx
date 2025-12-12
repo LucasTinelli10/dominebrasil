@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FileText, Stethoscope, BookOpen, ClipboardCheck, Car, Trophy, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,7 @@ const steps = [
     icon: FileText,
     title: 'Cadastro no Gov.br',
     description: 'O primeiro passo é ter sua conta Prata ou Ouro no Governo Federal e iniciar o processo no Detran do seu estado. Com a CNH Digital, o processo ficou muito mais simples.',
-    link: 'https://www.gov.br/transportes/pt-br/cnh-do-brasil',
+    link: 'https://www.gov.br/pt-br/servicos/obter-a-carteira-nacional-de-habilitacao',
     linkText: 'Acessar Gov.br',
   },
   {
@@ -25,7 +26,7 @@ const steps = [
     icon: BookOpen,
     title: 'Aulas Teóricas',
     description: 'Estude a legislação de trânsito. Com a nova lei, você pode estudar por conta própria usando material oficial ou fazer curso em CFC (Centro de Formação de Condutores).',
-    link: 'https://www.gov.br/transportes/pt-br/assuntos/transito/educacao-para-o-transito/publicacoes-educativas',
+    link: 'https://www.gov.br/senatran/pt-br/assuntos/educacao-para-o-transito/publicacoes-educativas',
     linkText: 'Baixar Apostilas Oficiais',
   },
   {
@@ -60,6 +61,7 @@ interface JornadaCNHSectionProps {
 }
 
 export const JornadaCNHSection: React.FC<JornadaCNHSectionProps> = ({ onOpenAuth }) => {
+  const navigate = useNavigate();
   return (
     <section id="jornada-cnh" className="py-20 bg-gradient-to-b from-primary/5 to-background">
       <div className="container mx-auto px-4">
@@ -122,7 +124,7 @@ export const JornadaCNHSection: React.FC<JornadaCNHSectionProps> = ({ onOpenAuth
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={onOpenAuth}
+                        onClick={() => navigate('/buscar-instrutor')}
                         className="border-primary text-primary hover:bg-primary hover:text-primary-foreground"
                       >
                         {step.linkText}
@@ -159,8 +161,8 @@ export const JornadaCNHSection: React.FC<JornadaCNHSectionProps> = ({ onOpenAuth
           <p className="text-muted-foreground mb-4">
             Está na etapa 5? O DomineBrasil conecta você aos melhores instrutores!
           </p>
-          <Button size="lg" onClick={onOpenAuth} className="shadow-lg">
-            Começar Agora
+          <Button size="lg" onClick={() => navigate('/buscar-instrutor')} className="shadow-lg">
+            Encontrar Instrutor
           </Button>
         </motion.div>
       </div>
