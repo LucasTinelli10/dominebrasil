@@ -5,6 +5,7 @@ import { HeroSection } from '@/components/landing/HeroSection';
 import { InstructorSection } from '@/components/landing/InstructorSection';
 import { InvestorSection } from '@/components/landing/InvestorSection';
 import { StudentSection } from '@/components/landing/StudentSection';
+import { JornadaCNHSection } from '@/components/landing/JornadaCNHSection';
 import { TrustSection } from '@/components/landing/TrustSection';
 import { FooterNew } from '@/components/landing/FooterNew';
 import { AuthModal } from '@/components/auth/AuthModal';
@@ -34,6 +35,7 @@ const Index = () => {
       <main>
         <HeroSection onOpenAuth={handleOpenAuth} />
         <StudentSection onOpenAuth={handleOpenAuth} />
+        <JornadaCNHSection onOpenAuth={handleOpenAuth} />
         <InstructorSection onOpenAuth={handleOpenAuth} />
         <InvestorSection onOpenAuth={handleOpenAuth} />
         <TrustSection />
