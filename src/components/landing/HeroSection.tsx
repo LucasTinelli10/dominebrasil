@@ -1,7 +1,8 @@
 import React from 'react';
 import { motion, Variants, Easing } from 'framer-motion';
-import { GraduationCap, Briefcase, Car, ArrowRight } from 'lucide-react';
+import { User, ShieldCheck, TrendingUp, ArrowRight } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 interface HeroSectionProps {
   onOpenAuth: () => void;
@@ -10,33 +11,24 @@ interface HeroSectionProps {
 const personas = [
   {
     id: 'student',
-    icon: GraduationCap,
-    title: 'Sou Aluno',
-    description: 'Quero aprender a dirigir com calma e paciência',
-    color: 'from-teal-500 to-teal-600',
-    hoverColor: 'hover:border-teal-500',
-    iconBg: 'bg-teal-500/10',
-    iconColor: 'text-teal-600',
+    icon: User,
+    title: 'Quero Perder o Medo',
+    subtitle: 'Para Alunos Habilitados',
+    variant: 'primary' as const,
   },
   {
     id: 'instructor',
-    icon: Briefcase,
+    icon: ShieldCheck,
     title: 'Sou Instrutor',
-    description: 'Quero trabalhar de forma independente e ganhar mais',
-    color: 'from-slate-700 to-slate-800',
-    hoverColor: 'hover:border-slate-600',
-    iconBg: 'bg-slate-500/10',
-    iconColor: 'text-slate-600',
+    subtitle: 'Quero dar aulas',
+    variant: 'outline' as const,
   },
   {
     id: 'investor',
-    icon: Car,
-    title: 'Sou Investidor',
-    description: 'Quero rentabilizar minha frota com segurança',
-    color: 'from-amber-500 to-amber-600',
-    hoverColor: 'hover:border-amber-500',
-    iconBg: 'bg-amber-500/10',
-    iconColor: 'text-amber-600',
+    icon: TrendingUp,
+    title: 'Tenho Frota',
+    subtitle: 'Quero investir',
+    variant: 'ghost' as const,
   },
 ];
 
@@ -84,7 +76,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth }) => {
           <motion.div variants={itemVariants} className="inline-flex items-center gap-2 px-4 py-2 bg-teal-500/10 border border-teal-500/20 rounded-full mb-8">
             <span className="w-2 h-2 bg-teal-400 rounded-full animate-pulse" />
             <span className="text-sm font-medium text-teal-300">
-              Conforme Lei CONTRAN 14.921/2024
+              100% Adequado à Nova Lei de Trânsito
             </span>
           </motion.div>
 
@@ -93,12 +85,12 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth }) => {
             variants={itemVariants}
             className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-tight text-white mb-6"
           >
-            Sua CNH na mão.{' '}
-            <span className="bg-gradient-to-r from-teal-400 to-teal-300 bg-clip-text text-transparent">
-              Sua Renda no bolso.
-            </span>{' '}
+            Liberdade para quem dirige.{' '}
             <br className="hidden md:block" />
-            Seu Investimento seguro.
+            <span className="text-teal-500">
+              Independência
+            </span>{' '}
+            para quem ensina.
           </motion.h1>
 
           {/* Subheadline */}
@@ -106,39 +98,95 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onOpenAuth }) => {
             variants={itemVariants}
             className="text-lg md:text-xl text-slate-300 max-w-3xl mx-auto mb-12"
           >
-            A primeira plataforma que conecta alunos a instrutores independentes e frotas de investidores.{' '}
-            <span className="text-teal-400">Tudo dentro da nova Lei do Contran.</span>
+            A plataforma oficial que une Alunos Habilitados, Instrutores Autônomos e Investidores de Frota.{' '}
+            <span className="text-teal-400">Segurança e tecnologia para você dominar o trânsito.</span>
           </motion.p>
 
-          {/* Persona Cards */}
+          {/* Choose Your Path Label */}
+          <motion.p
+            variants={itemVariants}
+            className="text-sm uppercase tracking-widest text-slate-400 mb-6"
+          >
+            Escolha seu caminho
+          </motion.p>
+
+          {/* Persona Buttons */}
           <motion.div
             variants={itemVariants}
-            className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto"
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 max-w-2xl mx-auto"
           >
-            {personas.map((persona) => (
-              <motion.div
-                key={persona.id}
-                whileHover={{ scale: 1.03, y: -5 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <Card
-                  onClick={onOpenAuth}
-                  className={`cursor-pointer bg-white/5 backdrop-blur-sm border-white/10 ${persona.hoverColor} transition-all duration-300 group overflow-hidden`}
+            {personas.map((persona) => {
+              const Icon = persona.icon;
+              
+              if (persona.variant === 'primary') {
+                return (
+                  <motion.div
+                    key={persona.id}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="w-full sm:w-auto"
+                  >
+                    <Button
+                      onClick={onOpenAuth}
+                      size="lg"
+                      className="w-full sm:w-auto bg-teal-600 hover:bg-teal-700 text-white px-8 py-6 h-auto flex flex-col items-center gap-1 shadow-lg shadow-teal-500/25"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Icon className="w-5 h-5" />
+                        <span className="font-semibold text-base">{persona.title}</span>
+                      </div>
+                      <span className="text-xs text-teal-200 font-normal">{persona.subtitle}</span>
+                    </Button>
+                  </motion.div>
+                );
+              }
+              
+              if (persona.variant === 'outline') {
+                return (
+                  <motion.div
+                    key={persona.id}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="w-full sm:w-auto"
+                  >
+                    <Button
+                      onClick={onOpenAuth}
+                      variant="outline"
+                      size="lg"
+                      className="w-full sm:w-auto border-white/30 bg-white/5 hover:bg-white/10 text-white px-8 py-6 h-auto flex flex-col items-center gap-1"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Icon className="w-5 h-5" />
+                        <span className="font-semibold text-base">{persona.title}</span>
+                      </div>
+                      <span className="text-xs text-slate-300 font-normal">{persona.subtitle}</span>
+                    </Button>
+                  </motion.div>
+                );
+              }
+              
+              return (
+                <motion.div
+                  key={persona.id}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full sm:w-auto"
                 >
-                  <CardContent className="p-6 text-left">
-                    <div className={`w-14 h-14 rounded-2xl ${persona.iconBg} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                      <persona.icon className={`w-7 h-7 ${persona.iconColor}`} />
+                  <Button
+                    onClick={onOpenAuth}
+                    variant="ghost"
+                    size="lg"
+                    className="w-full sm:w-auto text-slate-300 hover:text-white hover:bg-white/5 px-8 py-6 h-auto flex flex-col items-center gap-1"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Icon className="w-5 h-5" />
+                      <span className="font-semibold text-base">{persona.title}</span>
                     </div>
-                    <h3 className="text-xl font-bold text-white mb-2">{persona.title}</h3>
-                    <p className="text-slate-400 text-sm mb-4">{persona.description}</p>
-                    <div className="flex items-center text-teal-400 text-sm font-medium group-hover:text-teal-300">
-                      Começar agora
-                      <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
+                    <span className="text-xs text-slate-400 font-normal">{persona.subtitle}</span>
+                  </Button>
+                </motion.div>
+              );
+            })}
           </motion.div>
 
           {/* Trust Badge */}
