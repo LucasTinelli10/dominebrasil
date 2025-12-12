@@ -9,7 +9,10 @@ import { StudentSection } from '@/components/landing/StudentSection';
 import { JornadaCNHSection } from '@/components/landing/JornadaCNHSection';
 import { TrustSection } from '@/components/landing/TrustSection';
 import { FooterNew } from '@/components/landing/FooterNew';
+import { PricingSection } from '@/components/landing/PricingSection';
+import { WhyChooseSection } from '@/components/landing/WhyChooseSection';
 import { AuthModal } from '@/components/auth/AuthModal';
+import { AIChatWidget } from '@/components/chat/AIChatWidget';
 import { useAuth } from '@/contexts/AuthContext';
 
 type PreselectedRole = 'student' | 'instructor' | 'investor' | undefined;
@@ -64,12 +67,15 @@ const Index = () => {
         />
         <StudentSection />
         <HowItWorksSection />
+        <WhyChooseSection />
+        <PricingSection />
         <JornadaCNHSection />
         <InstructorSection onOpenAuth={handleOpenInstructorAuth} />
         <InvestorSection onOpenAuth={handleOpenInvestorAuth} />
         <TrustSection />
       </main>
       <FooterNew />
+      <AIChatWidget />
       <AuthModal 
         open={isAuthModalOpen} 
         onOpenChange={handleCloseAuth} 
