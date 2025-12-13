@@ -72,7 +72,17 @@ const AddCarWizard: React.FC<AddCarWizardProps> = ({ open, onOpenChange, onSucce
     }
   };
 
-  const uploadFile = async (file: File, path: string): Promise<string> => {
+  const generateSecureFileName = (originalName: string): string => {
+    const extension = originalName.split('.').pop() || 'jpg';
+    const randomPart = crypto.randomUUID();
+    const timestamp = Date.now();
+    return `${timestamp}_${randomPart}.${extension}`;
+  };
+
+  const uploadFile = async (file: File, folder: string, docType: string): Promise<string> => {
+    const secureName = generateSecureFileName(file.name);
+    const path = `${folder}/${docType}_${secureName}`;
+    
     const { error } = await supabase.storage
       .from('car-verification-docs')
       .upload(path, file, { upsert: true });
@@ -117,12 +127,12 @@ const AddCarWizard: React.FC<AddCarWizardProps> = ({ open, onOpenChange, onSucce
       const carId = car.id;
       const basePath = `${profile.id}/${carId}`;
 
-      // Upload all files
+      // Upload all files with secure random filenames
       const [crlvPath, frontPath, interiorPath, sidePath] = await Promise.all([
-        uploadFile(files.crlv, `${basePath}/crlv.${files.crlv.name.split('.').pop()}`),
-        uploadFile(files.front, `${basePath}/front.${files.front.name.split('.').pop()}`),
-        uploadFile(files.interior, `${basePath}/interior.${files.interior.name.split('.').pop()}`),
-        uploadFile(files.side, `${basePath}/side.${files.side.name.split('.').pop()}`),
+        uploadFile(files.crlv, basePath, 'crlv'),
+        uploadFile(files.front, basePath, 'front'),
+        uploadFile(files.interior, basePath, 'interior'),
+        uploadFile(files.side, basePath, 'side'),
       ]);
 
       // Update car with file paths

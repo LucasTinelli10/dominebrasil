@@ -116,8 +116,18 @@ export default function InstructorOnboarding() {
     }
   };
 
-  const uploadFileToStorage = async (file: File, path: string): Promise<string | null> => {
+  const generateSecureFileName = (originalName: string): string => {
+    const extension = originalName.split('.').pop() || 'jpg';
+    const randomPart = crypto.randomUUID();
+    const timestamp = Date.now();
+    return `${timestamp}_${randomPart}.${extension}`;
+  };
+
+  const uploadFileToStorage = async (file: File, folder: string, docType: string): Promise<string | null> => {
     try {
+      const secureName = generateSecureFileName(file.name);
+      const path = `${folder}/${docType}_${secureName}`;
+      
       const { data, error } = await supabase.storage
         .from('verification-docs')
         .upload(path, file, { upsert: true });
@@ -143,20 +153,19 @@ export default function InstructorOnboarding() {
     setIsLoading(true);
 
     try {
-      // Upload files
-      const timestamp = Date.now();
+      // Upload files with secure random filenames
       const userId = profile.id;
 
       const cnhUrl = uploadedFiles.cnhFront 
-        ? await uploadFileToStorage(uploadedFiles.cnhFront, `${userId}/cnh_front_${timestamp}.jpg`)
+        ? await uploadFileToStorage(uploadedFiles.cnhFront, userId, 'cnh_front')
         : null;
 
       const certificateUrl = uploadedFiles.certificate
-        ? await uploadFileToStorage(uploadedFiles.certificate, `${userId}/certificate_${timestamp}.jpg`)
+        ? await uploadFileToStorage(uploadedFiles.certificate, userId, 'certificate')
         : null;
 
       const selfieUrl = uploadedFiles.selfie
-        ? await uploadFileToStorage(uploadedFiles.selfie, `${userId}/selfie_${timestamp}.jpg`)
+        ? await uploadFileToStorage(uploadedFiles.selfie, userId, 'selfie')
         : null;
 
       if (!cnhUrl) {
