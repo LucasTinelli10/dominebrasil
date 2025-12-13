@@ -386,6 +386,21 @@ export type Database = {
         Args: { check_date: string; check_time: string; instr_id: string }
         Returns: boolean
       }
+      get_all_approved_instructors: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          badges: string[]
+          bio: string
+          city: string
+          full_name: string
+          instructor_id: string
+          price_per_hour: number
+          rating: number
+          total_lessons: number
+          years_experience: number
+        }[]
+      }
       get_approved_instructors: {
         Args: never
         Returns: {
@@ -393,6 +408,19 @@ export type Database = {
           city: string
           full_name: string
           id: string
+        }[]
+      }
+      get_public_instructor_details: {
+        Args: { instructor_id: string }
+        Returns: {
+          badges: string[]
+          bio: string
+          id: string
+          price_per_hour: number
+          profile_id: string
+          rating: number
+          total_lessons: number
+          years_experience: number
         }[]
       }
       get_public_instructor_profile: {
