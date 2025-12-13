@@ -71,6 +71,24 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        student: {
+          DEFAULT: "hsl(var(--student-primary))",
+          foreground: "hsl(var(--student-primary-foreground))",
+          accent: "hsl(var(--student-accent))",
+          "accent-foreground": "hsl(var(--student-accent-foreground))",
+        },
+        instructor: {
+          DEFAULT: "hsl(var(--instructor-primary))",
+          foreground: "hsl(var(--instructor-primary-foreground))",
+          accent: "hsl(var(--instructor-accent))",
+          "accent-foreground": "hsl(var(--instructor-accent-foreground))",
+        },
+        investor: {
+          DEFAULT: "hsl(var(--investor-primary))",
+          foreground: "hsl(var(--investor-primary-foreground))",
+          accent: "hsl(var(--investor-accent))",
+          "accent-foreground": "hsl(var(--investor-accent-foreground))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
