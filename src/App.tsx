@@ -5,16 +5,36 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+
+// Public pages
 import Index from "./pages/Index";
 import InstructorSearch from "./pages/InstructorSearch";
 import HelpCenter from "./pages/HelpCenter";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
 import NotFound from "./pages/NotFound";
-import StudentDashboard from "./pages/student/Dashboard";
-import InstructorDashboard from "./pages/instructor/Dashboard";
+
+// App Layout
+import { AppLayout } from "./components/layouts/AppLayout";
+
+// Instructor App Pages
+import InstructorHome from "./pages/app/instructor/InstructorHome";
+import InstructorRequests from "./pages/app/instructor/InstructorRequests";
+import InstructorSchedule from "./pages/app/instructor/InstructorSchedule";
+import InstructorMessages from "./pages/app/instructor/InstructorMessages";
+import InstructorProfile from "./pages/app/instructor/InstructorProfile";
+
+// Investor App Pages
+import InvestorHome from "./pages/app/investor/InvestorHome";
+import InvestorFleet from "./pages/app/investor/InvestorFleet";
+import InvestorMaintenance from "./pages/app/investor/InvestorMaintenance";
+import InvestorFinances from "./pages/app/investor/InvestorFinances";
+
+// Student App Pages
+import StudentHome from "./pages/app/student/StudentHome";
+
+// Legacy pages
 import InstructorOnboarding from "./pages/instructor/Onboarding";
-import InvestorDashboard from "./pages/investor/Dashboard";
 import AdminVerifications from "./pages/admin/Verifications";
 
 const queryClient = new QueryClient();
@@ -27,51 +47,43 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
+            {/* Public Routes */}
             <Route path="/" element={<Index />} />
             <Route path="/buscar-instrutor" element={<InstructorSearch />} />
             <Route path="/ajuda" element={<HelpCenter />} />
             <Route path="/privacidade" element={<PrivacyPolicy />} />
             <Route path="/termos" element={<TermsOfUse />} />
-            <Route
-              path="/student/dashboard"
-              element={
-                <ProtectedRoute allowedRoles={['student']}>
-                  <StudentDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/instructor/dashboard"
-              element={
-                <ProtectedRoute allowedRoles={['instructor']}>
-                  <InstructorDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/onboarding"
-              element={
-                <ProtectedRoute allowedRoles={['instructor']}>
-                  <InstructorOnboarding />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/investor/dashboard"
-              element={
-                <ProtectedRoute allowedRoles={['investor']}>
-                  <InvestorDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/verifications"
-              element={
-                <ProtectedRoute allowedRoles={['admin', 'investor']}>
-                  <AdminVerifications />
-                </ProtectedRoute>
-              }
-            />
+
+            {/* App Routes with Sidebar Layout */}
+            <Route path="/app" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+              {/* Student Routes */}
+              <Route path="student" element={<ProtectedRoute allowedRoles={['student']}><StudentHome /></ProtectedRoute>} />
+              <Route path="student/search" element={<ProtectedRoute allowedRoles={['student']}><InstructorSearch /></ProtectedRoute>} />
+              <Route path="student/lessons" element={<ProtectedRoute allowedRoles={['student']}><StudentHome /></ProtectedRoute>} />
+              <Route path="student/progress" element={<ProtectedRoute allowedRoles={['student']}><StudentHome /></ProtectedRoute>} />
+              <Route path="student/messages" element={<ProtectedRoute allowedRoles={['student']}><StudentHome /></ProtectedRoute>} />
+
+              {/* Instructor Routes */}
+              <Route path="instructor" element={<ProtectedRoute allowedRoles={['instructor']}><InstructorHome /></ProtectedRoute>} />
+              <Route path="instructor/requests" element={<ProtectedRoute allowedRoles={['instructor']}><InstructorRequests /></ProtectedRoute>} />
+              <Route path="instructor/schedule" element={<ProtectedRoute allowedRoles={['instructor']}><InstructorSchedule /></ProtectedRoute>} />
+              <Route path="instructor/messages" element={<ProtectedRoute allowedRoles={['instructor']}><InstructorMessages /></ProtectedRoute>} />
+              <Route path="instructor/profile" element={<ProtectedRoute allowedRoles={['instructor']}><InstructorProfile /></ProtectedRoute>} />
+
+              {/* Investor Routes */}
+              <Route path="investor" element={<ProtectedRoute allowedRoles={['investor']}><InvestorHome /></ProtectedRoute>} />
+              <Route path="investor/fleet" element={<ProtectedRoute allowedRoles={['investor']}><InvestorFleet /></ProtectedRoute>} />
+              <Route path="investor/maintenance" element={<ProtectedRoute allowedRoles={['investor']}><InvestorMaintenance /></ProtectedRoute>} />
+              <Route path="investor/finances" element={<ProtectedRoute allowedRoles={['investor']}><InvestorFinances /></ProtectedRoute>} />
+            </Route>
+
+            {/* Legacy Routes (redirect support) */}
+            <Route path="/student/dashboard" element={<ProtectedRoute allowedRoles={['student']}><StudentHome /></ProtectedRoute>} />
+            <Route path="/instructor/dashboard" element={<ProtectedRoute allowedRoles={['instructor']}><InstructorHome /></ProtectedRoute>} />
+            <Route path="/investor/dashboard" element={<ProtectedRoute allowedRoles={['investor']}><InvestorHome /></ProtectedRoute>} />
+            <Route path="/onboarding" element={<ProtectedRoute allowedRoles={['instructor']}><InstructorOnboarding /></ProtectedRoute>} />
+            <Route path="/admin/verifications" element={<ProtectedRoute allowedRoles={['admin']}><AdminVerifications /></ProtectedRoute>} />
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

@@ -48,10 +48,35 @@
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
     
+    /* Role-based theme colors */
+    /* Student - Blue theme */
+    --student-primary: 217 91% 60%;
+    --student-primary-foreground: 0 0% 100%;
+    --student-accent: 217 91% 95%;
+    --student-accent-foreground: 217 91% 40%;
+    --student-sidebar: 217 91% 97%;
+    
+    /* Instructor - Green/Money theme */
+    --instructor-primary: 142 71% 45%;
+    --instructor-primary-foreground: 0 0% 100%;
+    --instructor-accent: 142 71% 95%;
+    --instructor-accent-foreground: 142 71% 30%;
+    --instructor-sidebar: 142 50% 97%;
+    
+    /* Investor - Dark Blue/Corporate theme */
+    --investor-primary: 222 47% 35%;
+    --investor-primary-foreground: 0 0% 100%;
+    --investor-accent: 222 47% 95%;
+    --investor-accent-foreground: 222 47% 25%;
+    --investor-sidebar: 222 30% 97%;
+    
     /* Gradients */
     --gradient-hero: linear-gradient(135deg, hsl(175 77% 35%) 0%, hsl(175 84% 25%) 100%);
     --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(210 20% 98%) 100%);
     --gradient-glass: linear-gradient(135deg, hsla(0, 0%, 100%, 0.9) 0%, hsla(0, 0%, 100%, 0.7) 100%);
+    --gradient-student: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(217 91% 50%) 100%);
+    --gradient-instructor: linear-gradient(135deg, hsl(142 71% 45%) 0%, hsl(142 71% 35%) 100%);
+    --gradient-investor: linear-gradient(135deg, hsl(222 47% 35%) 0%, hsl(222 47% 25%) 100%);
     
     /* Shadows */
     --shadow-sm: 0 1px 2px 0 hsla(215, 25%, 15%, 0.05);
