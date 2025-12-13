@@ -386,6 +386,25 @@ export type Database = {
         Args: { check_date: string; check_time: string; instr_id: string }
         Returns: boolean
       }
+      get_approved_instructors: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          city: string
+          full_name: string
+          id: string
+        }[]
+      }
+      get_public_instructor_profile: {
+        Args: { instructor_id: string }
+        Returns: {
+          avatar_url: string
+          city: string
+          full_name: string
+          id: string
+          verification_status: Database["public"]["Enums"]["verification_status"]
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
