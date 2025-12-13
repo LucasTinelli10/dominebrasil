@@ -364,6 +364,36 @@ export type Database = {
           id: string
         }[]
       }
+      get_available_cars: {
+        Args: never
+        Returns: {
+          available: boolean
+          id: string
+          image_url: string
+          location_hub: string
+          model: string
+          photo_exterior_front: string
+          photo_exterior_side: string
+          plate: string
+          price_per_hour: number
+          transmission: Database["public"]["Enums"]["transmission_type"]
+        }[]
+      }
+      get_car_public_details: {
+        Args: { car_id: string }
+        Returns: {
+          available: boolean
+          id: string
+          image_url: string
+          location_hub: string
+          model: string
+          photo_exterior_front: string
+          photo_exterior_side: string
+          plate: string
+          price_per_hour: number
+          transmission: Database["public"]["Enums"]["transmission_type"]
+        }[]
+      }
       get_public_instructor_details: {
         Args: { instructor_id: string }
         Returns: {
