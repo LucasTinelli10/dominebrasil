@@ -26,7 +26,7 @@ const steps = [
     icon: BookOpen,
     title: 'Aulas Teóricas',
     description: 'Estude a legislação de trânsito. Com a nova lei, você pode estudar por conta própria usando material oficial ou fazer curso em CFC (Centro de Formação de Condutores).',
-    link: 'https://www.gov.br/senatran/pt-br/assuntos/educacao-para-o-transito/publicacoes-educativas',
+    link: 'https://servonline.detran.ms.gov.br/cfc/download/Curso-Primeira-CNH.pdf',
     linkText: 'Baixar Apostilas Oficiais',
   },
   {
