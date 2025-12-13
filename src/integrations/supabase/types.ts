@@ -70,24 +70,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "bookings_instructor_id_fkey"
-            columns: ["instructor_id"]
-            isOneToOne: false
-            referencedRelation: "public_instructor_profiles"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "bookings_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "bookings_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "public_instructor_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -136,13 +122,6 @@ export type Database = {
             columns: ["instructor_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "car_rentals_instructor_id_fkey"
-            columns: ["instructor_id"]
-            isOneToOne: false
-            referencedRelation: "public_instructor_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -208,13 +187,6 @@ export type Database = {
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "cars_owner_id_fkey"
-            columns: ["owner_id"]
-            isOneToOne: false
-            referencedRelation: "public_instructor_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -283,13 +255,6 @@ export type Database = {
             columns: ["profile_id"]
             isOneToOne: true
             referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "instructors_details_profile_id_fkey"
-            columns: ["profile_id"]
-            isOneToOne: true
-            referencedRelation: "public_instructor_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -368,18 +333,7 @@ export type Database = {
       }
     }
     Views: {
-      public_instructor_profiles: {
-        Row: {
-          avatar_url: string | null
-          city: string | null
-          full_name: string | null
-          id: string | null
-          verification_status:
-            | Database["public"]["Enums"]["verification_status"]
-            | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       check_availability: {
