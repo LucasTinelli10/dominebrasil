@@ -68,13 +68,7 @@ export const FooterNew: React.FC = () => {
                 <div className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center">
                   <Mail className="h-4 w-4 text-teal-400" />
                 </div>
-                contato@dominebrasil.com.br
-              </li>
-              <li className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center">
-                  <Phone className="h-4 w-4 text-teal-400" />
-                </div>
-                (11) 99999-9999
+                contatodominebrasil@gmail.com
               </li>
               <li className="flex items-start gap-3">
                 <div className="w-8 h-8 rounded-lg bg-slate-800 flex items-center justify-center shrink-0">
