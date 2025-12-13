@@ -41,30 +41,29 @@ const InstructorSearch = () => {
     setSearched(true);
 
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          full_name,
-          city,
-          avatar_url,
-          instructors_details (
-            bio,
-            price_per_hour,
-            rating,
-            years_experience,
-            badges
-          )
-        `)
-        .eq('verification_status', 'approved')
-        .ilike('city', `%${city}%`);
-
+      // Use secure RPC function to get approved instructors (no sensitive data exposed)
+      const { data, error } = await supabase.rpc('get_all_approved_instructors');
+      
       if (error) throw error;
-
-      // Filter only profiles that have instructor details (are instructors)
-      const instructorProfiles = (data || []).filter(
-        (profile) => profile.instructors_details !== null
-      ) as Instructor[];
+      
+      // Filter by city client-side (RPC function returns all approved instructors)
+      const instructorProfiles = (data || [])
+        .filter((instructor: any) => 
+          instructor.city?.toLowerCase().includes(city.toLowerCase())
+        )
+        .map((instructor: any) => ({
+          id: instructor.instructor_id,
+          full_name: instructor.full_name,
+          city: instructor.city,
+          avatar_url: instructor.avatar_url,
+          instructors_details: {
+            bio: instructor.bio,
+            price_per_hour: instructor.price_per_hour,
+            rating: instructor.rating,
+            years_experience: instructor.years_experience,
+            badges: instructor.badges
+          }
+        })) as Instructor[];
 
       setInstructors(instructorProfiles);
     } catch (error) {
