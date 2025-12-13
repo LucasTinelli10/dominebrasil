@@ -35,38 +35,26 @@ const StudentDashboard: React.FC = () => {
 
   const fetchInstructors = async () => {
     try {
-      // First get instructor user IDs from user_roles
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
-        .select('user_id')
-        .eq('role', 'instructor');
-
-      if (roleError) throw roleError;
-
-      const instructorIds = (roleData || []).map(r => r.user_id);
-
-      if (instructorIds.length === 0) {
-        setInstructors([]);
-        setLoading(false);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(`*, instructors_details(*)`)
-        .in('id', instructorIds)
-        .eq('verification_status', 'approved');
-
+      // Use secure RPC function to get approved instructors (no sensitive data exposed)
+      const { data, error } = await supabase.rpc('get_all_approved_instructors');
+      
       if (error) throw error;
-
-      const formattedInstructors = (data || []).map((p: any) => ({
-        id: p.id,
-        full_name: p.full_name || 'Instrutor',
-        city: p.city || 'Cidade não informada',
-        avatar_url: p.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${p.id}`,
-        details: p.instructors_details?.[0] || { bio: '', price_per_hour: 80, years_experience: 1, rating: 5, badges: [] }
+      
+      const formattedInstructors = (data || []).map((instructor: any) => ({
+        id: instructor.instructor_id,
+        full_name: instructor.full_name || 'Instrutor',
+        city: instructor.city || 'Cidade não informada',
+        avatar_url: instructor.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${instructor.instructor_id}`,
+        details: {
+          bio: instructor.bio || '',
+          price_per_hour: instructor.price_per_hour || 80,
+          years_experience: instructor.years_experience || 1,
+          rating: instructor.rating || 5,
+          badges: instructor.badges || [],
+          total_lessons: instructor.total_lessons || 0
+        }
       }));
-
+      
       setInstructors(formattedInstructors);
     } catch (error) {
       console.error('Error fetching instructors:', error);

@@ -336,6 +336,29 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_approve_instructor: {
+        Args: { instructor_id: string }
+        Returns: undefined
+      }
+      admin_list_instructor_verifications: {
+        Args: never
+        Returns: {
+          background_check_status: string
+          cnh_category: string
+          cnh_number: string
+          created_at: string
+          credential_number: string
+          fraud_score: number
+          full_name: string
+          id: string
+          verification_reason: string
+          verification_status: Database["public"]["Enums"]["verification_status"]
+        }[]
+      }
+      admin_reject_instructor: {
+        Args: { instructor_id: string }
+        Returns: undefined
+      }
       check_availability: {
         Args: { check_date: string; check_time: string; instr_id: string }
         Returns: boolean

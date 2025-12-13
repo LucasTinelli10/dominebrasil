@@ -75,52 +75,26 @@ export default function AdminVerifications() {
   const fetchInstructors = async () => {
     setLoading(true);
     try {
-      // First get instructor user_ids from user_roles
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
-        .select('user_id')
-        .eq('role', 'instructor');
-
-      if (roleError) throw roleError;
-
-      const instructorIds = roleData.map(r => r.user_id);
-
-      if (instructorIds.length === 0) {
-        setInstructors([]);
-        return;
-      }
-
-      // Fetch profiles with instructor details
-      const { data: profiles, error: profileError } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          full_name,
-          verification_status,
-          fraud_score,
-          verification_reason,
-          created_at
-        `)
-        .in('id', instructorIds)
-        .order('created_at', { ascending: false });
-
-      if (profileError) throw profileError;
-
-      // Fetch instructor details
-      const { data: details, error: detailsError } = await supabase
-        .from('instructors_details')
-        .select('profile_id, cnh_number, cnh_category, credential_number, background_check_status')
-        .in('profile_id', instructorIds);
-
-      if (detailsError) throw detailsError;
-
-      const detailsMap = new Map(details?.map(d => [d.profile_id, d]));
-
-      const combined = profiles?.map(p => ({
-        ...p,
-        instructor_details: detailsMap.get(p.id) || null
-      })) || [];
-
+      // Use secure admin RPC function to fetch instructor verifications
+      const { data, error } = await supabase.rpc('admin_list_instructor_verifications');
+      
+      if (error) throw error;
+      
+      const combined = (data || []).map((item: any) => ({
+        id: item.id,
+        full_name: item.full_name,
+        verification_status: item.verification_status,
+        fraud_score: item.fraud_score,
+        verification_reason: item.verification_reason,
+        created_at: item.created_at,
+        instructor_details: {
+          cnh_number: item.cnh_number,
+          cnh_category: item.cnh_category,
+          credential_number: item.credential_number,
+          background_check_status: item.background_check_status
+        }
+      }));
+      
       setInstructors(combined);
     } catch (error) {
       console.error('Error fetching instructors:', error);
@@ -133,23 +107,13 @@ export default function AdminVerifications() {
   const handleApprove = async (instructorId: string) => {
     setProcessingId(instructorId);
     try {
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          verification_status: 'approved',
-          verification_reason: 'Aprovado manualmente pelo administrador.'
-        })
-        .eq('id', instructorId);
-
-      if (profileError) throw profileError;
-
-      const { error: detailsError } = await supabase
-        .from('instructors_details')
-        .update({ background_check_status: 'clear' })
-        .eq('profile_id', instructorId);
-
-      if (detailsError) throw detailsError;
-
+      // Use secure admin RPC function for approving instructors
+      const { error } = await supabase.rpc('admin_approve_instructor', { 
+        instructor_id: instructorId 
+      });
+      
+      if (error) throw error;
+      
       toast({ title: 'Sucesso', description: 'Instrutor aprovado com sucesso!' });
       fetchInstructors();
     } catch (error) {
@@ -163,23 +127,13 @@ export default function AdminVerifications() {
   const handleReject = async (instructorId: string) => {
     setProcessingId(instructorId);
     try {
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          verification_status: 'rejected',
-          verification_reason: 'Rejeitado pelo administrador após análise manual.'
-        })
-        .eq('id', instructorId);
-
-      if (profileError) throw profileError;
-
-      const { error: detailsError } = await supabase
-        .from('instructors_details')
-        .update({ background_check_status: 'flagged' })
-        .eq('profile_id', instructorId);
-
-      if (detailsError) throw detailsError;
-
+      // Use secure admin RPC function for rejecting instructors
+      const { error } = await supabase.rpc('admin_reject_instructor', { 
+        instructor_id: instructorId 
+      });
+      
+      if (error) throw error;
+      
       toast({ title: 'Sucesso', description: 'Instrutor rejeitado.' });
       fetchInstructors();
     } catch (error) {
