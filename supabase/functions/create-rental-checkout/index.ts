@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,6 +10,16 @@ const corsHeaders = {
 
 // Fixed rental price - Business rule
 const CAR_RENTAL_PRICE_PER_HOUR = 50; // R$50/hour fixed
+const MAX_RENTAL_DURATION = 8; // 8 hours max
+
+// Input validation schema
+const RentalCheckoutSchema = z.object({
+  carId: z.string().uuid("ID do carro inválido"),
+  carModel: z.string().min(1, "Modelo do carro é obrigatório").max(100, "Modelo muito longo"),
+  rentalDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data deve estar no formato YYYY-MM-DD"),
+  rentalTime: z.string().regex(/^\d{2}:\d{2}$/, "Horário deve estar no formato HH:MM"),
+  duration: z.number().int().min(1, "Duração mínima é 1 hora").max(MAX_RENTAL_DURATION, `Duração máxima é ${MAX_RENTAL_DURATION} horas`).default(1),
+});
 
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -35,13 +46,23 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated");
     logStep("User authenticated", { email: user.email });
 
+    // Parse and validate input
+    const rawInput = await req.json();
+    const validationResult = RentalCheckoutSchema.safeParse(rawInput);
+    
+    if (!validationResult.success) {
+      const errorMessages = validationResult.error.errors.map(e => e.message).join(", ");
+      logStep("Validation failed", { errors: errorMessages });
+      throw new Error(`Dados inválidos: ${errorMessages}`);
+    }
+
     const { 
       carId,
       carModel, 
       rentalDate,
       rentalTime,
-      duration = 1 
-    } = await req.json();
+      duration,
+    } = validationResult.data;
 
     const totalAmount = CAR_RENTAL_PRICE_PER_HOUR * duration;
     logStep("Rental details", { carModel, totalAmount, duration });

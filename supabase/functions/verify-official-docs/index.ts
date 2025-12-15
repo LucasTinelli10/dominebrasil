@@ -1,10 +1,19 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Input validation schema
+const VerifyDocsSchema = z.object({
+  userId: z.string().uuid("ID do usuário inválido"),
+  cnhImageUrl: z.string().url("URL da imagem CNH inválida").max(2000, "URL muito longa"),
+  credentialImageUrl: z.string().url("URL da credencial inválida").max(2000, "URL muito longa").optional().nullable(),
+  selfieImageUrl: z.string().url("URL da selfie inválida").max(2000, "URL muito longa").optional().nullable(),
+});
 
 const SYSTEM_PROMPT = `You are a Document Verification Specialist for the Brazilian Traffic Department (DETRAN).
 Analyze the provided images of a CNH (Carteira Nacional de Habilitação) and an Instructor Credential.
@@ -58,13 +67,22 @@ serve(async (req) => {
   }
 
   try {
-    const { userId, cnhImageUrl, credentialImageUrl, selfieImageUrl } = await req.json();
+    // Parse and validate input
+    const rawInput = await req.json();
+    const validationResult = VerifyDocsSchema.safeParse(rawInput);
+    
+    if (!validationResult.success) {
+      const errorMessages = validationResult.error.errors.map(e => e.message).join(", ");
+      console.log("Validation failed:", errorMessages);
+      return new Response(
+        JSON.stringify({ error: `Dados inválidos: ${errorMessages}`, success: false }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { userId, cnhImageUrl, credentialImageUrl, selfieImageUrl } = validationResult.data;
     
     console.log("Starting document verification for user:", userId);
-    
-    if (!userId || !cnhImageUrl) {
-      throw new Error("Missing required parameters: userId and cnhImageUrl are required");
-    }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
