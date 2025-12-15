@@ -4,6 +4,7 @@ import { User, ShieldCheck, TrendingUp, Check, Calculator, PieChart } from 'luci
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
+import { BUSINESS_RULES } from '@/lib/businessRules';
 
 type ProfileType = 'aluno' | 'instrutor' | 'investidor' | null;
 
@@ -102,9 +103,9 @@ const AlunoContent: React.FC = () => (
 
 const InstrutorContent: React.FC = () => {
   const [horasSemanais, setHorasSemanais] = useState([20]);
-  const valorAula = 120;
-  const taxaSistema = 10;
-  const aluguelCarro = 50;
+  const valorAula = BUSINESS_RULES.DEFAULT_LESSON_PRICE;
+  const taxaSistema = BUSINESS_RULES.SYSTEM_FEE_PER_HOUR;
+  const aluguelCarro = BUSINESS_RULES.CAR_RENTAL_PRICE_PER_HOUR; // Valor fixo tabelado
 
   const horasMensais = horasSemanais[0] * 4;
   const receitaBruta = horasMensais * valorAula;
@@ -231,8 +232,8 @@ const InstrutorContent: React.FC = () => {
 };
 
 const InvestidorContent: React.FC = () => {
-  const investidorPercent = 75;
-  const dominePercent = 25;
+  const investidorPercent = BUSINESS_RULES.INVESTOR_PROFIT_PERCENTAGE;
+  const dominePercent = BUSINESS_RULES.PLATFORM_PROFIT_PERCENTAGE;
 
   return (
     <motion.div

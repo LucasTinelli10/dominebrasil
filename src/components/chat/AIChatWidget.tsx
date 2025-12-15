@@ -4,6 +4,7 @@ import { MessageCircle, X, Send, Bot, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { BUSINESS_RULES } from '@/lib/businessRules';
 
 interface Message {
   id: number;
@@ -17,7 +18,7 @@ const autoResponses: Record<string, string[]> = {
     'Sim! A plataforma é 100% GRATUITA para alunos. Você não paga nenhuma taxa - apenas o valor da aula diretamente ao instrutor. Sem mensalidades, sem taxas escondidas!'
   ],
   'preco|preço|quanto custa|valor': [
-    'Ótima pergunta! Para Alunos: R$0 (totalmente grátis). Para Instrutores: R$10/hora de taxa do sistema + R$50/hora de aluguel de carro (opcional, se não tiver carro próprio). Para Investidores: divisão 75% para você e 25% para a Domine do lucro gerado pelo veículo.'
+    `Ótima pergunta! Para Alunos: R$0 (totalmente grátis). Para Instrutores: R$${BUSINESS_RULES.SYSTEM_FEE_PER_HOUR}/hora de taxa do sistema + R$${BUSINESS_RULES.CAR_RENTAL_PRICE_PER_HOUR}/hora de aluguel de carro (opcional, se não tiver carro próprio). Valor mínimo por aula: R$${BUSINESS_RULES.MIN_LESSON_PRICE_PER_HOUR}. Para Investidores: divisão ${BUSINESS_RULES.INVESTOR_PROFIT_PERCENTAGE}% para você e ${BUSINESS_RULES.PLATFORM_PROFIT_PERCENTAGE}% para a Domine do lucro gerado pelo veículo.`
   ],
   'cadastro|cadastrar|criar conta|registro': [
     'Cadastrar-se é super simples! Clique em "Login" no topo, escolha seu perfil (Aluno, Instrutor ou Investidor) e siga o passo a passo. Para Alunos é instantâneo! Para Instrutores, há uma verificação de documentos (CNH e credencial DETRAN) que leva até 24h.'
@@ -29,10 +30,10 @@ const autoResponses: Record<string, string[]> = {
     'Você não está sozinho! Milhares de pessoas têm CNH mas não dirigem por insegurança. Nossos instrutores são especializados e MUITO pacientes. Todos os carros têm duplo comando, então você está 100% seguro. Já ajudamos milhares a retomar a confiança!'
   ],
   'carro|veiculo|aluguel|frota': [
-    'Para Instrutores: você pode usar seu próprio carro OU alugar da frota Domine por R$50/hora, apenas quando tiver aula. Sem compromisso fixo! Para Investidores: cadastre seu veículo regularizado com duplo comando e receba 75% do lucro. Nós cuidamos de tudo!'
+    `Para Instrutores: você pode usar seu próprio carro OU alugar da frota Domine por R$${BUSINESS_RULES.CAR_RENTAL_PRICE_PER_HOUR}/hora (valor fixo tabelado), apenas quando tiver aula. Sem compromisso fixo! Para Investidores: cadastre seu veículo regularizado com duplo comando e receba ${BUSINESS_RULES.INVESTOR_PROFIT_PERCENTAGE}% do lucro. Nós cuidamos de tudo!`
   ],
   'ganho|ganhar|lucro|salario|renda': [
-    'Instrutores na Domine ganham MUITO mais que em autoescola! Exemplo: R$120/aula - R$50 (carro) - R$10 (taxa) = R$60 líquido/hora. Com 4 aulas/dia, 22 dias/mês = mais de R$5.000! Se usar carro próprio, R$110 líquido/hora. Compare com os R$1.800 CLT...'
+    `Instrutores na Domine ganham MUITO mais que em autoescola! Exemplo: R$${BUSINESS_RULES.DEFAULT_LESSON_PRICE}/aula - R$${BUSINESS_RULES.CAR_RENTAL_PRICE_PER_HOUR} (carro) - R$${BUSINESS_RULES.SYSTEM_FEE_PER_HOUR} (taxa) = R$${BUSINESS_RULES.DEFAULT_LESSON_PRICE - BUSINESS_RULES.CAR_RENTAL_PRICE_PER_HOUR - BUSINESS_RULES.SYSTEM_FEE_PER_HOUR} líquido/hora. Com 4 aulas/dia, 22 dias/mês = mais de R$5.000! Se usar carro próprio, R$${BUSINESS_RULES.DEFAULT_LESSON_PRICE - BUSINESS_RULES.SYSTEM_FEE_PER_HOUR} líquido/hora. Compare com os R$1.800 CLT...`
   ],
   'pagamento|pagar|cartao|pix': [
     'Aceitamos Cartão de Crédito, Débito e PIX! Todas as transações são seguras e criptografadas. Instrutores recebem os pagamentos semanalmente direto na conta bancária. Tudo transparente e rastreável!'
@@ -44,7 +45,7 @@ const autoResponses: Record<string, string[]> = {
     'Segurança é nossa prioridade #1! Todos os instrutores passam por verificação com IA: análise de CNH, credencial DETRAN, e reconhecimento facial. Carros têm duplo comando obrigatório. Só profissionais APROVADOS aparecem na plataforma.'
   ],
   'investidor|investir|frota|renda passiva': [
-    'Para Investidores é ótimo! Você entra com o veículo (regularizado, com duplo comando) e nós cuidamos de TUDO: captação de clientes, gestão, suporte. Divisão justa: 75% do lucro para você, 25% para a Domine. Muito melhor que Uber/99!'
+    `Para Investidores é ótimo! Você entra com o veículo (regularizado, com duplo comando) e nós cuidamos de TUDO: captação de clientes, gestão, suporte. Divisão justa: ${BUSINESS_RULES.INVESTOR_PROFIT_PERCENTAGE}% do lucro para você, ${BUSINESS_RULES.PLATFORM_PROFIT_PERCENTAGE}% para a Domine. Muito melhor que Uber/99!`
   ],
   'material|estudo|teorica|prova': [
     'Temos o Kit Aprovação Premium GRATUITO! PDFs exclusivos com dicas de estudo, macetes de memorização e conteúdo 100% alinhado com as exigências do DETRAN. Disponível após criar sua conta. Muitos alunos passam de primeira!'

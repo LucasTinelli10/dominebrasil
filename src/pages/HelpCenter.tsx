@@ -10,6 +10,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { BUSINESS_RULES } from '@/lib/businessRules';
 
 type Category = 'all' | 'alunos' | 'instrutores' | 'financeiro';
 
@@ -43,15 +44,15 @@ const faqData = {
   instrutores: [
     {
       question: 'Quanto posso ganhar como instrutor na Domine?',
-      answer: 'Muito mais do que em autoescola tradicional! Cobrando R$120/aula, descontando R$50 do aluguel do carro e R$10 de taxa do sistema, seu lucro líquido é R$60/hora. Com 4 aulas/dia, 22 dias/mês = mais de R$5.000 líquidos! Se usar carro próprio, ganha ainda mais.'
+      answer: `Muito mais do que em autoescola tradicional! Cobrando R$${BUSINESS_RULES.DEFAULT_LESSON_PRICE}/aula, descontando R$${BUSINESS_RULES.CAR_RENTAL_PRICE_PER_HOUR} do aluguel do carro e R$${BUSINESS_RULES.SYSTEM_FEE_PER_HOUR} de taxa do sistema, seu lucro líquido é R$${BUSINESS_RULES.DEFAULT_LESSON_PRICE - BUSINESS_RULES.CAR_RENTAL_PRICE_PER_HOUR - BUSINESS_RULES.SYSTEM_FEE_PER_HOUR}/hora. Com 4 aulas/dia, 22 dias/mês = mais de R$5.000 líquidos! Se usar carro próprio, ganha ainda mais.`
     },
     {
       question: 'Qual a diferença real entre CLT e ser parceiro Domine?',
-      answer: 'Na CLT você ganha ~R$1.800 fixo, sem autonomia, horários rígidos. Na Domine: você define seus horários, seus preços, atende quem quiser. Instrutores ativos ganham 3-4x mais com liberdade total. Seja DONO do seu negócio!'
+      answer: `Na CLT você ganha ~R$1.800 fixo, sem autonomia, horários rígidos. Na Domine: você define seus horários, seus preços (mínimo R$${BUSINESS_RULES.MIN_LESSON_PRICE_PER_HOUR}/hora), atende quem quiser. Instrutores ativos ganham 3-4x mais com liberdade total. Seja DONO do seu negócio!`
     },
     {
       question: 'Não tenho carro. Posso trabalhar mesmo assim?',
-      answer: 'SIM! Esse é nosso diferencial. Alugue carros da frota por R$50/hora apenas quando tiver aula. Sem compromisso fixo, sem financiamento, sem dor de cabeça. Modelo Asset-Light: você trabalha, não se endivida.'
+      answer: `SIM! Esse é nosso diferencial. Alugue carros da frota por R$${BUSINESS_RULES.CAR_RENTAL_PRICE_PER_HOUR}/hora apenas quando tiver aula. Sem compromisso fixo, sem financiamento, sem dor de cabeça. Modelo Asset-Light: você trabalha, não se endivida.`
     },
     {
       question: 'Como funciona a verificação do instrutor?',
@@ -77,7 +78,7 @@ const faqData = {
     },
     {
       question: 'Existe alguma taxa escondida?',
-      answer: 'NENHUMA! Transparência é nosso valor. Alunos: R$0 (grátis). Instrutores: R$10/hora + R$50 aluguel (opcional). Investidores: apenas a divisão 75/25 do lucro. Tudo claro desde o primeiro dia.'
+      answer: `NENHUMA! Transparência é nosso valor. Alunos: R$0 (grátis). Instrutores: R$${BUSINESS_RULES.SYSTEM_FEE_PER_HOUR}/hora + R$${BUSINESS_RULES.CAR_RENTAL_PRICE_PER_HOUR} aluguel (opcional). Investidores: apenas a divisão ${BUSINESS_RULES.INVESTOR_PROFIT_PERCENTAGE}/${BUSINESS_RULES.PLATFORM_PROFIT_PERCENTAGE} do lucro. Tudo claro desde o primeiro dia.`
     },
     {
       question: 'Posso emitir nota fiscal dos meus serviços?',

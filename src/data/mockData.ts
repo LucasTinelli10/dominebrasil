@@ -1,5 +1,6 @@
-// Mock data for dashboards
+import { BUSINESS_RULES } from '@/lib/businessRules';
 
+// Mock data for dashboards
 // Instructor earnings data - Daily
 export const dailyEarnings = [
   { hour: '07:00', amount: 120 },
@@ -132,7 +133,7 @@ export const fleetCars = [
     status: 'in_lesson',
     currentKm: 45200,
     nextRevisionKm: 50000,
-    pricePerHour: 50,
+    pricePerHour: BUSINESS_RULES.CAR_RENTAL_PRICE_PER_HOUR, // Preço fixo tabelado
     monthlyRevenue: 4200,
   },
   {
@@ -143,7 +144,7 @@ export const fleetCars = [
     status: 'idle',
     currentKm: 32100,
     nextRevisionKm: 40000,
-    pricePerHour: 55,
+    pricePerHour: BUSINESS_RULES.CAR_RENTAL_PRICE_PER_HOUR,
     monthlyRevenue: 3800,
   },
   {
@@ -154,7 +155,7 @@ export const fleetCars = [
     status: 'maintenance',
     currentKm: 28500,
     nextRevisionKm: 30000,
-    pricePerHour: 60,
+    pricePerHour: BUSINESS_RULES.CAR_RENTAL_PRICE_PER_HOUR,
     monthlyRevenue: 4100,
   },
   {
@@ -165,7 +166,7 @@ export const fleetCars = [
     status: 'in_lesson',
     currentKm: 12300,
     nextRevisionKm: 20000,
-    pricePerHour: 45,
+    pricePerHour: BUSINESS_RULES.CAR_RENTAL_PRICE_PER_HOUR,
     monthlyRevenue: 3600,
   },
   {
@@ -176,7 +177,7 @@ export const fleetCars = [
     status: 'idle',
     currentKm: 38900,
     nextRevisionKm: 40000,
-    pricePerHour: 45,
+    pricePerHour: BUSINESS_RULES.CAR_RENTAL_PRICE_PER_HOUR,
     monthlyRevenue: 3400,
   },
   {
@@ -187,7 +188,7 @@ export const fleetCars = [
     status: 'in_lesson',
     currentKm: 21500,
     nextRevisionKm: 30000,
-    pricePerHour: 48,
+    pricePerHour: BUSINESS_RULES.CAR_RENTAL_PRICE_PER_HOUR,
     monthlyRevenue: 3580,
   },
 ];
@@ -279,7 +280,7 @@ export const availableInstructors = [
     city: 'São Paulo',
     rating: 4.9,
     totalLessons: 342,
-    pricePerHour: 120,
+    pricePerHour: BUSINESS_RULES.DEFAULT_LESSON_PRICE, // Valor sugerido padrão
     bio: 'Instrutor certificado há 8 anos. Especialista em alunos nervosos e primeira habilitação.',
     badges: ['Paciente', 'Pontual', 'Didático'],
     transmission: 'both',
@@ -291,7 +292,7 @@ export const availableInstructors = [
     city: 'São Paulo',
     rating: 4.8,
     totalLessons: 218,
-    pricePerHour: 110,
+    pricePerHour: 110, // Pode variar, desde que >= MIN_LESSON_PRICE_PER_HOUR
     bio: 'Instrutora credenciada pelo DETRAN-SP. Foco em direção defensiva e segurança.',
     badges: ['Atenciosa', 'Experiente'],
     transmission: 'automatic',
@@ -303,7 +304,7 @@ export const availableInstructors = [
     city: 'São Paulo',
     rating: 4.7,
     totalLessons: 156,
-    pricePerHour: 100,
+    pricePerHour: 100, // Pode variar, desde que >= MIN_LESSON_PRICE_PER_HOUR
     bio: 'Ex-piloto profissional. Especialista em câmbio manual e manobras avançadas.',
     badges: ['Técnico', 'Preciso'],
     transmission: 'manual',
