@@ -1,6 +1,21 @@
 // Mock data for dashboards
 
-// Instructor earnings data
+// Instructor earnings data - Daily
+export const dailyEarnings = [
+  { hour: '07:00', amount: 120 },
+  { hour: '08:00', amount: 120 },
+  { hour: '09:00', amount: 0 },
+  { hour: '10:00', amount: 120 },
+  { hour: '11:00', amount: 0 },
+  { hour: '13:00', amount: 120 },
+  { hour: '14:00', amount: 120 },
+  { hour: '15:00', amount: 0 },
+  { hour: '16:00', amount: 120 },
+  { hour: '17:00', amount: 120 },
+  { hour: '18:00', amount: 0 },
+];
+
+// Instructor earnings data - Weekly
 export const weeklyEarnings = [
   { day: 'Seg', amount: 240 },
   { day: 'Ter', amount: 360 },

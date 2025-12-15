@@ -23,6 +23,7 @@ import InstructorRequests from "./pages/app/instructor/InstructorRequests";
 import InstructorSchedule from "./pages/app/instructor/InstructorSchedule";
 import InstructorMessages from "./pages/app/instructor/InstructorMessages";
 import InstructorProfile from "./pages/app/instructor/InstructorProfile";
+import InstructorCars from "./pages/app/instructor/InstructorCars";
 
 // Investor App Pages
 import InvestorHome from "./pages/app/investor/InvestorHome";
@@ -32,6 +33,12 @@ import InvestorFinances from "./pages/app/investor/InvestorFinances";
 
 // Student App Pages
 import StudentHome from "./pages/app/student/StudentHome";
+import StudentLessons from "./pages/app/student/StudentLessons";
+import StudentProgress from "./pages/app/student/StudentProgress";
+import StudentMessages from "./pages/app/student/StudentMessages";
+
+// Settings
+import Settings from "./pages/app/Settings";
 
 // Legacy pages
 import InstructorOnboarding from "./pages/instructor/Onboarding";
@@ -59,22 +66,26 @@ const App = () => (
               {/* Student Routes */}
               <Route path="student" element={<ProtectedRoute allowedRoles={['student']}><StudentHome /></ProtectedRoute>} />
               <Route path="student/search" element={<ProtectedRoute allowedRoles={['student']}><InstructorSearch /></ProtectedRoute>} />
-              <Route path="student/lessons" element={<ProtectedRoute allowedRoles={['student']}><StudentHome /></ProtectedRoute>} />
-              <Route path="student/progress" element={<ProtectedRoute allowedRoles={['student']}><StudentHome /></ProtectedRoute>} />
-              <Route path="student/messages" element={<ProtectedRoute allowedRoles={['student']}><StudentHome /></ProtectedRoute>} />
+              <Route path="student/lessons" element={<ProtectedRoute allowedRoles={['student']}><StudentLessons /></ProtectedRoute>} />
+              <Route path="student/progress" element={<ProtectedRoute allowedRoles={['student']}><StudentProgress /></ProtectedRoute>} />
+              <Route path="student/messages" element={<ProtectedRoute allowedRoles={['student']}><StudentMessages /></ProtectedRoute>} />
+              <Route path="student/settings" element={<ProtectedRoute allowedRoles={['student']}><Settings /></ProtectedRoute>} />
 
               {/* Instructor Routes */}
               <Route path="instructor" element={<ProtectedRoute allowedRoles={['instructor']}><InstructorHome /></ProtectedRoute>} />
               <Route path="instructor/requests" element={<ProtectedRoute allowedRoles={['instructor']}><InstructorRequests /></ProtectedRoute>} />
               <Route path="instructor/schedule" element={<ProtectedRoute allowedRoles={['instructor']}><InstructorSchedule /></ProtectedRoute>} />
+              <Route path="instructor/cars" element={<ProtectedRoute allowedRoles={['instructor']}><InstructorCars /></ProtectedRoute>} />
               <Route path="instructor/messages" element={<ProtectedRoute allowedRoles={['instructor']}><InstructorMessages /></ProtectedRoute>} />
               <Route path="instructor/profile" element={<ProtectedRoute allowedRoles={['instructor']}><InstructorProfile /></ProtectedRoute>} />
+              <Route path="instructor/settings" element={<ProtectedRoute allowedRoles={['instructor']}><Settings /></ProtectedRoute>} />
 
               {/* Investor Routes */}
               <Route path="investor" element={<ProtectedRoute allowedRoles={['investor']}><InvestorHome /></ProtectedRoute>} />
               <Route path="investor/fleet" element={<ProtectedRoute allowedRoles={['investor']}><InvestorFleet /></ProtectedRoute>} />
               <Route path="investor/maintenance" element={<ProtectedRoute allowedRoles={['investor']}><InvestorMaintenance /></ProtectedRoute>} />
               <Route path="investor/finances" element={<ProtectedRoute allowedRoles={['investor']}><InvestorFinances /></ProtectedRoute>} />
+              <Route path="investor/settings" element={<ProtectedRoute allowedRoles={['investor']}><Settings /></ProtectedRoute>} />
             </Route>
 
             {/* Legacy Routes (redirect support) */}
