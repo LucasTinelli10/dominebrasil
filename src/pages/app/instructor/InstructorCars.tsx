@@ -28,6 +28,7 @@ export default function InstructorCars() {
   const { user } = useAuth();
   const [cars, setCars] = useState<AvailableCar[]>([]);
   const [loading, setLoading] = useState(true);
+  const [processingPayment, setProcessingPayment] = useState(false);
   const [selectedCar, setSelectedCar] = useState<AvailableCar | null>(null);
   const [rentalDialogOpen, setRentalDialogOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
@@ -63,6 +64,8 @@ export default function InstructorCars() {
       return;
     }
 
+    setProcessingPayment(true);
+
     try {
       const dateStr = selectedDate.toISOString().split('T')[0];
 
@@ -75,31 +78,38 @@ export default function InstructorCars() {
 
       if (!isAvailable) {
         toast.error('Este horário não está disponível');
+        setProcessingPayment(false);
         return;
       }
 
-      // Create rental
-      const { error } = await supabase
-        .from('car_rentals')
-        .insert({
-          car_id: selectedCar.id,
-          instructor_id: user?.id,
-          date: dateStr,
-          time_slot: selectedTimeSlot,
-          status: 'confirmed',
-        });
+      // Create Stripe checkout session
+      const { data, error } = await supabase.functions.invoke('create-rental-checkout', {
+        body: {
+          carId: selectedCar.id,
+          carModel: selectedCar.model,
+          rentalDate: dateStr,
+          rentalTime: selectedTimeSlot,
+          duration: 1,
+        },
+      });
 
       if (error) throw error;
 
-      toast.success('Carro alugado com sucesso!', {
-        description: `${selectedCar.model} reservado para ${dateStr} às ${selectedTimeSlot}`,
-      });
-      setRentalDialogOpen(false);
-      setSelectedCar(null);
-      setSelectedTimeSlot('');
+      if (data?.url) {
+        // Open Stripe checkout in new tab
+        window.open(data.url, '_blank');
+        toast.info('Redirecionando para pagamento...', {
+          description: 'Complete o pagamento na nova aba para confirmar o aluguel.',
+        });
+        setRentalDialogOpen(false);
+      } else {
+        throw new Error('Erro ao criar sessão de pagamento');
+      }
     } catch (error) {
-      console.error('Error renting car:', error);
-      toast.error('Erro ao alugar carro');
+      console.error('Error creating checkout:', error);
+      toast.error('Erro ao processar pagamento');
+    } finally {
+      setProcessingPayment(false);
     }
   };
 
@@ -291,16 +301,25 @@ export default function InstructorCars() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRentalDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setRentalDialogOpen(false)} disabled={processingPayment}>
               Cancelar
             </Button>
             <Button
               className="bg-instructor hover:bg-instructor/90"
               onClick={handleRentCar}
-              disabled={!selectedDate || !selectedTimeSlot}
+              disabled={!selectedDate || !selectedTimeSlot || processingPayment}
             >
-              <Check className="h-4 w-4 mr-2" />
-              Confirmar Aluguel
+              {processingPayment ? (
+                <>
+                  <span className="animate-spin mr-2">⏳</span>
+                  Processando...
+                </>
+              ) : (
+                <>
+                  <Check className="h-4 w-4 mr-2" />
+                  Pagar e Confirmar
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

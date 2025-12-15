@@ -5,3 +5,9 @@ verify_jwt = true
 
 [functions.verify-official-docs]
 verify_jwt = true
+
+[functions.create-lesson-checkout]
+verify_jwt = true
+
+[functions.create-rental-checkout]
+verify_jwt = true
