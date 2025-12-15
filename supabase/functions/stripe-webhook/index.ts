@@ -1,11 +1,33 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
 };
+
+// Metadata validation schemas
+const LessonMetadataSchema = z.object({
+  booking_type: z.literal("lesson"),
+  student_id: z.string().uuid(),
+  instructor_id: z.string().uuid(),
+  lesson_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  lesson_time: z.string().regex(/^\d{2}:\d{2}$/),
+  duration: z.string().regex(/^\d+$/),
+  total_price: z.string().regex(/^\d+(\.\d+)?$/),
+  car_id: z.string().optional(),
+});
+
+const RentalMetadataSchema = z.object({
+  booking_type: z.literal("car_rental"),
+  car_id: z.string().uuid(),
+  instructor_id: z.string().uuid(),
+  rental_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  rental_time: z.string().regex(/^\d{2}:\d{2}$/),
+  duration: z.string().regex(/^\d+$/),
+});
 
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -52,19 +74,41 @@ serve(async (req) => {
       if (session.payment_status === "paid") {
         // Check if this is a lesson booking or car rental
         if (metadata?.booking_type === "lesson") {
+          // Validate lesson metadata
+          const validationResult = LessonMetadataSchema.safeParse(metadata);
+          if (!validationResult.success) {
+            logStep("Invalid lesson metadata", { errors: validationResult.error.errors });
+            throw new Error("Invalid lesson metadata in webhook");
+          }
+          
+          const validatedMetadata = validationResult.data;
+          
           // Create or update booking
-          const bookingData = {
-            student_id: metadata.student_id,
-            instructor_id: metadata.instructor_id,
-            date: metadata.lesson_date,
-            time_slot: metadata.lesson_time,
-            total_price: parseFloat(metadata.total_price || "0"),
+          const bookingData: {
+            student_id: string;
+            instructor_id: string;
+            date: string;
+            time_slot: string;
+            total_price: number;
+            status: string;
+            notes: string;
+            car_id?: string;
+          } = {
+            student_id: validatedMetadata.student_id,
+            instructor_id: validatedMetadata.instructor_id,
+            date: validatedMetadata.lesson_date,
+            time_slot: validatedMetadata.lesson_time,
+            total_price: parseFloat(validatedMetadata.total_price),
             status: "confirmed",
             notes: `Pagamento confirmado via Stripe. Session ID: ${session.id}`,
           };
 
-          if (metadata.car_id) {
-            (bookingData as any).car_id = metadata.car_id;
+          // Only add car_id if it's a valid UUID
+          if (validatedMetadata.car_id && validatedMetadata.car_id.length > 0) {
+            const carIdValidation = z.string().uuid().safeParse(validatedMetadata.car_id);
+            if (carIdValidation.success) {
+              bookingData.car_id = carIdValidation.data;
+            }
           }
 
           logStep("Creating booking", bookingData);
@@ -82,19 +126,12 @@ serve(async (req) => {
 
           logStep("Booking created successfully", { bookingId: booking.id });
 
-          // Get instructor info for the message
-          const { data: instructorProfile } = await supabaseAdmin
-            .from("profiles")
-            .select("full_name")
-            .eq("id", metadata.instructor_id)
-            .single();
-
           // Create automatic confirmation message
-          const confirmationMessage = `✅ Aula confirmada!\n\n📅 Data: ${new Date(metadata.lesson_date + 'T00:00:00').toLocaleDateString('pt-BR')}\n⏰ Horário: ${metadata.lesson_time}\n💰 Valor: R$ ${parseFloat(metadata.total_price).toFixed(2)}\n\nNos vemos em breve!`;
+          const confirmationMessage = `✅ Aula confirmada!\n\n📅 Data: ${new Date(validatedMetadata.lesson_date + 'T00:00:00').toLocaleDateString('pt-BR')}\n⏰ Horário: ${validatedMetadata.lesson_time}\n💰 Valor: R$ ${parseFloat(validatedMetadata.total_price).toFixed(2)}\n\nNos vemos em breve!`;
 
           await supabaseAdmin.from("messages").insert({
-            sender_id: metadata.instructor_id,
-            receiver_id: metadata.student_id,
+            sender_id: validatedMetadata.instructor_id,
+            receiver_id: validatedMetadata.student_id,
             content: confirmationMessage,
             booking_id: booking.id,
           });
@@ -102,12 +139,21 @@ serve(async (req) => {
           logStep("Confirmation message sent");
 
         } else if (metadata?.booking_type === "car_rental") {
+          // Validate rental metadata
+          const validationResult = RentalMetadataSchema.safeParse(metadata);
+          if (!validationResult.success) {
+            logStep("Invalid rental metadata", { errors: validationResult.error.errors });
+            throw new Error("Invalid rental metadata in webhook");
+          }
+          
+          const validatedMetadata = validationResult.data;
+          
           // Create car rental record
           const rentalData = {
-            instructor_id: metadata.instructor_id,
-            car_id: metadata.car_id,
-            date: metadata.rental_date,
-            time_slot: metadata.rental_time,
+            instructor_id: validatedMetadata.instructor_id,
+            car_id: validatedMetadata.car_id,
+            date: validatedMetadata.rental_date,
+            time_slot: validatedMetadata.rental_time,
             status: "confirmed",
           };
 

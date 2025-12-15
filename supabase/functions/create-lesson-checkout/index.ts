@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,7 +10,19 @@ const corsHeaders = {
 
 // Business rules
 const MIN_LESSON_PRICE = 90; // R$90 minimum
-const PLATFORM_FEE_PERCENTAGE = 10; // 10% platform fee
+const MAX_LESSON_PRICE = 500; // R$500 maximum
+const MAX_DURATION = 5; // 5 hours max
+
+// Input validation schema
+const LessonCheckoutSchema = z.object({
+  instructorId: z.string().uuid("ID do instrutor inválido"),
+  instructorName: z.string().min(1, "Nome do instrutor é obrigatório").max(100, "Nome muito longo"),
+  lessonPrice: z.number().min(MIN_LESSON_PRICE, `Preço mínimo é R$${MIN_LESSON_PRICE}`).max(MAX_LESSON_PRICE, `Preço máximo é R$${MAX_LESSON_PRICE}`),
+  lessonDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data deve estar no formato YYYY-MM-DD"),
+  lessonTime: z.string().regex(/^\d{2}:\d{2}$/, "Horário deve estar no formato HH:MM"),
+  duration: z.number().int().min(1, "Duração mínima é 1 hora").max(MAX_DURATION, `Duração máxima é ${MAX_DURATION} horas`).default(1),
+  carId: z.string().uuid("ID do carro inválido").optional().nullable(),
+});
 
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -36,20 +49,25 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated");
     logStep("User authenticated", { email: user.email });
 
+    // Parse and validate input
+    const rawInput = await req.json();
+    const validationResult = LessonCheckoutSchema.safeParse(rawInput);
+    
+    if (!validationResult.success) {
+      const errorMessages = validationResult.error.errors.map(e => e.message).join(", ");
+      logStep("Validation failed", { errors: errorMessages });
+      throw new Error(`Dados inválidos: ${errorMessages}`);
+    }
+
     const { 
       instructorId,
       instructorName, 
       lessonPrice, 
       lessonDate,
       lessonTime,
-      duration = 1,
+      duration,
       carId,
-    } = await req.json();
-
-    // Validate minimum price
-    if (lessonPrice < MIN_LESSON_PRICE) {
-      throw new Error(`Preço mínimo da aula é R$${MIN_LESSON_PRICE}`);
-    }
+    } = validationResult.data;
 
     const totalAmount = lessonPrice * duration;
     logStep("Lesson details", { instructorId, instructorName, totalAmount, duration });

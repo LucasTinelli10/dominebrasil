@@ -1,10 +1,20 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Input validation schema
+const InspectVehicleSchema = z.object({
+  carId: z.string().uuid("ID do carro inválido"),
+  crlvPath: z.string().min(1, "Caminho do CRLV é obrigatório").max(500, "Caminho muito longo"),
+  frontPath: z.string().min(1, "Caminho da foto frontal é obrigatório").max(500, "Caminho muito longo"),
+  interiorPath: z.string().min(1, "Caminho da foto interior é obrigatório").max(500, "Caminho muito longo"),
+  sidePath: z.string().min(1, "Caminho da foto lateral é obrigatório").max(500, "Caminho muito longo"),
+});
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -21,7 +31,17 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { carId, crlvPath, frontPath, interiorPath, sidePath } = await req.json();
+    // Parse and validate input
+    const rawInput = await req.json();
+    const validationResult = InspectVehicleSchema.safeParse(rawInput);
+    
+    if (!validationResult.success) {
+      const errorMessages = validationResult.error.errors.map(e => e.message).join(", ");
+      console.log("Validation failed:", errorMessages);
+      throw new Error(`Dados inválidos: ${errorMessages}`);
+    }
+
+    const { carId, crlvPath, frontPath, interiorPath, sidePath } = validationResult.data;
     console.log("Starting vehicle inspection for car:", carId);
 
     // Update status to analyzing
