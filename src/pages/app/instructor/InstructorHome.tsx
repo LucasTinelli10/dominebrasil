@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,17 +24,50 @@ import {
 } from 'recharts';
 import { cn } from '@/lib/utils';
 import {
+  dailyEarnings,
   weeklyEarnings,
   monthlyEarnings,
-  instructorMetrics,
   upcomingLessons,
 } from '@/data/mockData';
+import { useNavigate } from 'react-router-dom';
 
 export default function InstructorHome() {
-  const [chartPeriod, setChartPeriod] = useState<'weekly' | 'monthly'>('weekly');
+  const navigate = useNavigate();
+  const [chartPeriod, setChartPeriod] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
 
-  const chartData = chartPeriod === 'weekly' ? weeklyEarnings : monthlyEarnings;
-  const xKey = chartPeriod === 'weekly' ? 'day' : 'week';
+  const chartData = chartPeriod === 'daily' ? dailyEarnings : chartPeriod === 'weekly' ? weeklyEarnings : monthlyEarnings;
+  const xKey = chartPeriod === 'daily' ? 'hour' : chartPeriod === 'weekly' ? 'day' : 'week';
+
+  // Synced metrics based on period
+  const metrics = useMemo(() => {
+    if (chartPeriod === 'daily') {
+      return {
+        grossRevenue: dailyEarnings.reduce((a, b) => a + b.amount, 0),
+        netProfit: dailyEarnings.reduce((a, b) => a + b.amount, 0) * 0.7,
+        lessonsCompleted: dailyEarnings.filter(d => d.amount > 0).length,
+        averageRating: 4.9,
+        period: 'Hoje',
+      };
+    } else if (chartPeriod === 'weekly') {
+      return {
+        grossRevenue: weeklyEarnings.reduce((a, b) => a + b.amount, 0),
+        netProfit: weeklyEarnings.reduce((a, b) => a + b.amount, 0) * 0.7,
+        lessonsCompleted: weeklyEarnings.reduce((a, b) => a + Math.floor(b.amount / 120), 0),
+        averageRating: 4.9,
+        period: 'Esta Semana',
+      };
+    } else {
+      return {
+        grossRevenue: monthlyEarnings.reduce((a, b) => a + b.amount, 0),
+        netProfit: monthlyEarnings.reduce((a, b) => a + b.amount, 0) * 0.7,
+        lessonsCompleted: monthlyEarnings.reduce((a, b) => a + Math.floor(b.amount / 120), 0),
+        averageRating: 4.9,
+        period: 'Este Mês',
+      };
+    }
+  }, [chartPeriod]);
+
+  const pendingRequests = 5;
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
@@ -63,7 +96,7 @@ export default function InstructorHome() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Metrics Cards */}
+      {/* Metrics Cards - Synced with period */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-gradient-to-br from-instructor/10 to-instructor/5 border-instructor/20">
           <CardContent className="p-6">
@@ -71,10 +104,10 @@ export default function InstructorHome() {
               <div>
                 <p className="text-sm text-muted-foreground">Faturamento Bruto</p>
                 <p className="text-2xl font-bold text-foreground mt-1">
-                  {formatCurrency(instructorMetrics.grossRevenue)}
+                  {formatCurrency(metrics.grossRevenue)}
                 </p>
-                <p className="text-xs text-instructor mt-1 flex items-center gap-1">
-                  <TrendingUp className="h-3 w-3" /> +12% vs mês anterior
+                <p className="text-xs text-instructor mt-1">
+                  {metrics.period}
                 </p>
               </div>
               <div className="p-3 rounded-xl bg-instructor/10">
@@ -90,10 +123,10 @@ export default function InstructorHome() {
               <div>
                 <p className="text-sm text-muted-foreground">Lucro Líquido</p>
                 <p className="text-2xl font-bold text-foreground mt-1">
-                  {formatCurrency(instructorMetrics.netProfit)}
+                  {formatCurrency(metrics.netProfit)}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Já descontado taxas
+                  {metrics.period} (taxas descontadas)
                 </p>
               </div>
               <div className="p-3 rounded-xl bg-success/10">
@@ -109,10 +142,10 @@ export default function InstructorHome() {
               <div>
                 <p className="text-sm text-muted-foreground">Aulas Realizadas</p>
                 <p className="text-2xl font-bold text-foreground mt-1">
-                  {instructorMetrics.lessonsCompleted}
+                  {metrics.lessonsCompleted}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Este mês: {instructorMetrics.lessonsThisMonth}
+                  {metrics.period}
                 </p>
               </div>
               <div className="p-3 rounded-xl bg-primary/10">
@@ -128,7 +161,7 @@ export default function InstructorHome() {
               <div>
                 <p className="text-sm text-muted-foreground">Avaliação Média</p>
                 <p className="text-2xl font-bold text-foreground mt-1 flex items-center gap-1">
-                  {instructorMetrics.averageRating}
+                  {metrics.averageRating}
                   <Star className="h-5 w-5 text-warning fill-warning" />
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -149,8 +182,9 @@ export default function InstructorHome() {
         <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-lg font-display">Evolução dos Ganhos</CardTitle>
-            <Tabs value={chartPeriod} onValueChange={(v) => setChartPeriod(v as 'weekly' | 'monthly')}>
+            <Tabs value={chartPeriod} onValueChange={(v) => setChartPeriod(v as 'daily' | 'weekly' | 'monthly')}>
               <TabsList className="h-8">
+                <TabsTrigger value="daily" className="text-xs px-3">Diário</TabsTrigger>
                 <TabsTrigger value="weekly" className="text-xs px-3">Semanal</TabsTrigger>
                 <TabsTrigger value="monthly" className="text-xs px-3">Mensal</TabsTrigger>
               </TabsList>
@@ -255,7 +289,7 @@ export default function InstructorHome() {
       </div>
 
       {/* Pending Requests Alert */}
-      {instructorMetrics.pendingRequests > 0 && (
+      {pendingRequests > 0 && (
         <Card className="bg-warning/5 border-warning/20">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -265,14 +299,17 @@ export default function InstructorHome() {
                 </div>
                 <div>
                   <p className="font-medium text-foreground">
-                    Você tem {instructorMetrics.pendingRequests} solicitações pendentes
+                    Você tem {pendingRequests} solicitações pendentes
                   </p>
                   <p className="text-sm text-muted-foreground">
                     Responda rapidamente para aumentar sua taxa de conversão
                   </p>
                 </div>
               </div>
-              <Button className="bg-warning hover:bg-warning/90 text-warning-foreground">
+              <Button 
+                className="bg-warning hover:bg-warning/90 text-warning-foreground"
+                onClick={() => navigate('/app/instructor/requests')}
+              >
                 Ver Solicitações
               </Button>
             </div>

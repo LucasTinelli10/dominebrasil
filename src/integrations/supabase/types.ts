@@ -259,6 +259,88 @@ export type Database = {
           },
         ]
       }
+      lesson_feedback: {
+        Row: {
+          areas_to_improve: string[] | null
+          booking_id: string
+          created_at: string
+          feedback: string | null
+          id: string
+          instructor_id: string
+          rating: number | null
+          strengths: string[] | null
+          student_id: string
+        }
+        Insert: {
+          areas_to_improve?: string[] | null
+          booking_id: string
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          instructor_id: string
+          rating?: number | null
+          strengths?: string[] | null
+          student_id: string
+        }
+        Update: {
+          areas_to_improve?: string[] | null
+          booking_id?: string
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          instructor_id?: string
+          rating?: number | null
+          strengths?: string[] | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_feedback_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          booking_id: string | null
+          content: string
+          created_at: string
+          id: string
+          read: boolean | null
+          receiver_id: string
+          sender_id: string
+        }
+        Insert: {
+          booking_id?: string | null
+          content: string
+          created_at?: string
+          id?: string
+          read?: boolean | null
+          receiver_id: string
+          sender_id: string
+        }
+        Update: {
+          booking_id?: string | null
+          content?: string
+          created_at?: string
+          id?: string
+          read?: boolean | null
+          receiver_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

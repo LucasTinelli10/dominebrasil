@@ -24,13 +24,11 @@ import {
   BookOpen,
   Car,
   Wallet,
-  FileText,
   Settings,
   LogOut,
   Bell,
   Wrench,
   PieChart,
-  ClipboardList,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -53,6 +51,7 @@ const instructorMenuItems: MenuItem[] = [
   { title: 'Visão Geral', url: '/app/instructor', icon: Home },
   { title: 'Solicitações', url: '/app/instructor/requests', icon: Bell },
   { title: 'Minha Agenda', url: '/app/instructor/schedule', icon: Calendar },
+  { title: 'Carros para Alugar', url: '/app/instructor/cars', icon: Car },
   { title: 'Mensagens', url: '/app/instructor/messages', icon: MessageSquare },
   { title: 'Perfil Profissional', url: '/app/instructor/profile', icon: User },
 ];
@@ -178,6 +177,42 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Settings Section */}
+        <SidebarGroup className="mt-auto">
+          <SidebarGroupLabel className="text-muted-foreground text-xs font-medium px-2 mb-2">
+            Conta
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink
+                    to={`/app/${role}/settings`}
+                    className={cn(
+                      'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200',
+                      'hover:bg-card hover:shadow-sm',
+                      location.pathname.includes('/settings') && 'bg-card shadow-sm'
+                    )}
+                  >
+                    <Settings className={cn(
+                      'h-5 w-5',
+                      location.pathname.includes('/settings') ? config.colorClass : 'text-muted-foreground'
+                    )} />
+                    {!collapsed && (
+                      <span className={cn(
+                        'font-medium',
+                        location.pathname.includes('/settings') ? 'text-foreground' : 'text-muted-foreground'
+                      )}>
+                        Configurações
+                      </span>
+                    )}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
