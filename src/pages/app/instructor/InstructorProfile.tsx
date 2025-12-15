@@ -15,10 +15,12 @@ import {
   Check,
   Plus,
   X,
+  AlertCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { BUSINESS_RULES, validateLessonPrice, formatCurrency } from '@/lib/businessRules';
 
 const availableBadges = [
   'Paciente', 'Pontual', 'Didático', 'Experiente', 'Atencioso', 'Técnico', 'Calmo'
@@ -29,11 +31,27 @@ export default function InstructorProfile() {
   const [bio, setBio] = useState(
     'Instrutor certificado há 8 anos com mais de 500 alunos formados. Especialista em alunos nervosos e primeira habilitação. Metodologia focada em confiança e segurança.'
   );
-  const [pricePerHour, setPricePerHour] = useState('120');
+  const [pricePerHour, setPricePerHour] = useState(String(BUSINESS_RULES.DEFAULT_LESSON_PRICE));
+  const [priceError, setPriceError] = useState<string | null>(null);
   const [selectedBadges, setSelectedBadges] = useState(['Paciente', 'Pontual', 'Didático']);
   const [hasOwnCar, setHasOwnCar] = useState(true);
 
+  const handlePriceChange = (value: string) => {
+    setPricePerHour(value);
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue)) {
+      const validation = validateLessonPrice(numValue);
+      setPriceError(validation.valid ? null : validation.message || null);
+    }
+  };
+
   const handleSave = () => {
+    const numPrice = parseFloat(pricePerHour);
+    const validation = validateLessonPrice(numPrice);
+    if (!validation.valid) {
+      toast.error(validation.message);
+      return;
+    }
     toast.success('Perfil atualizado com sucesso!');
   };
 
@@ -164,10 +182,21 @@ export default function InstructorProfile() {
                   <Input
                     id="price"
                     type="number"
+                    min={BUSINESS_RULES.MIN_LESSON_PRICE_PER_HOUR}
                     value={pricePerHour}
-                    onChange={(e) => setPricePerHour(e.target.value)}
-                    className="text-lg font-semibold"
+                    onChange={(e) => handlePriceChange(e.target.value)}
+                    className={cn("text-lg font-semibold", priceError && "border-destructive")}
                   />
+                  {priceError ? (
+                    <p className="text-xs text-destructive flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      {priceError}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Mínimo: {formatCurrency(BUSINESS_RULES.MIN_LESSON_PRICE_PER_HOUR)}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label>Tipo de câmbio</Label>
@@ -270,7 +299,7 @@ export default function InstructorProfile() {
                 <div className="p-4 rounded-lg bg-instructor/10 border border-instructor/20">
                   <p className="text-sm text-foreground">
                     Sem veículo próprio? Sem problemas! Você poderá alugar carros da nossa frota
-                    de investidores por R$50/hora durante as aulas.
+                    de investidores por <strong>{formatCurrency(BUSINESS_RULES.CAR_RENTAL_PRICE_PER_HOUR)}/hora</strong> durante as aulas.
                   </p>
                 </div>
               )}

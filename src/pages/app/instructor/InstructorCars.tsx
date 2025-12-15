@@ -6,11 +6,12 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Calendar } from '@/components/ui/calendar';
-import { Car, MapPin, Clock, DollarSign, Calendar as CalendarIcon, Check, X } from 'lucide-react';
+import { Car, MapPin, Clock, DollarSign, Calendar as CalendarIcon, Check, X, Info } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import { BUSINESS_RULES, formatCurrency } from '@/lib/businessRules';
 
 interface AvailableCar {
   id: string;
@@ -108,12 +109,8 @@ export default function InstructorCars() {
     return true;
   });
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
-  };
+  // Preço fixo de aluguel - valor tabelado da plataforma
+  const rentalPrice = BUSINESS_RULES.CAR_RENTAL_PRICE_PER_HOUR;
 
   if (loading) {
     return (
@@ -137,6 +134,17 @@ export default function InstructorCars() {
         <h1 className="text-2xl font-display font-bold text-foreground">Carros para Alugar</h1>
         <p className="text-muted-foreground">Alugue um carro para dar suas aulas</p>
       </div>
+
+      {/* Fixed Price Info */}
+      <Card className="border-instructor/30 bg-instructor/5">
+        <CardContent className="p-4 flex items-center gap-3">
+          <Info className="h-5 w-5 text-instructor" />
+          <p className="text-sm">
+            <strong>Preço único tabelado:</strong> Todos os carros da frota custam{' '}
+            <span className="font-bold text-instructor">{formatCurrency(rentalPrice)}/hora</span> de aluguel.
+          </p>
+        </CardContent>
+      </Card>
 
       {/* Filters */}
       <Card>
@@ -207,7 +215,8 @@ export default function InstructorCars() {
                   </div>
                   <div className="flex items-center gap-2">
                     <DollarSign className="h-4 w-4" />
-                    <span className="font-semibold text-instructor">{formatCurrency(car.price_per_hour)}/hora</span>
+                    <span className="font-semibold text-instructor">{formatCurrency(rentalPrice)}/hora</span>
+                    <Badge variant="outline" className="text-xs">Preço fixo</Badge>
                   </div>
                 </div>
                 <Button
@@ -273,7 +282,7 @@ export default function InstructorCars() {
                     <p>Data: {selectedDate.toLocaleDateString('pt-BR')}</p>
                     <p>Horário: {selectedTimeSlot}</p>
                     <p className="font-semibold text-instructor">
-                      Valor: {formatCurrency(selectedCar.price_per_hour)}
+                      Valor: {formatCurrency(rentalPrice)} (preço fixo)
                     </p>
                   </div>
                 </CardContent>
