@@ -37,12 +37,13 @@ serve(async (req) => {
     logStep("User authenticated", { email: user.email });
 
     const { 
-      bookingId,
+      instructorId,
       instructorName, 
       lessonPrice, 
       lessonDate,
       lessonTime,
-      duration = 1 
+      duration = 1,
+      carId,
     } = await req.json();
 
     // Validate minimum price
@@ -51,7 +52,7 @@ serve(async (req) => {
     }
 
     const totalAmount = lessonPrice * duration;
-    logStep("Lesson details", { instructorName, totalAmount, duration });
+    logStep("Lesson details", { instructorId, instructorName, totalAmount, duration });
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
@@ -85,14 +86,17 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
-      success_url: `${origin}/app/student?payment=success&booking=${bookingId}`,
+      success_url: `${origin}/app/student?payment=success`,
       cancel_url: `${origin}/app/student?payment=canceled`,
       metadata: {
-        booking_id: bookingId,
+        booking_type: "lesson",
         student_id: user.id,
+        instructor_id: instructorId,
         lesson_date: lessonDate,
         lesson_time: lessonTime,
         duration: duration.toString(),
+        total_price: totalAmount.toString(),
+        car_id: carId || "",
       },
     });
 
