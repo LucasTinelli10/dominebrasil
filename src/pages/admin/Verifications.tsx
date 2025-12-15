@@ -65,12 +65,21 @@ export default function AdminVerifications() {
   const [processingId, setProcessingId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (profile?.role !== 'admin' && profile?.role !== 'investor') {
-      // For now, allow investors to access this page for testing
-      // In production, should be admin only
+    // Server-side admin check is enforced by RPC functions
+    // This client-side check provides immediate UX feedback
+    if (profile && profile.role !== 'admin') {
+      toast({ 
+        title: 'Acesso Negado', 
+        description: 'Apenas administradores podem acessar esta página.', 
+        variant: 'destructive' 
+      });
+      navigate('/');
+      return;
     }
-    fetchInstructors();
-  }, [profile]);
+    if (profile?.role === 'admin') {
+      fetchInstructors();
+    }
+  }, [profile, navigate]);
 
   const fetchInstructors = async () => {
     setLoading(true);
