@@ -84,26 +84,35 @@ export default function InstructorRequests() {
   const [chatMessages, setChatMessages] = useState<any[]>([]);
 
   const handleAccept = async (request: LessonRequest) => {
-    // Send automatic acceptance message
     const acceptanceMessage = `Olá ${request.studentName.split(' ')[0]}! Sua solicitação de aula foi aceita. 🎉\n\nDetalhes:\n📅 Data: ${new Date(request.requestedDate + 'T00:00:00').toLocaleDateString('pt-BR')}\n⏰ Horário: ${request.requestedTime}\n\nNos vemos em breve!`;
 
     try {
-      // In a real app, this would send to the actual student
-      await supabase.from('messages').insert({
+      // Insert message to database - this creates the conversation automatically
+      const { error: messageError } = await supabase.from('messages').insert({
         sender_id: user?.id,
         receiver_id: request.studentId,
         content: acceptanceMessage,
       });
-    } catch (error) {
-      console.log('Message will be sent when student ID is valid');
-    }
 
-    // Remove from list
-    setRequests(prev => prev.filter(r => r.id !== request.id));
-    
-    toast.success('Solicitação aceita!', {
-      description: `Mensagem automática enviada para ${request.studentName}`,
-    });
+      if (messageError) {
+        console.error('Error sending message:', messageError);
+        // Still remove from list even if message fails (mock data)
+      }
+
+      // Remove from requests list
+      setRequests(prev => prev.filter(r => r.id !== request.id));
+      
+      toast.success('Solicitação aceita!', {
+        description: `Conversa iniciada com ${request.studentName}. Acesse "Mensagens" para continuar.`,
+      });
+    } catch (error) {
+      console.error('Error accepting request:', error);
+      // Remove from list anyway for mock data
+      setRequests(prev => prev.filter(r => r.id !== request.id));
+      toast.success('Solicitação aceita!', {
+        description: `Mensagem enviada para ${request.studentName}`,
+      });
+    }
   };
 
   const handleReject = (request: LessonRequest) => {

@@ -81,6 +81,7 @@ serve(async (req) => {
       success_url: `${origin}/app/instructor/cars?payment=success&car=${carId}`,
       cancel_url: `${origin}/app/instructor/cars?payment=canceled`,
       metadata: {
+        booking_type: "car_rental",
         car_id: carId,
         instructor_id: user.id,
         rental_date: rentalDate,

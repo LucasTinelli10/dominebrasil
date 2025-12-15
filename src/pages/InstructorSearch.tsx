@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, MapPin, Star, Shield, ArrowLeft, MessageCircle } from 'lucide-react';
+import { Search, MapPin, Star, Shield, ArrowLeft, CalendarDays } from 'lucide-react';
 import { AuthModal } from '@/components/auth/AuthModal';
+import { BookingModal } from '@/components/booking/BookingModal';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface Instructor {
@@ -15,13 +16,11 @@ interface Instructor {
   full_name: string;
   city: string;
   avatar_url: string | null;
-  instructors_details: {
-    bio: string | null;
-    price_per_hour: number | null;
-    rating: number | null;
-    years_experience: number | null;
-    badges: string[] | null;
-  } | null;
+  price_per_hour: number;
+  rating: number | null;
+  bio: string | null;
+  years_experience: number | null;
+  badges: string[] | null;
 }
 
 const InstructorSearch = () => {
@@ -31,6 +30,8 @@ const InstructorSearch = () => {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [selectedInstructor, setSelectedInstructor] = useState<Instructor | null>(null);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -41,12 +42,10 @@ const InstructorSearch = () => {
     setSearched(true);
 
     try {
-      // Use secure RPC function to get approved instructors (no sensitive data exposed)
       const { data, error } = await supabase.rpc('get_all_approved_instructors');
       
       if (error) throw error;
       
-      // Filter by city client-side (RPC function returns all approved instructors)
       const instructorProfiles = (data || [])
         .filter((instructor: any) => 
           instructor.city?.toLowerCase().includes(city.toLowerCase())
@@ -56,13 +55,11 @@ const InstructorSearch = () => {
           full_name: instructor.full_name,
           city: instructor.city,
           avatar_url: instructor.avatar_url,
-          instructors_details: {
-            bio: instructor.bio,
-            price_per_hour: instructor.price_per_hour,
-            rating: instructor.rating,
-            years_experience: instructor.years_experience,
-            badges: instructor.badges
-          }
+          price_per_hour: instructor.price_per_hour || 120,
+          rating: instructor.rating,
+          bio: instructor.bio,
+          years_experience: instructor.years_experience,
+          badges: instructor.badges,
         })) as Instructor[];
 
       setInstructors(instructorProfiles);
@@ -73,14 +70,22 @@ const InstructorSearch = () => {
     }
   };
 
-  const handleContactInstructor = (instructorId: string) => {
+  const handleBookInstructor = (instructor: Instructor) => {
     if (!user) {
       setIsAuthModalOpen(true);
+      setSelectedInstructor(instructor);
     } else {
-      // Navigate to booking or chat
-      navigate(`/student/dashboard?instructor=${instructorId}`);
+      setSelectedInstructor(instructor);
+      setIsBookingModalOpen(true);
     }
   };
+
+  // After auth, open booking modal
+  useEffect(() => {
+    if (user && selectedInstructor && !isBookingModalOpen && !isAuthModalOpen) {
+      setIsBookingModalOpen(true);
+    }
+  }, [user, selectedInstructor]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -209,36 +214,36 @@ const InstructorSearch = () => {
                               <MapPin className="w-3 h-3" />
                               {instructor.city || 'Local não informado'}
                             </div>
-                            {instructor.instructors_details?.rating && (
+                            {instructor.rating && (
                               <div className="flex items-center gap-1">
                                 <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
                                 <span className="text-sm font-medium">
-                                  {instructor.instructors_details.rating.toFixed(1)}
+                                  {instructor.rating.toFixed(1)}
                                 </span>
                               </div>
                             )}
                           </div>
                         </div>
 
-                        {instructor.instructors_details?.bio && (
+                        {instructor.bio && (
                           <p className="text-sm text-slate-600 mt-4 line-clamp-2">
-                            {instructor.instructors_details.bio}
+                            {instructor.bio}
                           </p>
                         )}
 
                         <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
                           <div>
                             <span className="text-2xl font-bold text-teal-600">
-                              R$ {instructor.instructors_details?.price_per_hour || 120}
+                              R$ {instructor.price_per_hour}
                             </span>
                             <span className="text-sm text-slate-500">/hora</span>
                           </div>
                           <Button 
-                            onClick={() => handleContactInstructor(instructor.id)}
+                            onClick={() => handleBookInstructor(instructor)}
                             className="bg-teal-600 hover:bg-teal-700"
                           >
-                            <MessageCircle className="w-4 h-4 mr-2" />
-                            Entrar em contato
+                            <CalendarDays className="w-4 h-4 mr-2" />
+                            Agendar Aula
                           </Button>
                         </div>
                       </CardContent>
@@ -268,6 +273,11 @@ const InstructorSearch = () => {
       </div>
 
       <AuthModal open={isAuthModalOpen} onOpenChange={setIsAuthModalOpen} />
+      <BookingModal 
+        open={isBookingModalOpen} 
+        onOpenChange={setIsBookingModalOpen}
+        instructor={selectedInstructor}
+      />
     </div>
   );
 };
