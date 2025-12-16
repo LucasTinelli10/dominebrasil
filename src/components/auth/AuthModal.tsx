@@ -21,6 +21,7 @@ interface AuthModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   preselectedRole?: UserRole;
+  defaultMode?: AuthMode;
 }
 
 const roleOptions = [
@@ -38,23 +39,24 @@ const roleOptions = [
   },
 ];
 
-export const AuthModal: React.FC<AuthModalProps> = ({ open, onOpenChange, preselectedRole }) => {
+export const AuthModal: React.FC<AuthModalProps> = ({ open, onOpenChange, preselectedRole, defaultMode = 'login' }) => {
   const [step, setStep] = useState<AuthStep>(preselectedRole ? 'auth-form' : 'select-role');
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(preselectedRole || null);
-  const [authMode, setAuthMode] = useState<AuthMode>('login');
+  const [authMode, setAuthMode] = useState<AuthMode>(defaultMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Update when preselectedRole changes
+  // Update when preselectedRole or defaultMode changes
   React.useEffect(() => {
     if (preselectedRole) {
       setSelectedRole(preselectedRole);
       setStep('auth-form');
     }
-  }, [preselectedRole]);
+    setAuthMode(defaultMode);
+  }, [preselectedRole, defaultMode]);
   
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
@@ -129,10 +131,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ open, onOpenChange, presel
 
       onOpenChange(false);
       
-      // Redirect based on role
+      // Redirect based on role - instructors go to onboarding after signup
       setTimeout(() => {
         if (selectedRole) {
-          navigate(`/${selectedRole}/dashboard`);
+          if (authMode === 'signup' && selectedRole === 'instructor') {
+            navigate('/onboarding');
+          } else {
+            navigate(`/${selectedRole}/dashboard`);
+          }
         }
       }, 100);
       
@@ -146,7 +152,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ open, onOpenChange, presel
   const resetModal = () => {
     setStep(preselectedRole ? 'auth-form' : 'select-role');
     setSelectedRole(preselectedRole || null);
-    setAuthMode('login');
+    setAuthMode(defaultMode);
     setEmail('');
     setPassword('');
     setConfirmPassword('');

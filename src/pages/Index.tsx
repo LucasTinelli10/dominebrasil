@@ -16,10 +16,12 @@ import { AIChatWidget } from '@/components/chat/AIChatWidget';
 import { useAuth } from '@/contexts/AuthContext';
 
 type PreselectedRole = 'student' | 'instructor' | 'investor' | undefined;
+type AuthMode = 'login' | 'signup';
 
 const Index = () => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [preselectedRole, setPreselectedRole] = useState<PreselectedRole>(undefined);
+  const [authDefaultMode, setAuthDefaultMode] = useState<AuthMode>('login');
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
 
@@ -34,18 +36,24 @@ const Index = () => {
     }
   }, [user, profile, loading, navigate]);
 
+  // Login button - opens in login mode
   const handleOpenAuth = () => {
     setPreselectedRole(undefined);
+    setAuthDefaultMode('login');
     setIsAuthModalOpen(true);
   };
 
+  // Instructor button - opens in signup mode
   const handleOpenInstructorAuth = () => {
     setPreselectedRole('instructor');
+    setAuthDefaultMode('signup');
     setIsAuthModalOpen(true);
   };
 
+  // Investor button - opens in signup mode
   const handleOpenInvestorAuth = () => {
     setPreselectedRole('investor');
+    setAuthDefaultMode('signup');
     setIsAuthModalOpen(true);
   };
 
@@ -53,6 +61,7 @@ const Index = () => {
     setIsAuthModalOpen(open);
     if (!open) {
       setPreselectedRole(undefined);
+      setAuthDefaultMode('login');
     }
   };
 
@@ -80,6 +89,7 @@ const Index = () => {
         open={isAuthModalOpen} 
         onOpenChange={handleCloseAuth} 
         preselectedRole={preselectedRole}
+        defaultMode={authDefaultMode}
       />
     </div>
   );

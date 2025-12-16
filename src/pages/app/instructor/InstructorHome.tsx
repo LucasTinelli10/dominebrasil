@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -30,10 +30,19 @@ import {
   upcomingLessons,
 } from '@/data/mockData';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function InstructorHome() {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [chartPeriod, setChartPeriod] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
+
+  // Redirect to onboarding if not verified
+  useEffect(() => {
+    if (profile && profile.verification_status !== 'approved') {
+      navigate('/onboarding');
+    }
+  }, [profile, navigate]);
 
   const chartData = chartPeriod === 'daily' ? dailyEarnings : chartPeriod === 'weekly' ? weeklyEarnings : monthlyEarnings;
   const xKey = chartPeriod === 'daily' ? 'hour' : chartPeriod === 'weekly' ? 'day' : 'week';
