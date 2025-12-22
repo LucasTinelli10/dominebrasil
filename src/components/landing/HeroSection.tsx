@@ -115,7 +115,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
                 className="w-full sm:w-auto bg-teal-600 hover:bg-teal-700 text-white px-8 py-5 h-auto flex items-center gap-2 shadow-lg shadow-teal-500/25"
               >
                 <User className="w-5 h-5" />
-                <span className="font-semibold text-base">Quero Perder o Medo</span>
+                <span className="font-semibold text-base">Sou Aluno</span>
               </Button>
             </motion.div>
 
