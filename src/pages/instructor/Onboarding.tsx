@@ -284,6 +284,28 @@ export default function InstructorOnboarding() {
       <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate('/')}
+              className="text-slate-300 hover:text-white"
+            >
+              ← Voltar ao início
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                const { signOut } = await import('@/contexts/AuthContext').then(m => ({ signOut: () => supabase.auth.signOut() }));
+                await supabase.auth.signOut();
+                navigate('/');
+              }}
+              className="text-slate-300 hover:text-white border-slate-600"
+            >
+              Sair
+            </Button>
+          </div>
           <div className="flex items-center justify-center gap-2 mb-4">
             <Shield className="h-8 w-8 text-teal-400" />
             <h1 className="text-2xl font-bold text-white">Validação Governamental</h1>
