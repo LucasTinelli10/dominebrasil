@@ -422,6 +422,7 @@ export type Database = {
         Args: { instructor_id: string }
         Returns: undefined
       }
+      admin_approve_user: { Args: { user_id: string }; Returns: undefined }
       admin_list_instructor_verifications: {
         Args: never
         Returns: {
@@ -437,8 +438,31 @@ export type Database = {
           verification_status: Database["public"]["Enums"]["verification_status"]
         }[]
       }
+      admin_list_pending_approvals: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          background_check_status: string
+          cnh_category: string
+          cnh_number: string
+          created_at: string
+          credential_number: string
+          documents_url: Json
+          email: string
+          fraud_score: number
+          full_name: string
+          id: string
+          role: string
+          verification_reason: string
+          verification_status: Database["public"]["Enums"]["verification_status"]
+        }[]
+      }
       admin_reject_instructor: {
         Args: { instructor_id: string }
+        Returns: undefined
+      }
+      admin_reject_user_with_reason: {
+        Args: { reason: string; user_id: string }
         Returns: undefined
       }
       check_availability: {
