@@ -22,7 +22,7 @@ interface AuthContextType {
   session: Session | null;
   profile: Profile | null;
   loading: boolean;
-  signUp: (email: string, password: string, role: UserRole, fullName: string) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, role: UserRole, fullName: string, phone?: string) => Promise<{ error: Error | null }>;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -132,7 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, role: UserRole, fullName: string) => {
+  const signUp = async (email: string, password: string, role: UserRole, fullName: string, phone?: string) => {
     try {
       const redirectUrl = `${window.location.origin}/`;
       
@@ -144,6 +144,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           data: {
             role,
             full_name: fullName,
+            phone,
           }
         }
       });

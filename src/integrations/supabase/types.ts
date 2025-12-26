@@ -351,6 +351,7 @@ export type Database = {
           full_name: string | null
           id: string
           neighborhood: string | null
+          phone: string | null
           status: Database["public"]["Enums"]["profile_status"] | null
           updated_at: string | null
           verification_reason: string | null
@@ -367,6 +368,7 @@ export type Database = {
           full_name?: string | null
           id: string
           neighborhood?: string | null
+          phone?: string | null
           status?: Database["public"]["Enums"]["profile_status"] | null
           updated_at?: string | null
           verification_reason?: string | null
@@ -383,6 +385,7 @@ export type Database = {
           full_name?: string | null
           id?: string
           neighborhood?: string | null
+          phone?: string | null
           status?: Database["public"]["Enums"]["profile_status"] | null
           updated_at?: string | null
           verification_reason?: string | null
@@ -452,6 +455,7 @@ export type Database = {
           fraud_score: number
           full_name: string
           id: string
+          phone: string
           role: string
           verification_reason: string
           verification_status: Database["public"]["Enums"]["verification_status"]

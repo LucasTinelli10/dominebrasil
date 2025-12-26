@@ -47,6 +47,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ open, onOpenChange, presel
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   // Update when preselectedRole or defaultMode changes
@@ -77,6 +78,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ open, onOpenChange, presel
     setPassword('');
     setConfirmPassword('');
     setFullName('');
+    setPhone('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -90,6 +92,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ open, onOpenChange, presel
     if (authMode === 'signup') {
       if (!fullName) {
         toast.error('Preencha seu nome completo');
+        return;
+      }
+      if (!phone) {
+        toast.error('Preencha seu telefone');
         return;
       }
       if (password !== confirmPassword) {
@@ -106,7 +112,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ open, onOpenChange, presel
 
     try {
       if (authMode === 'signup') {
-        const { error } = await signUp(email, password, selectedRole!, fullName);
+        const { error } = await signUp(email, password, selectedRole!, fullName, phone);
         if (error) {
           if (error.message.includes('already registered')) {
             toast.error('Este email já está cadastrado. Tente fazer login.');
@@ -157,6 +163,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ open, onOpenChange, presel
     setPassword('');
     setConfirmPassword('');
     setFullName('');
+    setPhone('');
   };
 
   return (
@@ -210,17 +217,30 @@ export const AuthModal: React.FC<AuthModalProps> = ({ open, onOpenChange, presel
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 {authMode === 'signup' && (
-                  <div className="space-y-2">
-                    <Label htmlFor="fullName">Nome completo</Label>
-                    <Input
-                      id="fullName"
-                      type="text"
-                      placeholder="Seu nome completo"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      disabled={isLoading}
-                    />
-                  </div>
+                  <>
+                    <div className="space-y-2">
+                      <Label htmlFor="fullName">Nome completo</Label>
+                      <Input
+                        id="fullName"
+                        type="text"
+                        placeholder="Seu nome completo"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        disabled={isLoading}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Telefone (WhatsApp)</Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        placeholder="(11) 99999-9999"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        disabled={isLoading}
+                      />
+                    </div>
+                  </>
                 )}
 
                 <div className="space-y-2">
