@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
@@ -94,8 +94,12 @@ const App = () => (
             <Route path="/instructor/dashboard" element={<ProtectedRoute allowedRoles={['instructor']}><InstructorHome /></ProtectedRoute>} />
             <Route path="/investor/dashboard" element={<ProtectedRoute allowedRoles={['investor']}><InvestorHome /></ProtectedRoute>} />
             <Route path="/onboarding" element={<ProtectedRoute allowedRoles={['instructor']}><InstructorOnboarding /></ProtectedRoute>} />
-            <Route path="/admin/verifications" element={<ProtectedRoute allowedRoles={['admin']}><AdminVerifications /></ProtectedRoute>} />
+
+            {/* Admin Routes */}
             <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/admin/verifications" element={<ProtectedRoute allowedRoles={['admin']}><AdminVerifications /></ProtectedRoute>} />
+            <Route path="/admin/*" element={<ProtectedRoute allowedRoles={['admin']}><Navigate to="/admin" replace /></ProtectedRoute>} />
 
             <Route path="*" element={<NotFound />} />
           </Routes>
