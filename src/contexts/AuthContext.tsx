@@ -55,17 +55,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (profileError) throw profileError;
 
-      // Fetch role from user_roles table
-      const { data: roleData, error: roleError } = await supabase
+      // Fetch roles from user_roles table (user may have multiple roles)
+      const { data: rolesData, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', userId)
-        .maybeSingle();
+        .eq('user_id', userId);
 
       if (roleError) throw roleError;
 
-      // Get role from user_roles, fallback to user_metadata
-      const userRole = roleData?.role as UserRole || 
+      // Priority order: admin > investor > instructor > student
+      const rolePriority: UserRole[] = ['admin', 'investor', 'instructor', 'student'];
+      const userRoles = rolesData?.map(r => r.role as UserRole) || [];
+      
+      // Get highest priority role, fallback to user_metadata, then default to student
+      const userRole = rolePriority.find(role => userRoles.includes(role)) || 
         (userMetadata?.role as UserRole) || 
         'student';
 
