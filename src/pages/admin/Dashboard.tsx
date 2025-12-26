@@ -17,14 +17,16 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { 
-  Shield, CheckCircle, XCircle, User, Loader2, LogOut, RefreshCw,
-  Mail, Phone, FileText, GraduationCap, Car
+  CheckCircle, XCircle, User, Loader2, RefreshCw,
+  Mail, Phone, FileText, Car, Building2
 } from 'lucide-react';
+import AdminLayout from '@/components/layouts/AdminLayout';
 
 interface PendingUser {
   id: string;
   full_name: string | null;
   email: string | null;
+  phone: string | null;
   role: string;
   verification_status: 'pending' | 'analyzing' | 'approved' | 'rejected';
   fraud_score: number | null;
@@ -40,7 +42,7 @@ interface PendingUser {
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const { user, profile, signOut } = useAuth();
+  const { user, profile } = useAuth();
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -130,11 +132,6 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
-  };
-
   const openUserModal = (user: PendingUser) => {
     setSelectedUser(user);
     setModalOpen(true);
@@ -146,10 +143,8 @@ export default function AdminDashboard() {
     switch (role) {
       case 'instructor':
         return <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30"><Car className="w-3 h-3 mr-1" /> Instrutor</Badge>;
-      case 'student':
-        return <Badge className="bg-purple-500/20 text-purple-400 border-purple-500/30"><GraduationCap className="w-3 h-3 mr-1" /> Aluno</Badge>;
       case 'investor':
-        return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30">Investidor</Badge>;
+        return <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30"><Building2 className="w-3 h-3 mr-1" /> Investidor</Badge>;
       default:
         return <Badge>{role}</Badge>;
     }
@@ -169,129 +164,113 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 py-8 px-4">
-      <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex items-center gap-3">
-            <Shield className="h-8 w-8 text-teal-400" />
-            <div>
-              <h1 className="text-2xl font-bold text-white">Painel Administrativo</h1>
-              <p className="text-slate-400 text-sm">Gerencie aprovações de usuários</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={fetchPendingUsers}
-              disabled={loading}
-              className="border-slate-600 text-slate-300"
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-              Atualizar
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={handleSignOut}
-              className="text-slate-300 hover:text-white"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Sair
-            </Button>
-          </div>
+    <AdminLayout>
+      {/* Header with refresh */}
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Aprovações Pendentes</h1>
+          <p className="text-slate-400 text-sm">Instrutores e investidores aguardando verificação</p>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={fetchPendingUsers}
+          disabled={loading}
+          className="border-slate-600 text-slate-300"
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          Atualizar
+        </Button>
+      </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
-          <Card className="bg-slate-800/50 border-slate-700">
-            <CardContent className="pt-4">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400 text-sm">Total Pendentes</span>
-                <span className="text-2xl font-bold text-yellow-400">{pendingUsers.length}</span>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-slate-800/50 border-slate-700">
-            <CardContent className="pt-4">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400 text-sm">Alunos</span>
-                <span className="text-2xl font-bold text-purple-400">
-                  {pendingUsers.filter(u => u.role === 'student').length}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-slate-800/50 border-slate-700">
-            <CardContent className="pt-4">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-400 text-sm">Instrutores</span>
-                <span className="text-2xl font-bold text-blue-400">
-                  {pendingUsers.filter(u => u.role === 'instructor').length}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Pending Users Table */}
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-4 mb-6">
         <Card className="bg-slate-800/50 border-slate-700">
-          <CardHeader>
-            <CardTitle className="text-white">Aprovações Pendentes</CardTitle>
-            <CardDescription className="text-slate-400">
-              Clique no nome para ver detalhes e documentos
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="h-8 w-8 text-teal-400 animate-spin" />
-              </div>
-            ) : pendingUsers.length === 0 ? (
-              <div className="text-center py-12 text-slate-400">
-                <CheckCircle className="h-12 w-12 mx-auto mb-4 opacity-50 text-green-400" />
-                <p>Nenhuma aprovação pendente!</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {pendingUsers.map((user) => (
-                  <div
-                    key={user.id}
-                    className="bg-slate-700/50 rounded-lg p-4 border border-slate-600 hover:border-teal-500/50 transition-colors cursor-pointer"
-                    onClick={() => openUserModal(user)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-full bg-slate-600 flex items-center justify-center overflow-hidden">
-                          {user.avatar_url ? (
-                            <img src={user.avatar_url} alt={user.full_name || ''} className="w-full h-full object-cover" />
-                          ) : (
-                            <User className="h-6 w-6 text-slate-400" />
-                          )}
-                        </div>
-                        <div>
-                          <h3 className="text-white font-medium">{user.full_name || 'Nome não informado'}</h3>
-                          <div className="flex items-center gap-2 mt-1">
-                            {getRoleBadge(user.role)}
-                            {getStatusBadge(user.verification_status)}
-                          </div>
-                          <p className="text-sm text-slate-400 mt-1">{user.email}</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs text-slate-500">
-                          {new Date(user.created_at).toLocaleDateString('pt-BR')}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-400 text-sm">Total Pendentes</span>
+              <span className="text-2xl font-bold text-yellow-400">{pendingUsers.length}</span>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-slate-800/50 border-slate-700">
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-400 text-sm">Instrutores</span>
+              <span className="text-2xl font-bold text-blue-400">
+                {pendingUsers.filter(u => u.role === 'instructor').length}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-slate-800/50 border-slate-700">
+          <CardContent className="pt-4">
+            <div className="flex items-center justify-between">
+              <span className="text-slate-400 text-sm">Investidores</span>
+              <span className="text-2xl font-bold text-amber-400">
+                {pendingUsers.filter(u => u.role === 'investor').length}
+              </span>
+            </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Pending Users Table */}
+      <Card className="bg-slate-800/50 border-slate-700">
+        <CardHeader>
+          <CardTitle className="text-white">Usuários Pendentes</CardTitle>
+          <CardDescription className="text-slate-400">
+            Clique no nome para ver detalhes e documentos
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 text-teal-400 animate-spin" />
+            </div>
+          ) : pendingUsers.length === 0 ? (
+            <div className="text-center py-12 text-slate-400">
+              <CheckCircle className="h-12 w-12 mx-auto mb-4 opacity-50 text-green-400" />
+              <p>Nenhuma aprovação pendente!</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {pendingUsers.map((user) => (
+                <div
+                  key={user.id}
+                  className="bg-slate-700/50 rounded-lg p-4 border border-slate-600 hover:border-teal-500/50 transition-colors cursor-pointer"
+                  onClick={() => openUserModal(user)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-slate-600 flex items-center justify-center overflow-hidden">
+                        {user.avatar_url ? (
+                          <img src={user.avatar_url} alt={user.full_name || ''} className="w-full h-full object-cover" />
+                        ) : (
+                          <User className="h-6 w-6 text-slate-400" />
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="text-white font-medium">{user.full_name || 'Nome não informado'}</h3>
+                        <div className="flex items-center gap-2 mt-1">
+                          {getRoleBadge(user.role)}
+                          {getStatusBadge(user.verification_status)}
+                        </div>
+                        <p className="text-sm text-slate-400 mt-1">{user.email}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-slate-500">
+                        {new Date(user.created_at).toLocaleDateString('pt-BR')}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* User Details Modal */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>
@@ -328,7 +307,7 @@ export default function AdminDashboard() {
                     <Label className="text-slate-400 flex items-center gap-2">
                       <Phone className="w-4 h-4" /> Telefone
                     </Label>
-                    <p className="text-white">Não cadastrado</p>
+                    <p className="text-white">{selectedUser.phone || 'Não informado'}</p>
                   </div>
                 </div>
 
@@ -449,6 +428,6 @@ export default function AdminDashboard() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+    </AdminLayout>
   );
 }
