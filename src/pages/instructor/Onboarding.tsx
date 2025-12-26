@@ -62,7 +62,9 @@ export default function InstructorOnboarding() {
 
   useEffect(() => {
     if (profile?.verification_status === 'approved') {
-      navigate('/instructor/dashboard');
+      navigate(`/app/${profile.role}`);
+    } else if (profile?.verification_status === 'analyzing') {
+      navigate('/verification-status');
     }
   }, [profile, navigate]);
 
@@ -194,7 +196,7 @@ export default function InstructorOnboarding() {
 
       if (data.verification_status === 'approved') {
         toast({ title: "Sucesso!", description: "Seus documentos foram aprovados!" });
-        setTimeout(() => navigate('/instructor/dashboard'), 2000);
+        setTimeout(() => navigate(`/app/${profile.role}`), 2000);
       } else if (data.verification_status === 'rejected') {
         toast({ 
           title: "Documentos Rejeitados", 
@@ -203,9 +205,11 @@ export default function InstructorOnboarding() {
         });
       } else {
         toast({ 
-          title: "Em Análise", 
-          description: "Seus documentos estão sendo analisados manualmente."
+          title: "Documentos Enviados!", 
+          description: "Seus documentos foram enviados para análise. Aguarde a verificação."
         });
+        // Move to step 4 to show completion, then redirect
+        setCurrentStep(4);
       }
 
     } catch (error) {
@@ -260,8 +264,8 @@ export default function InstructorOnboarding() {
         .eq('id', profile.id);
 
       await refreshProfile();
-      toast({ title: "Cadastro Completo!", description: "Aguardando aprovação dos documentos." });
-      navigate('/instructor/dashboard');
+      toast({ title: "Cadastro Enviado!", description: "Seus documentos estão em análise." });
+      navigate('/verification-status');
     } catch (error) {
       console.error('Finish error:', error);
       toast({ title: "Erro", description: "Erro ao finalizar cadastro.", variant: "destructive" });
@@ -698,6 +702,14 @@ export default function InstructorOnboarding() {
             {/* Step 4: Finalization */}
             {currentStep === 4 && (
               <div className="space-y-4">
+                <div className="text-center py-4">
+                  <div className="mx-auto w-16 h-16 bg-teal-900/30 border-2 border-teal-600/50 rounded-full flex items-center justify-center mb-4">
+                    <CheckCircle className="h-8 w-8 text-teal-400" />
+                  </div>
+                  <h3 className="text-xl font-semibold text-white mb-2">Documentos Enviados com Sucesso!</h3>
+                  <p className="text-slate-300">Seu cadastro está completo e seus documentos foram enviados para análise.</p>
+                </div>
+
                 <div className="bg-slate-700/50 rounded-lg p-4">
                   <h4 className="text-slate-200 font-medium mb-3">Resumo do Cadastro</h4>
                   <div className="space-y-2 text-sm">
@@ -717,19 +729,17 @@ export default function InstructorOnboarding() {
                       <span className="text-slate-400">Credencial DETRAN:</span>
                       <span className="text-white">{credentialData.credentialNumber}</span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Status:</span>
-                      <span className={`${
-                        profile?.verification_status === 'approved' ? 'text-green-400' :
-                        profile?.verification_status === 'rejected' ? 'text-red-400' :
-                        'text-yellow-400'
-                      }`}>
-                        {profile?.verification_status === 'approved' ? 'Aprovado' :
-                         profile?.verification_status === 'rejected' ? 'Rejeitado' :
-                         'Em Análise'}
-                      </span>
-                    </div>
                   </div>
+                </div>
+
+                <div className="bg-blue-900/20 border border-blue-600/50 rounded-lg p-4">
+                  <h4 className="text-blue-300 font-medium mb-2">Próximos Passos:</h4>
+                  <ul className="text-sm text-slate-300 space-y-1">
+                    <li>• Nossa equipe irá analisar seus documentos</li>
+                    <li>• O processo pode levar até 48 horas úteis</li>
+                    <li>• Você receberá uma notificação quando concluído</li>
+                    <li>• Após aprovação, você terá acesso completo à plataforma</li>
+                  </ul>
                 </div>
 
                 <div className="bg-teal-900/20 border border-teal-600/50 rounded-lg p-4">

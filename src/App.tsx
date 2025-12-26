@@ -13,6 +13,7 @@ import HelpCenter from "./pages/HelpCenter";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
 import NotFound from "./pages/NotFound";
+import VerificationStatus from "./pages/VerificationStatus";
 
 // App Layout
 import { AppLayout } from "./components/layouts/AppLayout";
@@ -93,7 +94,8 @@ const App = () => (
             <Route path="/student/dashboard" element={<ProtectedRoute allowedRoles={['student']}><StudentHome /></ProtectedRoute>} />
             <Route path="/instructor/dashboard" element={<ProtectedRoute allowedRoles={['instructor']}><InstructorHome /></ProtectedRoute>} />
             <Route path="/investor/dashboard" element={<ProtectedRoute allowedRoles={['investor']}><InvestorHome /></ProtectedRoute>} />
-            <Route path="/onboarding" element={<ProtectedRoute allowedRoles={['instructor']}><InstructorOnboarding /></ProtectedRoute>} />
+            <Route path="/onboarding" element={<ProtectedRoute allowedRoles={['instructor', 'investor']}><InstructorOnboarding /></ProtectedRoute>} />
+            <Route path="/verification-status" element={<ProtectedRoute allowedRoles={['instructor', 'investor']}><VerificationStatus /></ProtectedRoute>} />
 
             {/* Admin Routes */}
             <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
