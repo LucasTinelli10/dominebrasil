@@ -10,6 +10,9 @@ interface ProtectedRouteProps {
   allowedRoles?: UserRole[];
 }
 
+// Roles that require verification before accessing the app
+const ROLES_REQUIRING_VERIFICATION: UserRole[] = ['instructor', 'investor'];
+
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
   children, 
   allowedRoles 
@@ -41,6 +44,31 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         </div>
       </div>
     );
+  }
+
+  // Check if user role requires verification
+  const requiresVerification = ROLES_REQUIRING_VERIFICATION.includes(profile.role);
+  
+  // Allow access to onboarding and verification-status pages without verification
+  const isOnboardingPage = location.pathname === '/onboarding';
+  const isVerificationStatusPage = location.pathname === '/verification-status';
+  
+  if (requiresVerification && !isOnboardingPage && !isVerificationStatusPage) {
+    // If user hasn't completed verification, redirect appropriately
+    if (profile.verification_status === 'pending') {
+      // User needs to complete onboarding first
+      return <Navigate to="/onboarding" replace />;
+    }
+    
+    if (profile.verification_status === 'analyzing') {
+      // User completed onboarding, waiting for admin approval
+      return <Navigate to="/verification-status" replace />;
+    }
+    
+    if (profile.verification_status === 'rejected') {
+      // User was rejected, show status page with option to resubmit
+      return <Navigate to="/verification-status" replace />;
+    }
   }
 
   if (allowedRoles && !allowedRoles.includes(profile.role)) {
