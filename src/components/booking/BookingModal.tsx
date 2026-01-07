@@ -83,12 +83,9 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
       const { data, error } = await supabase.functions.invoke("create-lesson-checkout", {
         body: {
           instructorId: instructor.id,
-          instructorName: instructor.full_name,
-          lessonPrice: lessonPrice,
           lessonDate: formattedDate,
           lessonTime: selectedTime,
           duration: duration,
-          bookingType: "lesson",
         },
       });
 
