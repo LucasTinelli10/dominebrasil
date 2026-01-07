@@ -13,11 +13,9 @@ const MIN_LESSON_PRICE = 90; // R$90 minimum
 const MAX_LESSON_PRICE = 500; // R$500 maximum
 const MAX_DURATION = 5; // 5 hours max
 
-// Input validation schema
+// Input validation schema - price is now fetched from DB, not from frontend
 const LessonCheckoutSchema = z.object({
   instructorId: z.string().uuid("ID do instrutor inválido"),
-  instructorName: z.string().min(1, "Nome do instrutor é obrigatório").max(100, "Nome muito longo"),
-  lessonPrice: z.number().min(MIN_LESSON_PRICE, `Preço mínimo é R$${MIN_LESSON_PRICE}`).max(MAX_LESSON_PRICE, `Preço máximo é R$${MAX_LESSON_PRICE}`),
   lessonDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Data deve estar no formato YYYY-MM-DD"),
   lessonTime: z.string().regex(/^\d{2}:\d{2}$/, "Horário deve estar no formato HH:MM"),
   duration: z.number().int().min(1, "Duração mínima é 1 hora").max(MAX_DURATION, `Duração máxima é ${MAX_DURATION} horas`).default(1),
@@ -61,16 +59,53 @@ serve(async (req) => {
 
     const { 
       instructorId,
-      instructorName, 
-      lessonPrice, 
       lessonDate,
       lessonTime,
       duration,
       carId,
     } = validationResult.data;
 
+    // Fetch instructor details from database (price and name)
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    // Get instructor name from profiles
+    const { data: profileData, error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .select("full_name")
+      .eq("id", instructorId)
+      .single();
+
+    if (profileError || !profileData) {
+      logStep("Failed to fetch instructor profile", { error: profileError?.message });
+      throw new Error("Instrutor não encontrado");
+    }
+
+    // Get instructor price from instructors_details
+    const { data: instructorData, error: instructorError } = await supabaseAdmin
+      .from("instructors_details")
+      .select("price_per_hour")
+      .eq("profile_id", instructorId)
+      .single();
+
+    if (instructorError || !instructorData) {
+      logStep("Failed to fetch instructor details", { error: instructorError?.message });
+      throw new Error("Detalhes do instrutor não encontrados");
+    }
+
+    const instructorName = profileData.full_name || "Instrutor";
+    const lessonPrice = Number(instructorData.price_per_hour);
+
+    // Validate price from database
+    if (lessonPrice < MIN_LESSON_PRICE || lessonPrice > MAX_LESSON_PRICE) {
+      logStep("Invalid price from database", { lessonPrice });
+      throw new Error(`Preço do instrutor fora do limite permitido (R$${MIN_LESSON_PRICE} - R$${MAX_LESSON_PRICE})`);
+    }
+
     const totalAmount = lessonPrice * duration;
-    logStep("Lesson details", { instructorId, instructorName, totalAmount, duration });
+    logStep("Lesson details fetched from DB", { instructorId, instructorName, lessonPrice, totalAmount, duration });
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
@@ -86,7 +121,7 @@ serve(async (req) => {
 
     const origin = req.headers.get("origin") || "http://localhost:3000";
 
-    // Create checkout session with dynamic pricing
+    // Create checkout session with dynamic pricing from database
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
@@ -95,7 +130,7 @@ serve(async (req) => {
           price_data: {
             currency: "brl",
             product_data: {
-              name: `Aula de Direção - ${instructorName}`,
+              name: `Aula Prática com ${instructorName}`,
               description: `${duration}h de aula em ${lessonDate} às ${lessonTime}`,
             },
             unit_amount: Math.round(totalAmount * 100), // Convert to cents
