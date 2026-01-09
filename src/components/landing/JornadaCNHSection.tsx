@@ -26,8 +26,13 @@ const steps = [
     icon: BookOpen,
     title: 'Aulas Teóricas',
     description: 'Estude a legislação de trânsito. Com a nova lei, você pode estudar por conta própria usando material oficial ou fazer curso em CFC (Centro de Formação de Condutores).',
-    link: 'https://servonline.detran.ms.gov.br/cfc/download/Curso-Primeira-CNH.pdf',
+    links: [
+      { url: 'https://www.detran.df.gov.br/wp-content/uploads/2020/01/ATUALIZACAO-MANUAL-OBTENCAO-CNH-Maio-2021-Encarte.pdf', label: 'Manual CNH (DETRAN-DF)' },
+      { url: 'https://www.detran.am.gov.br/wp-content/uploads/2015/04/ctb.pdf', label: 'Código de Trânsito Brasileiro' },
+      { url: 'https://servonline.detran.ms.gov.br/cfc/download/Curso-Primeira-CNH.pdf', label: 'Apostila Primeira CNH (DETRAN-MS)' },
+    ],
     linkText: 'Baixar Apostilas Oficiais',
+    hasMultipleLinks: true,
   },
   {
     step: 4,
@@ -130,6 +135,23 @@ export const JornadaCNHSection: React.FC<JornadaCNHSectionProps> = ({ onOpenAuth
                         {step.linkText}
                         <Car className="w-4 h-4 ml-2" />
                       </Button>
+                    ) : step.hasMultipleLinks && step.links ? (
+                      <div className="flex flex-wrap gap-2">
+                        {step.links.map((link, linkIndex) => (
+                          <Button
+                            key={linkIndex}
+                            variant="outline"
+                            size="sm"
+                            asChild
+                            className="border-primary/50 text-primary hover:bg-primary/10 text-xs"
+                          >
+                            <a href={link.url} target="_blank" rel="noopener noreferrer">
+                              {link.label}
+                              <ExternalLink className="w-3 h-3 ml-1" />
+                            </a>
+                          </Button>
+                        ))}
+                      </div>
                     ) : (
                       <Button
                         variant="outline"
