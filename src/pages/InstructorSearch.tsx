@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, MapPin, Star, Shield, ArrowLeft, CalendarDays } from 'lucide-react';
+import { Search, MapPin, Star, Shield, ArrowLeft, CalendarDays, User } from 'lucide-react';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { BookingModal } from '@/components/booking/BookingModal';
+import { InstructorProfileModal } from '@/components/instructor/InstructorProfileModal';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface Instructor {
@@ -31,6 +32,7 @@ const InstructorSearch = () => {
   const [searched, setSearched] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [selectedInstructor, setSelectedInstructor] = useState<Instructor | null>(null);
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -70,19 +72,25 @@ const InstructorSearch = () => {
     }
   };
 
+  const handleViewProfile = (instructor: Instructor) => {
+    setSelectedInstructor(instructor);
+    setIsProfileModalOpen(true);
+  };
+
   const handleBookInstructor = (instructor: Instructor) => {
     if (!user) {
       setIsAuthModalOpen(true);
       setSelectedInstructor(instructor);
     } else {
       setSelectedInstructor(instructor);
+      setIsProfileModalOpen(false);
       setIsBookingModalOpen(true);
     }
   };
 
   // After auth, open booking modal
   useEffect(() => {
-    if (user && selectedInstructor && !isBookingModalOpen && !isAuthModalOpen) {
+    if (user && selectedInstructor && !isBookingModalOpen && !isAuthModalOpen && !isProfileModalOpen) {
       setIsBookingModalOpen(true);
     }
   }, [user, selectedInstructor]);
@@ -201,11 +209,15 @@ const InstructorSearch = () => {
                           <img
                             src={instructor.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(instructor.full_name || 'I')}&background=0d9488&color=fff`}
                             alt={instructor.full_name || 'Instrutor'}
-                            className="w-20 h-20 rounded-xl object-cover"
+                            className="w-20 h-20 rounded-xl object-cover cursor-pointer hover:ring-2 hover:ring-teal-500 transition-all"
+                            onClick={() => handleViewProfile(instructor)}
                           />
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
-                              <h3 className="font-semibold text-slate-900">
+                              <h3 
+                                className="font-semibold text-slate-900 cursor-pointer hover:text-teal-600 transition-colors"
+                                onClick={() => handleViewProfile(instructor)}
+                              >
                                 {instructor.full_name}
                               </h3>
                               <Shield className="w-4 h-4 text-teal-500" />
@@ -238,13 +250,24 @@ const InstructorSearch = () => {
                             </span>
                             <span className="text-sm text-slate-500">/hora</span>
                           </div>
-                          <Button 
-                            onClick={() => handleBookInstructor(instructor)}
-                            className="bg-teal-600 hover:bg-teal-700"
-                          >
-                            <CalendarDays className="w-4 h-4 mr-2" />
-                            Agendar Aula
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleViewProfile(instructor)}
+                            >
+                              <User className="w-4 h-4 mr-1" />
+                              Ver Perfil
+                            </Button>
+                            <Button 
+                              onClick={() => handleBookInstructor(instructor)}
+                              className="bg-teal-600 hover:bg-teal-700"
+                              size="sm"
+                            >
+                              <CalendarDays className="w-4 h-4 mr-1" />
+                              Agendar
+                            </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -277,6 +300,12 @@ const InstructorSearch = () => {
         open={isBookingModalOpen} 
         onOpenChange={setIsBookingModalOpen}
         instructor={selectedInstructor}
+      />
+      <InstructorProfileModal
+        open={isProfileModalOpen}
+        onOpenChange={setIsProfileModalOpen}
+        instructor={selectedInstructor}
+        onBookNow={() => handleBookInstructor(selectedInstructor!)}
       />
     </div>
   );
