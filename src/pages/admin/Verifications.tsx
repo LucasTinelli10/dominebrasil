@@ -8,23 +8,33 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { 
   CheckCircle, XCircle, ExternalLink, 
-  User, Loader2, RefreshCw 
+  User, Loader2, RefreshCw, Eye
 } from 'lucide-react';
 import AdminLayout from '@/components/layouts/AdminLayout';
+import UserDetailsModal from '@/components/admin/UserDetailsModal';
 
 interface InstructorVerification {
   id: string;
   full_name: string;
+  email?: string;
+  phone?: string;
+  city?: string;
+  neighborhood?: string;
+  avatar_url?: string;
   verification_status: 'pending' | 'analyzing' | 'approved' | 'rejected';
   fraud_score: number;
   verification_reason: string | null;
   created_at: string;
-  instructor_details: {
-    cnh_number: string | null;
-    cnh_category: string | null;
-    credential_number: string | null;
-    background_check_status: string | null;
-  } | null;
+  cnh_number?: string;
+  cnh_category?: string;
+  cnh_expiry_date?: string;
+  credential_number?: string;
+  credential_expiry?: string;
+  background_check_status?: string;
+  documents_url?: Record<string, string>;
+  bio?: string;
+  price_per_hour?: number;
+  years_experience?: number;
 }
 
 const DETRAN_LINKS: Record<string, string> = {
@@ -64,6 +74,8 @@ export default function AdminVerifications() {
   const [loading, setLoading] = useState(true);
   const [selectedState, setSelectedState] = useState('SP');
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [selectedUser, setSelectedUser] = useState<InstructorVerification | null>(null);
+  const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
     if (profile && profile.role !== 'admin') {
@@ -90,16 +102,25 @@ export default function AdminVerifications() {
       const combined = (data || []).map((item: any) => ({
         id: item.id,
         full_name: item.full_name,
+        email: item.email,
+        phone: item.phone,
+        city: item.city,
+        neighborhood: item.neighborhood,
+        avatar_url: item.avatar_url,
         verification_status: item.verification_status,
         fraud_score: item.fraud_score,
         verification_reason: item.verification_reason,
         created_at: item.created_at,
-        instructor_details: {
-          cnh_number: item.cnh_number,
-          cnh_category: item.cnh_category,
-          credential_number: item.credential_number,
-          background_check_status: item.background_check_status
-        }
+        cnh_number: item.cnh_number,
+        cnh_category: item.cnh_category,
+        cnh_expiry_date: item.cnh_expiry_date,
+        credential_number: item.credential_number,
+        credential_expiry: item.credential_expiry,
+        background_check_status: item.background_check_status,
+        documents_url: item.documents_url,
+        bio: item.bio,
+        price_per_hour: item.price_per_hour,
+        years_experience: item.years_experience,
       }));
       
       setInstructors(combined);
@@ -108,6 +129,31 @@ export default function AdminVerifications() {
       toast({ title: 'Erro', description: 'Erro ao carregar instrutores.', variant: 'destructive' });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOpenUserDetails = (instructor: InstructorVerification) => {
+    setSelectedUser(instructor);
+    setModalOpen(true);
+  };
+
+  const handleRejectWithReason = async (userId: string, reason: string) => {
+    setProcessingId(userId);
+    try {
+      const { error } = await supabase.rpc('admin_reject_instructor', { 
+        instructor_id: userId 
+      });
+      
+      if (error) throw error;
+      
+      toast({ title: 'Sucesso', description: 'Instrutor rejeitado.' });
+      fetchInstructors();
+      setModalOpen(false);
+    } catch (error) {
+      console.error('Error rejecting instructor:', error);
+      toast({ title: 'Erro', description: 'Erro ao rejeitar instrutor.', variant: 'destructive' });
+    } finally {
+      setProcessingId(null);
     }
   };
 
@@ -289,30 +335,38 @@ export default function AdminVerifications() {
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 rounded-full bg-slate-600 flex items-center justify-center">
-                        <User className="h-6 w-6 text-slate-400" />
+                      <div className="w-12 h-12 rounded-full bg-slate-600 flex items-center justify-center overflow-hidden">
+                        {instructor.avatar_url ? (
+                          <img src={instructor.avatar_url} alt={instructor.full_name} className="w-full h-full object-cover" />
+                        ) : (
+                          <User className="h-6 w-6 text-slate-400" />
+                        )}
                       </div>
                       <div>
-                        <h3 className="text-white font-medium">{instructor.full_name || 'Nome não informado'}</h3>
+                        <button
+                          onClick={() => handleOpenUserDetails(instructor)}
+                          className="text-white font-medium hover:text-teal-400 hover:underline transition-colors text-left flex items-center gap-2"
+                        >
+                          {instructor.full_name || 'Nome não informado'}
+                          <Eye className="h-4 w-4 opacity-50" />
+                        </button>
                         <div className="flex items-center gap-4 mt-1">
                           {getStatusBadge(instructor.verification_status)}
                           <span className={`text-sm ${getFraudScoreColor(instructor.fraud_score || 0)}`}>
                             Risco: {instructor.fraud_score || 0}%
                           </span>
                         </div>
-                        {instructor.instructor_details && (
-                          <div className="flex items-center gap-4 mt-2 text-sm text-slate-400">
-                            {instructor.instructor_details.cnh_number && (
-                              <span>CNH: {instructor.instructor_details.cnh_number}</span>
-                            )}
-                            {instructor.instructor_details.cnh_category && (
-                              <span>Cat: {instructor.instructor_details.cnh_category}</span>
-                            )}
-                            {instructor.instructor_details.credential_number && (
-                              <span>Cred: {instructor.instructor_details.credential_number}</span>
-                            )}
-                          </div>
-                        )}
+                        <div className="flex items-center gap-4 mt-2 text-sm text-slate-400">
+                          {instructor.cnh_number && (
+                            <span>CNH: {instructor.cnh_number}</span>
+                          )}
+                          {instructor.cnh_category && (
+                            <span>Cat: {instructor.cnh_category}</span>
+                          )}
+                          {instructor.credential_number && (
+                            <span>Cred: {instructor.credential_number}</span>
+                          )}
+                        </div>
                         {instructor.verification_reason && (
                           <p className="text-sm text-slate-400 mt-2">
                             {instructor.verification_reason}
@@ -386,6 +440,42 @@ export default function AdminVerifications() {
           )}
         </CardContent>
       </Card>
+
+      {/* Modal de Detalhes do Usuário */}
+      <UserDetailsModal
+        user={selectedUser ? {
+          id: selectedUser.id,
+          full_name: selectedUser.full_name,
+          email: selectedUser.email || null,
+          phone: selectedUser.phone || null,
+          role: 'instructor',
+          verification_status: selectedUser.verification_status,
+          fraud_score: selectedUser.fraud_score,
+          verification_reason: selectedUser.verification_reason,
+          created_at: selectedUser.created_at,
+          avatar_url: selectedUser.avatar_url || null,
+          city: selectedUser.city || null,
+          neighborhood: selectedUser.neighborhood || null,
+          cnh_number: selectedUser.cnh_number || null,
+          cnh_category: selectedUser.cnh_category || null,
+          cnh_expiry_date: selectedUser.cnh_expiry_date || null,
+          credential_number: selectedUser.credential_number || null,
+          credential_expiry: selectedUser.credential_expiry || null,
+          background_check_status: selectedUser.background_check_status || null,
+          documents_url: selectedUser.documents_url || null,
+          bio: selectedUser.bio || null,
+          price_per_hour: selectedUser.price_per_hour || null,
+          years_experience: selectedUser.years_experience || null,
+        } : null}
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        onApprove={async (userId) => {
+          await handleApprove(userId);
+          setModalOpen(false);
+        }}
+        onReject={handleRejectWithReason}
+        processingId={processingId}
+      />
     </AdminLayout>
   );
 }
