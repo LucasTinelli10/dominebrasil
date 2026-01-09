@@ -9,8 +9,8 @@ const corsHeaders = {
 };
 
 // Business rules
-const MIN_LESSON_PRICE = 50; // R$50 minimum (allows flexibility for instructors)
-const MAX_LESSON_PRICE = 500; // R$500 maximum
+const MIN_LESSON_PRICE = 90; // R$90 minimum (valor mínimo conforme regras de negócio)
+const MAX_LESSON_PRICE = 10000; // R$10.000 maximum (até infinito)
 const MAX_DURATION = 5; // 5 hours max
 
 // Input validation schema - price is now fetched from DB, not from frontend
