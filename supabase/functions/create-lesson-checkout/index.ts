@@ -9,7 +9,7 @@ const corsHeaders = {
 };
 
 // Business rules
-const MIN_LESSON_PRICE = 90; // R$90 minimum
+const MIN_LESSON_PRICE = 50; // R$50 minimum (allows flexibility for instructors)
 const MAX_LESSON_PRICE = 500; // R$500 maximum
 const MAX_DURATION = 5; // 5 hours max
 
@@ -20,6 +20,7 @@ const LessonCheckoutSchema = z.object({
   lessonTime: z.string().regex(/^\d{2}:\d{2}$/, "Horário deve estar no formato HH:MM"),
   duration: z.number().int().min(1, "Duração mínima é 1 hora").max(MAX_DURATION, `Duração máxima é ${MAX_DURATION} horas`).default(1),
   carId: z.string().uuid("ID do carro inválido").optional().nullable(),
+  lessonType: z.enum(["primeira_cnh", "perder_medo"]).default("primeira_cnh"),
 });
 
 const logStep = (step: string, details?: any) => {
@@ -63,6 +64,7 @@ serve(async (req) => {
       lessonTime,
       duration,
       carId,
+      lessonType,
     } = validationResult.data;
 
     // Fetch instructor details from database (price and name)
@@ -105,7 +107,8 @@ serve(async (req) => {
     }
 
     const totalAmount = lessonPrice * duration;
-    logStep("Lesson details fetched from DB", { instructorId, instructorName, lessonPrice, totalAmount, duration });
+    const lessonTypeLabel = lessonType === "primeira_cnh" ? "1ª CNH" : "Perder o Medo";
+    logStep("Lesson details fetched from DB", { instructorId, instructorName, lessonPrice, totalAmount, duration, lessonType });
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2025-08-27.basil",
@@ -130,7 +133,7 @@ serve(async (req) => {
           price_data: {
             currency: "brl",
             product_data: {
-              name: `Aula Prática com ${instructorName}`,
+              name: `Aula Prática com ${instructorName} (${lessonTypeLabel})`,
               description: `${duration}h de aula em ${lessonDate} às ${lessonTime}`,
             },
             unit_amount: Math.round(totalAmount * 100), // Convert to cents
@@ -150,6 +153,7 @@ serve(async (req) => {
         duration: duration.toString(),
         total_price: totalAmount.toString(),
         car_id: carId || "",
+        lesson_type: lessonType,
       },
     });
 

@@ -14,6 +14,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -21,6 +23,8 @@ import {
   Shield,
   Star,
   Loader2,
+  GraduationCap,
+  Heart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -48,18 +52,25 @@ const TIME_SLOTS = [
   "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"
 ];
 
+type LessonType = "primeira_cnh" | "perder_medo";
+
 export function BookingModal({ open, onOpenChange, instructor }: BookingModalProps) {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [duration, setDuration] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState<"date" | "time" | "confirm">("date");
+  const [step, setStep] = useState<"type" | "date" | "time" | "confirm">("type");
+  const [lessonType, setLessonType] = useState<LessonType>("primeira_cnh");
 
   const today = startOfToday();
   const maxDate = addDays(today, 30);
 
   const lessonPrice = instructor?.price_per_hour || BUSINESS_RULES.DEFAULT_LESSON_PRICE;
   const totalPrice = lessonPrice * duration;
+
+  const handleTypeSelect = () => {
+    setStep("date");
+  };
 
   const handleDateSelect = (date: Date | undefined) => {
     setSelectedDate(date);
@@ -86,6 +97,7 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
           lessonDate: formattedDate,
           lessonTime: selectedTime,
           duration: duration,
+          lessonType: lessonType,
         },
       });
 
@@ -109,11 +121,14 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
     setSelectedDate(undefined);
     setSelectedTime(null);
     setDuration(1);
-    setStep("date");
+    setStep("type");
+    setLessonType("primeira_cnh");
   };
 
   const handleBack = () => {
-    if (step === "time") {
+    if (step === "date") {
+      setStep("type");
+    } else if (step === "time") {
       setStep("date");
       setSelectedTime(null);
     } else if (step === "confirm") {
@@ -160,9 +175,86 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
         </DialogHeader>
 
         <ScrollArea className="flex-1 pr-4">
+          {/* Step 0: Lesson Type Selection */}
+          {step === "type" && (
+            <div className="space-y-4">
+              <div className="text-center mb-4">
+                <h3 className="font-semibold text-lg mb-1">Qual é o seu objetivo?</h3>
+                <p className="text-sm text-muted-foreground">
+                  Escolha o tipo de aula que melhor atende suas necessidades
+                </p>
+              </div>
+
+              <RadioGroup
+                value={lessonType}
+                onValueChange={(value) => setLessonType(value as LessonType)}
+                className="space-y-3"
+              >
+                <div 
+                  className={cn(
+                    "flex items-start space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all",
+                    lessonType === "primeira_cnh" 
+                      ? "border-student bg-student/5" 
+                      : "border-border hover:border-student/50"
+                  )}
+                  onClick={() => setLessonType("primeira_cnh")}
+                >
+                  <RadioGroupItem value="primeira_cnh" id="primeira_cnh" className="mt-1" />
+                  <div className="flex-1">
+                    <Label htmlFor="primeira_cnh" className="flex items-center gap-2 cursor-pointer font-medium">
+                      <GraduationCap className="h-5 w-5 text-student" />
+                      Primeira CNH
+                    </Label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Estou tirando minha primeira habilitação e preciso de aulas práticas para o exame
+                    </p>
+                  </div>
+                </div>
+
+                <div 
+                  className={cn(
+                    "flex items-start space-x-3 p-4 rounded-lg border-2 cursor-pointer transition-all",
+                    lessonType === "perder_medo" 
+                      ? "border-student bg-student/5" 
+                      : "border-border hover:border-student/50"
+                  )}
+                  onClick={() => setLessonType("perder_medo")}
+                >
+                  <RadioGroupItem value="perder_medo" id="perder_medo" className="mt-1" />
+                  <div className="flex-1">
+                    <Label htmlFor="perder_medo" className="flex items-center gap-2 cursor-pointer font-medium">
+                      <Heart className="h-5 w-5 text-rose-500" />
+                      Perder o Medo de Dirigir
+                    </Label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Já tenho CNH mas não dirijo por insegurança ou falta de prática
+                    </p>
+                  </div>
+                </div>
+              </RadioGroup>
+
+              <Button
+                className="w-full bg-student hover:bg-student/90 mt-4"
+                onClick={handleTypeSelect}
+              >
+                Continuar
+              </Button>
+            </div>
+          )}
+
           {/* Step 1: Date Selection */}
           {step === "date" && (
             <div className="space-y-4">
+              <Button variant="ghost" size="sm" onClick={handleBack} className="mb-2">
+                ← Voltar
+              </Button>
+
+              <div className="text-center mb-2">
+                <Badge variant="outline" className="text-xs">
+                  {lessonType === "primeira_cnh" ? "📚 1ª CNH" : "💪 Perder o Medo"}
+                </Badge>
+              </div>
+              
               <div className="flex items-center gap-2 text-sm font-medium">
                 <CalendarIcon className="h-4 w-4" />
                 <span>Selecione a data</span>
@@ -225,6 +317,12 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
                 <h4 className="font-medium">Resumo da Reserva</h4>
                 
                 <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Tipo de Aula</span>
+                    <Badge variant="outline" className="font-medium">
+                      {lessonType === "primeira_cnh" ? "📚 1ª CNH" : "💪 Perder o Medo"}
+                    </Badge>
+                  </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Instrutor</span>
                     <span className="font-medium">{instructor.full_name}</span>
