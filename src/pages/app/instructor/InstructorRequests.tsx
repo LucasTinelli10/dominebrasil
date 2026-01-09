@@ -3,14 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Input } from '@/components/ui/input';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Check,
   X,
@@ -28,136 +28,137 @@ import { toast } from 'sonner';
 
 interface LessonRequest {
   id: string;
-  studentName: string;
-  studentId: string;
-  studentAvatar: string;
-  message: string;
-  requestedDate: string;
-  requestedTime: string;
-  transmission: string;
-  createdAt: string;
+  date: string;
+  time_slot: string;
+  notes: string;
+  created_at: string;
+  student: {
+    id: string;
+    full_name: string;
+    avatar_url: string;
+  };
 }
-
-// Mock data for now
-const initialRequests: LessonRequest[] = [
-  {
-    id: '1',
-    studentName: 'Pedro Oliveira',
-    studentId: 'student-1',
-    studentAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100',
-    message: 'Olá! Estou buscando um instrutor paciente para aulas de direção. Tenho CNH mas não dirijo há 5 anos.',
-    requestedDate: '2024-01-17',
-    requestedTime: '10:00',
-    transmission: 'automatic',
-    createdAt: '2024-01-14T10:30:00',
-  },
-  {
-    id: '2',
-    studentName: 'Carla Mendes',
-    studentId: 'student-2',
-    studentAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100',
-    message: 'Preciso de aulas para tirar minha primeira habilitação. Disponível pela manhã.',
-    requestedDate: '2024-01-18',
-    requestedTime: '08:00',
-    transmission: 'manual',
-    createdAt: '2024-01-14T14:15:00',
-  },
-  {
-    id: '3',
-    studentName: 'Lucas Ferreira',
-    studentId: 'student-3',
-    studentAvatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100',
-    message: 'Quero melhorar minhas habilidades em estacionamento e baliza.',
-    requestedDate: '2024-01-19',
-    requestedTime: '15:00',
-    transmission: 'automatic',
-    createdAt: '2024-01-14T16:45:00',
-  },
-];
 
 export default function InstructorRequests() {
   const { user } = useAuth();
-  const [requests, setRequests] = useState<LessonRequest[]>(initialRequests);
+  const [requests, setRequests] = useState<LessonRequest[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<LessonRequest | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleAccept = async (request: LessonRequest) => {
-    const acceptanceMessage = `Olá ${request.studentName.split(' ')[0]}! Sua solicitação de aula foi aceita. 🎉\n\nDetalhes:\n📅 Data: ${new Date(request.requestedDate + 'T00:00:00').toLocaleDateString('pt-BR')}\n⏰ Horário: ${request.requestedTime}\n\nNos vemos em breve!`;
+  useEffect(() => {
+    if (user?.id) {
+      fetchRequests();
+    }
+  }, [user?.id]);
 
+  const fetchRequests = async () => {
     try {
-      // Insert message to database - this creates the conversation automatically
-      const { error: messageError } = await supabase.from('messages').insert({
-        sender_id: user?.id,
-        receiver_id: request.studentId,
-        content: acceptanceMessage,
-      });
+      const { data, error } = await supabase
+        .from('bookings')
+        .select(`
+          id, date, time_slot, notes, created_at,
+          student:profiles!bookings_student_id_fkey(id, full_name, avatar_url)
+        `)
+        .eq('instructor_id', user?.id)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false });
 
-      if (messageError) {
-        console.error('Error sending message:', messageError);
-        // Still remove from list even if message fails (mock data)
-      }
-
-      // Remove from requests list
-      setRequests(prev => prev.filter(r => r.id !== request.id));
-      
-      toast.success('Solicitação aceita!', {
-        description: `Conversa iniciada com ${request.studentName}. Acesse "Mensagens" para continuar.`,
-      });
+      if (error) throw error;
+      setRequests(data as unknown as LessonRequest[] || []);
     } catch (error) {
-      console.error('Error accepting request:', error);
-      // Remove from list anyway for mock data
-      setRequests(prev => prev.filter(r => r.id !== request.id));
-      toast.success('Solicitação aceita!', {
-        description: `Mensagem enviada para ${request.studentName}`,
-      });
+      console.error('Error fetching requests:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleReject = (request: LessonRequest) => {
-    // Remove from list immediately
-    setRequests(prev => prev.filter(r => r.id !== request.id));
-    
-    toast.info('Solicitação recusada', {
-      description: 'O aluno poderá buscar outro instrutor.',
-    });
+  const handleAccept = async (request: LessonRequest) => {
+    try {
+      // Update booking status
+      const { error: updateError } = await supabase
+        .from('bookings')
+        .update({ status: 'confirmed' })
+        .eq('id', request.id);
+
+      if (updateError) throw updateError;
+
+      // Send confirmation message
+      const acceptanceMessage = `Olá ${request.student?.full_name?.split(' ')[0]}! Sua aula foi confirmada. 🎉\n\nDetalhes:\n📅 Data: ${new Date(request.date + 'T00:00:00').toLocaleDateString('pt-BR')}\n⏰ Horário: ${request.time_slot}\n\nNos vemos em breve!`;
+
+      await supabase.from('messages').insert({
+        sender_id: user?.id,
+        receiver_id: request.student?.id,
+        content: acceptanceMessage,
+      });
+
+      setRequests(prev => prev.filter(r => r.id !== request.id));
+      
+      toast.success('Solicitação aceita!', {
+        description: `Conversa iniciada com ${request.student?.full_name}. Acesse "Mensagens" para continuar.`,
+      });
+    } catch (error) {
+      console.error('Error accepting request:', error);
+      toast.error('Erro ao aceitar solicitação');
+    }
   };
 
-  const handleOpenChat = (request: LessonRequest) => {
+  const handleReject = async (request: LessonRequest) => {
+    try {
+      const { error } = await supabase
+        .from('bookings')
+        .update({ status: 'cancelled' })
+        .eq('id', request.id);
+
+      if (error) throw error;
+
+      setRequests(prev => prev.filter(r => r.id !== request.id));
+      
+      toast.info('Solicitação recusada', {
+        description: 'O aluno poderá buscar outro instrutor.',
+      });
+    } catch (error) {
+      console.error('Error rejecting request:', error);
+      toast.error('Erro ao recusar solicitação');
+    }
+  };
+
+  const handleOpenChat = async (request: LessonRequest) => {
     setSelectedRequest(request);
-    setChatMessages([
-      {
-        id: '1',
-        senderId: request.studentId,
-        message: request.message,
-        timestamp: request.createdAt,
-      }
-    ]);
+    
+    // Fetch existing messages
+    const { data: messages } = await supabase
+      .from('messages')
+      .select('*')
+      .or(`and(sender_id.eq.${user?.id},receiver_id.eq.${request.student?.id}),and(sender_id.eq.${request.student?.id},receiver_id.eq.${user?.id})`)
+      .order('created_at', { ascending: true });
+
+    setChatMessages(messages || []);
     setChatOpen(true);
   };
 
   const handleSendMessage = async () => {
     if (!message.trim() || !selectedRequest) return;
     
-    const newMessage = {
-      id: String(chatMessages.length + 1),
-      senderId: 'instructor',
-      message: message.trim(),
-      timestamp: new Date().toISOString(),
-    };
-    
-    setChatMessages(prev => [...prev, newMessage]);
-    setMessage('');
-
     try {
-      await supabase.from('messages').insert({
-        sender_id: user?.id,
-        receiver_id: selectedRequest.studentId,
-        content: message.trim(),
-      });
+      const { data, error } = await supabase
+        .from('messages')
+        .insert({
+          sender_id: user?.id,
+          receiver_id: selectedRequest.student?.id,
+          content: message.trim(),
+        })
+        .select()
+        .single();
+
+      if (!error && data) {
+        setChatMessages(prev => [...prev, data]);
+        setMessage('');
+      }
     } catch (error) {
-      console.log('Message stored locally');
+      console.error('Error sending message:', error);
     }
   };
 
@@ -177,15 +178,26 @@ export default function InstructorRequests() {
     return `Há ${Math.floor(hours / 24)}d`;
   };
 
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div><h1 className="text-2xl font-display font-bold">Solicitações de Aulas</h1></div>
+        <div className="grid gap-4">
+          {[1, 2, 3].map(i => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-6"><div className="h-24 bg-muted rounded" /></CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="text-2xl font-display font-bold text-foreground">
-          Solicitações de Aulas
-        </h1>
-        <p className="text-muted-foreground">
-          Gerencie as solicitações de novos alunos
-        </p>
+        <h1 className="text-2xl font-display font-bold text-foreground">Solicitações de Aulas</h1>
+        <p className="text-muted-foreground">Gerencie as solicitações de novos alunos</p>
       </div>
 
       {requests.length === 0 ? (
@@ -193,9 +205,7 @@ export default function InstructorRequests() {
           <CardContent className="py-12 text-center">
             <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">Nenhuma solicitação pendente</h3>
-            <p className="text-muted-foreground">
-              Novas solicitações de alunos aparecerão aqui.
-            </p>
+            <p className="text-muted-foreground">Novas solicitações de alunos aparecerão aqui.</p>
           </CardContent>
         </Card>
       ) : (
@@ -208,36 +218,34 @@ export default function InstructorRequests() {
                   <div className="flex-1 p-6 border-b md:border-b-0 md:border-r border-border">
                     <div className="flex items-start gap-4">
                       <Avatar className="h-14 w-14">
-                        <AvatarImage src={request.studentAvatar} />
+                        <AvatarImage src={request.student?.avatar_url || ''} />
                         <AvatarFallback className="bg-instructor text-instructor-foreground text-lg">
-                          {request.studentName.charAt(0)}
+                          {request.student?.full_name?.charAt(0) || 'A'}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
                           <h3 className="font-semibold text-foreground text-lg">
-                            {request.studentName}
+                            {request.student?.full_name}
                           </h3>
                           <span className="text-xs text-muted-foreground">
-                            {getTimeAgo(request.createdAt)}
+                            {getTimeAgo(request.created_at)}
                           </span>
                         </div>
-                        <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
-                          "{request.message}"
-                        </p>
+                        {request.notes && (
+                          <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                            "{request.notes}"
+                          </p>
+                        )}
                         <div className="flex items-center gap-4 mt-4">
                           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                             <Calendar className="h-4 w-4" />
-                            <span>{formatDate(request.requestedDate)}</span>
+                            <span>{formatDate(request.date)}</span>
                           </div>
                           <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                             <Clock className="h-4 w-4" />
-                            <span>{request.requestedTime}</span>
+                            <span>{request.time_slot}</span>
                           </div>
-                          <Badge variant="outline" className="text-xs">
-                            <Car className="h-3 w-3 mr-1" />
-                            {request.transmission === 'automatic' ? 'Automático' : 'Manual'}
-                          </Badge>
                         </div>
                       </div>
                     </div>
@@ -245,18 +253,11 @@ export default function InstructorRequests() {
 
                   {/* Actions */}
                   <div className="flex flex-row md:flex-col justify-center gap-2 p-4 bg-muted/30 min-w-[160px]">
-                    <Button
-                      className="flex-1 bg-instructor hover:bg-instructor/90"
-                      onClick={() => handleAccept(request)}
-                    >
+                    <Button className="flex-1 bg-instructor hover:bg-instructor/90" onClick={() => handleAccept(request)}>
                       <Check className="h-4 w-4 mr-2" />
                       Aceitar
                     </Button>
-                    <Button
-                      variant="outline"
-                      className="flex-1"
-                      onClick={() => handleOpenChat(request)}
-                    >
+                    <Button variant="outline" className="flex-1" onClick={() => handleOpenChat(request)}>
                       <MessageSquare className="h-4 w-4 mr-2" />
                       Chat
                     </Button>
@@ -282,44 +283,49 @@ export default function InstructorRequests() {
           <DialogHeader className="p-4 border-b">
             <DialogTitle className="flex items-center gap-3">
               <Avatar className="h-10 w-10">
-                <AvatarImage src={selectedRequest?.studentAvatar} />
+                <AvatarImage src={selectedRequest?.student?.avatar_url || ''} />
                 <AvatarFallback className="bg-instructor text-instructor-foreground">
-                  {selectedRequest?.studentName.charAt(0)}
+                  {selectedRequest?.student?.full_name?.charAt(0)}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <p className="font-medium">{selectedRequest?.studentName}</p>
-                <p className="text-xs text-muted-foreground font-normal">Online agora</p>
+                <p className="font-medium">{selectedRequest?.student?.full_name}</p>
+                <p className="text-xs text-muted-foreground font-normal">Aluno</p>
               </div>
             </DialogTitle>
           </DialogHeader>
 
           <ScrollArea className="flex-1 p-4">
             <div className="space-y-4">
+              {chatMessages.length === 0 && (
+                <div className="text-center text-muted-foreground py-8">
+                  Nenhuma mensagem ainda. Inicie a conversa!
+                </div>
+              )}
               {chatMessages.map((msg) => (
                 <div
                   key={msg.id}
                   className={cn(
                     'flex',
-                    msg.senderId === 'instructor' ? 'justify-end' : 'justify-start'
+                    msg.sender_id === user?.id ? 'justify-end' : 'justify-start'
                   )}
                 >
                   <div
                     className={cn(
                       'max-w-[80%] rounded-2xl px-4 py-2',
-                      msg.senderId === 'instructor'
+                      msg.sender_id === user?.id
                         ? 'bg-instructor text-instructor-foreground rounded-br-sm'
                         : 'bg-muted rounded-bl-sm'
                     )}
                   >
-                    <p className="text-sm">{msg.message}</p>
+                    <p className="text-sm">{msg.content}</p>
                     <p className={cn(
                       'text-[10px] mt-1',
-                      msg.senderId === 'instructor' 
+                      msg.sender_id === user?.id 
                         ? 'text-instructor-foreground/70' 
                         : 'text-muted-foreground'
                     )}>
-                      {new Date(msg.timestamp).toLocaleTimeString('pt-BR', {
+                      {new Date(msg.created_at).toLocaleTimeString('pt-BR', {
                         hour: '2-digit',
                         minute: '2-digit',
                       })}
@@ -339,11 +345,7 @@ export default function InstructorRequests() {
                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                 className="flex-1"
               />
-              <Button
-                size="icon"
-                className="bg-instructor hover:bg-instructor/90"
-                onClick={handleSendMessage}
-              >
+              <Button size="icon" className="bg-instructor hover:bg-instructor/90" onClick={handleSendMessage}>
                 <Send className="h-4 w-4" />
               </Button>
             </div>
