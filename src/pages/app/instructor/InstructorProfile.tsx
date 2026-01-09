@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,10 +16,12 @@ import {
   Plus,
   X,
   AlertCircle,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 import { BUSINESS_RULES, validateLessonPrice, formatCurrency } from '@/lib/businessRules';
 
 const availableBadges = [
@@ -27,14 +29,43 @@ const availableBadges = [
 ];
 
 export default function InstructorProfile() {
-  const { profile } = useAuth();
-  const [bio, setBio] = useState(
-    'Instrutor certificado há 8 anos com mais de 500 alunos formados. Especialista em alunos nervosos e primeira habilitação. Metodologia focada em confiança e segurança.'
-  );
+  const { profile, user } = useAuth();
+  const [bio, setBio] = useState('');
   const [pricePerHour, setPricePerHour] = useState(String(BUSINESS_RULES.DEFAULT_LESSON_PRICE));
   const [priceError, setPriceError] = useState<string | null>(null);
-  const [selectedBadges, setSelectedBadges] = useState(['Paciente', 'Pontual', 'Didático']);
+  const [selectedBadges, setSelectedBadges] = useState<string[]>([]);
   const [hasOwnCar, setHasOwnCar] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Fetch instructor details on mount
+  useEffect(() => {
+    const fetchInstructorDetails = async () => {
+      if (!user?.id) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('instructors_details')
+          .select('bio, price_per_hour, badges')
+          .eq('profile_id', user.id)
+          .single();
+
+        if (error && error.code !== 'PGRST116') {
+          console.error('Error fetching instructor details:', error);
+        }
+
+        if (data) {
+          setBio(data.bio || '');
+          setPricePerHour(String(data.price_per_hour || BUSINESS_RULES.DEFAULT_LESSON_PRICE));
+          setSelectedBadges(data.badges || []);
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchInstructorDetails();
+  }, [user?.id]);
 
   const handlePriceChange = (value: string) => {
     setPricePerHour(value);
@@ -45,14 +76,61 @@ export default function InstructorProfile() {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    if (!user?.id) {
+      toast.error('Usuário não autenticado');
+      return;
+    }
+
     const numPrice = parseFloat(pricePerHour);
     const validation = validateLessonPrice(numPrice);
     if (!validation.valid) {
       toast.error(validation.message);
       return;
     }
-    toast.success('Perfil atualizado com sucesso!');
+
+    setIsSaving(true);
+    try {
+      // Check if instructor details exist
+      const { data: existing } = await supabase
+        .from('instructors_details')
+        .select('id')
+        .eq('profile_id', user.id)
+        .single();
+
+      if (existing) {
+        // Update existing record
+        const { error } = await supabase
+          .from('instructors_details')
+          .update({
+            bio,
+            price_per_hour: numPrice,
+            badges: selectedBadges,
+          })
+          .eq('profile_id', user.id);
+
+        if (error) throw error;
+      } else {
+        // Insert new record
+        const { error } = await supabase
+          .from('instructors_details')
+          .insert({
+            profile_id: user.id,
+            bio,
+            price_per_hour: numPrice,
+            badges: selectedBadges,
+          });
+
+        if (error) throw error;
+      }
+
+      toast.success('Perfil atualizado com sucesso! O novo valor será aplicado nas próximas reservas.');
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      toast.error('Erro ao salvar perfil. Tente novamente.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const toggleBadge = (badge: string) => {
@@ -76,9 +154,17 @@ export default function InstructorProfile() {
             Configure seu perfil público para atrair mais alunos
           </p>
         </div>
-        <Button className="bg-instructor hover:bg-instructor/90" onClick={handleSave}>
-          <Check className="h-4 w-4 mr-2" />
-          Salvar Alterações
+        <Button 
+          className="bg-instructor hover:bg-instructor/90" 
+          onClick={handleSave}
+          disabled={isSaving || !!priceError}
+        >
+          {isSaving ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Check className="h-4 w-4 mr-2" />
+          )}
+          {isSaving ? 'Salvando...' : 'Salvar Alterações'}
         </Button>
       </div>
 
