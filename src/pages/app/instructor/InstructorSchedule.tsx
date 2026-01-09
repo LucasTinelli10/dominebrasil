@@ -1,11 +1,23 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ChevronLeft, ChevronRight, Clock, MapPin } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, MapPin, Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { upcomingLessons } from '@/data/mockData';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+
+interface ScheduledLesson {
+  id: string;
+  date: string;
+  time_slot: string;
+  status: string;
+  student: {
+    full_name: string;
+    avatar_url: string;
+  };
+}
 
 const timeSlots = [
   '08:00', '09:00', '10:00', '11:00', '12:00',
@@ -15,7 +27,52 @@ const timeSlots = [
 const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
 
 export default function InstructorSchedule() {
+  const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [lessons, setLessons] = useState<ScheduledLesson[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [todayStats, setTodayStats] = useState({ count: 0, hours: 0, revenue: 0 });
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchLessons();
+    }
+  }, [user?.id, currentDate]);
+
+  const fetchLessons = async () => {
+    try {
+      const weekStart = new Date(currentDate);
+      weekStart.setDate(currentDate.getDate() - currentDate.getDay());
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekStart.getDate() + 6);
+
+      const { data } = await supabase
+        .from('bookings')
+        .select(`
+          id, date, time_slot, status,
+          student:profiles!bookings_student_id_fkey(full_name, avatar_url)
+        `)
+        .eq('instructor_id', user?.id)
+        .gte('date', weekStart.toISOString().split('T')[0])
+        .lte('date', weekEnd.toISOString().split('T')[0])
+        .in('status', ['confirmed', 'pending']);
+
+      setLessons(data as unknown as ScheduledLesson[] || []);
+
+      // Calculate today's stats
+      const today = new Date().toISOString().split('T')[0];
+      const todayLessons = (data || []).filter(l => l.date === today && l.status === 'confirmed');
+      setTodayStats({
+        count: todayLessons.length,
+        hours: todayLessons.length, // Assuming 1 hour per lesson
+        revenue: todayLessons.length * 90, // Using minimum price
+      });
+    } catch (error) {
+      console.error('Error fetching lessons:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getWeekDays = () => {
     const startOfWeek = new Date(currentDate);
@@ -43,9 +100,7 @@ export default function InstructorSchedule() {
 
   const getLessonForSlot = (date: Date, time: string) => {
     const dateStr = date.toISOString().split('T')[0];
-    return upcomingLessons.find(
-      lesson => lesson.date === dateStr && lesson.time === time
-    );
+    return lessons.find(lesson => lesson.date === dateStr && lesson.time_slot === time);
   };
 
   const formatMonth = () => {
@@ -59,43 +114,37 @@ export default function InstructorSchedule() {
     return `${start.toLocaleDateString('pt-BR', { month: 'short' })} - ${end.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}`;
   };
 
+  if (loading) {
+    return (
+      <div className="space-y-6 animate-fade-in">
+        <div><h1 className="text-2xl font-display font-bold">Minha Agenda</h1></div>
+        <Card className="animate-pulse">
+          <CardContent className="p-6"><div className="h-96 bg-muted rounded" /></CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-display font-bold text-foreground">
-            Minha Agenda
-          </h1>
-          <p className="text-muted-foreground">
-            Visualize e gerencie seus horários
-          </p>
+          <h1 className="text-2xl font-display font-bold text-foreground">Minha Agenda</h1>
+          <p className="text-muted-foreground">Visualize e gerencie seus horários</p>
         </div>
-        <Button className="bg-instructor hover:bg-instructor/90">
-          Bloquear Horário
-        </Button>
       </div>
 
       <Card>
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => navigateWeek('prev')}
-              >
+              <Button variant="outline" size="icon" onClick={() => navigateWeek('prev')}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => navigateWeek('next')}
-              >
+              <Button variant="outline" size="icon" onClick={() => navigateWeek('next')}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
-              <span className="font-medium text-foreground capitalize">
-                {formatMonth()}
-              </span>
+              <span className="font-medium text-foreground capitalize">{formatMonth()}</span>
             </div>
             <div className="flex items-center gap-4 text-sm">
               <div className="flex items-center gap-2">
@@ -114,12 +163,11 @@ export default function InstructorSchedule() {
           </div>
         </CardHeader>
         <CardContent>
-          {/* Calendar Grid */}
           <div className="overflow-x-auto">
             <div className="min-w-[800px]">
               {/* Header - Days */}
               <div className="grid grid-cols-8 gap-1 mb-2">
-                <div className="p-2" /> {/* Empty corner */}
+                <div className="p-2" />
                 {weekDays.map((date, i) => (
                   <div
                     key={i}
@@ -128,9 +176,7 @@ export default function InstructorSchedule() {
                       isToday(date) && 'bg-instructor text-instructor-foreground'
                     )}
                   >
-                    <div className="text-xs font-medium">
-                      {daysOfWeek[date.getDay()]}
-                    </div>
+                    <div className="text-xs font-medium">{daysOfWeek[date.getDay()]}</div>
                     <div className="text-lg font-bold">{date.getDate()}</div>
                   </div>
                 ))}
@@ -140,9 +186,7 @@ export default function InstructorSchedule() {
               <div className="space-y-1">
                 {timeSlots.map((time) => (
                   <div key={time} className="grid grid-cols-8 gap-1">
-                    <div className="p-2 text-sm text-muted-foreground text-right pr-4">
-                      {time}
-                    </div>
+                    <div className="p-2 text-sm text-muted-foreground text-right pr-4">{time}</div>
                     {weekDays.map((date, i) => {
                       const lesson = getLessonForSlot(date, time);
                       
@@ -162,18 +206,18 @@ export default function InstructorSchedule() {
                             <div className="p-2 h-full">
                               <div className="flex items-center gap-2">
                                 <Avatar className="h-6 w-6">
-                                  <AvatarImage src={lesson.studentAvatar} />
+                                  <AvatarImage src={lesson.student?.avatar_url || ''} />
                                   <AvatarFallback className="text-[10px] bg-instructor text-instructor-foreground">
-                                    {lesson.studentName.charAt(0)}
+                                    {lesson.student?.full_name?.charAt(0) || 'A'}
                                   </AvatarFallback>
                                 </Avatar>
                                 <span className="text-xs font-medium truncate">
-                                  {lesson.studentName.split(' ')[0]}
+                                  {lesson.student?.full_name?.split(' ')[0]}
                                 </span>
                               </div>
                               <div className="mt-1 text-[10px] text-muted-foreground flex items-center gap-1">
                                 <Clock className="h-3 w-3" />
-                                {lesson.duration}min
+                                60min
                               </div>
                             </div>
                           )}
@@ -196,15 +240,15 @@ export default function InstructorSchedule() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="p-4 rounded-lg bg-instructor/10 text-center">
-              <p className="text-3xl font-bold text-instructor">3</p>
+              <p className="text-3xl font-bold text-instructor">{todayStats.count}</p>
               <p className="text-sm text-muted-foreground">Aulas Agendadas</p>
             </div>
             <div className="p-4 rounded-lg bg-success/10 text-center">
-              <p className="text-3xl font-bold text-success">4h</p>
+              <p className="text-3xl font-bold text-success">{todayStats.hours}h</p>
               <p className="text-sm text-muted-foreground">Tempo Trabalhado</p>
             </div>
             <div className="p-4 rounded-lg bg-muted text-center">
-              <p className="text-3xl font-bold text-foreground">R$ 360</p>
+              <p className="text-3xl font-bold text-foreground">R$ {todayStats.revenue}</p>
               <p className="text-sm text-muted-foreground">Faturamento do Dia</p>
             </div>
           </div>
