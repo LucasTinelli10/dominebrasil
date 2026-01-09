@@ -31,6 +31,7 @@ import {
 } from '@/data/mockData';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import DocumentExpiryAlert from '@/components/DocumentExpiryAlert';
 
 export default function InstructorHome() {
   const navigate = useNavigate();
@@ -105,6 +106,9 @@ export default function InstructorHome() {
 
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Document Expiry Alert */}
+      <DocumentExpiryAlert className="mb-4" />
+
       {/* Metrics Cards - Synced with period */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="bg-gradient-to-br from-instructor/10 to-instructor/5 border-instructor/20">

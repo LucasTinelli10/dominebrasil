@@ -7,20 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { 
-  CheckCircle, XCircle, User, Loader2, RefreshCw,
-  Mail, Phone, FileText, Car, Building2
+  CheckCircle, User, Loader2, RefreshCw,
+  Car, Building2
 } from 'lucide-react';
 import AdminLayout from '@/components/layouts/AdminLayout';
+import UserDetailsModal from '@/components/admin/UserDetailsModal';
 
 interface PendingUser {
   id: string;
@@ -33,11 +24,19 @@ interface PendingUser {
   verification_reason: string | null;
   created_at: string;
   avatar_url: string | null;
+  city: string | null;
+  neighborhood: string | null;
+  // Instructor fields
   cnh_number: string | null;
   cnh_category: string | null;
+  cnh_expiry_date: string | null;
   credential_number: string | null;
+  credential_expiry: string | null;
   background_check_status: string | null;
   documents_url: Record<string, string> | null;
+  bio: string | null;
+  price_per_hour: number | null;
+  years_experience: number | null;
 }
 
 export default function AdminDashboard() {
@@ -135,8 +134,35 @@ export default function AdminDashboard() {
   const openUserModal = (user: PendingUser) => {
     setSelectedUser(user);
     setModalOpen(true);
-    setShowRejectForm(false);
-    setRejectReason('');
+  };
+
+  const handleModalApprove = async (userId: string) => {
+    await handleApprove(userId);
+    setModalOpen(false);
+    setSelectedUser(null);
+  };
+
+  const handleModalReject = async (userId: string, reason: string) => {
+    setRejectReason(reason);
+    setProcessingId(userId);
+    try {
+      const { error } = await supabase.rpc('admin_reject_user_with_reason', { 
+        user_id: userId,
+        reason: reason
+      });
+      
+      if (error) throw error;
+      
+      toast({ title: 'Sucesso', description: 'Usuário rejeitado.' });
+      setModalOpen(false);
+      setSelectedUser(null);
+      fetchPendingUsers();
+    } catch (error) {
+      console.error('Error rejecting user:', error);
+      toast({ title: 'Erro', description: 'Erro ao rejeitar usuário.', variant: 'destructive' });
+    } finally {
+      setProcessingId(null);
+    }
   };
 
   const getRoleBadge = (role: string) => {
@@ -273,161 +299,14 @@ export default function AdminDashboard() {
       </Card>
 
       {/* User Details Modal */}
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-        <DialogContent className="max-w-2xl bg-slate-800 border-slate-700 text-white max-h-[90vh] overflow-y-auto">
-          {selectedUser && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-slate-600 flex items-center justify-center overflow-hidden">
-                    {selectedUser.avatar_url ? (
-                      <img src={selectedUser.avatar_url} alt={selectedUser.full_name || ''} className="w-full h-full object-cover" />
-                    ) : (
-                      <User className="h-5 w-5 text-slate-400" />
-                    )}
-                  </div>
-                  <span>{selectedUser.full_name || 'Nome não informado'}</span>
-                  {getRoleBadge(selectedUser.role)}
-                </DialogTitle>
-                <DialogDescription className="text-slate-400">
-                  Detalhes do cadastro e documentos enviados
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="space-y-6 py-4">
-                {/* Contact Info */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-slate-400 flex items-center gap-2">
-                      <Mail className="w-4 h-4" /> Email
-                    </Label>
-                    <p className="text-white">{selectedUser.email || 'Não informado'}</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-slate-400 flex items-center gap-2">
-                      <Phone className="w-4 h-4" /> Telefone
-                    </Label>
-                    <p className="text-white">{selectedUser.phone || 'Não informado'}</p>
-                  </div>
-                </div>
-
-                {/* Instructor Details */}
-                {selectedUser.role === 'instructor' && (
-                  <div className="border-t border-slate-700 pt-4">
-                    <h4 className="text-white font-medium mb-3 flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-teal-400" />
-                      Dados do Instrutor
-                    </h4>
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <Label className="text-slate-400">Nº CNH</Label>
-                        <p className="text-white">{selectedUser.cnh_number || 'Não informado'}</p>
-                      </div>
-                      <div>
-                        <Label className="text-slate-400">Categoria</Label>
-                        <p className="text-white">{selectedUser.cnh_category || 'Não informado'}</p>
-                      </div>
-                      <div>
-                        <Label className="text-slate-400">Nº Credencial</Label>
-                        <p className="text-white">{selectedUser.credential_number || 'Não informado'}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Documents */}
-                {selectedUser.documents_url && Object.keys(selectedUser.documents_url).length > 0 && (
-                  <div className="border-t border-slate-700 pt-4">
-                    <h4 className="text-white font-medium mb-3">Documentos Enviados</h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      {Object.entries(selectedUser.documents_url).map(([key, url]) => (
-                        <div key={key} className="space-y-2">
-                          <Label className="text-slate-400 capitalize">{key.replace(/_/g, ' ')}</Label>
-                          <a 
-                            href={url as string} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="block"
-                          >
-                            <img 
-                              src={url as string} 
-                              alt={key}
-                              className="rounded-lg border border-slate-600 hover:border-teal-500 transition-colors max-h-48 object-cover w-full"
-                            />
-                          </a>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Reject Form */}
-                {showRejectForm && (
-                  <div className="border-t border-slate-700 pt-4">
-                    <Label className="text-slate-400 mb-2 block">Motivo da Rejeição</Label>
-                    <Textarea
-                      value={rejectReason}
-                      onChange={(e) => setRejectReason(e.target.value)}
-                      placeholder="Ex: Foto da CNH ilegível, documento vencido, etc."
-                      className="bg-slate-700 border-slate-600 text-white"
-                      rows={3}
-                    />
-                  </div>
-                )}
-              </div>
-
-              <DialogFooter className="gap-2">
-                {!showRejectForm ? (
-                  <>
-                    <Button
-                      variant="destructive"
-                      onClick={() => setShowRejectForm(true)}
-                      disabled={processingId === selectedUser.id}
-                    >
-                      <XCircle className="h-4 w-4 mr-2" />
-                      Rejeitar
-                    </Button>
-                    <Button
-                      onClick={() => handleApprove(selectedUser.id)}
-                      disabled={processingId === selectedUser.id}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      {processingId === selectedUser.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      ) : (
-                        <CheckCircle className="h-4 w-4 mr-2" />
-                      )}
-                      Aprovar
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowRejectForm(false)}
-                      className="border-slate-600 text-slate-300"
-                    >
-                      Cancelar
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      onClick={() => handleReject(selectedUser.id)}
-                      disabled={processingId === selectedUser.id || !rejectReason.trim()}
-                    >
-                      {processingId === selectedUser.id ? (
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      ) : (
-                        <XCircle className="h-4 w-4 mr-2" />
-                      )}
-                      Confirmar Rejeição
-                    </Button>
-                  </>
-                )}
-              </DialogFooter>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      <UserDetailsModal
+        user={selectedUser}
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        onApprove={handleModalApprove}
+        onReject={handleModalReject}
+        processingId={processingId}
+      />
     </AdminLayout>
   );
 }

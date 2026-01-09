@@ -197,25 +197,29 @@ serve(async (req) => {
     }
     fraudScore = Math.min(fraudScore, 100);
 
-    // Determine verification status
+    // Determine verification status - AUTOMATIC APPROVAL with lower threshold
+    // Only extreme cases (fraud_score >= 70) go to manual review
     let verificationStatus: 'pending' | 'analyzing' | 'approved' | 'rejected' = 'analyzing';
     let backgroundCheckStatus: 'clear' | 'flagged' | 'pending' = 'pending';
 
-    if (fraudScore <= 20 && analysisResult.is_authentic_visual && analysisResult.biometric_match) {
+    if (fraudScore <= 30 && analysisResult.is_authentic_visual) {
+      // Aprovação automática: baixo risco e documento visualmente autêntico
       verificationStatus = 'approved';
       backgroundCheckStatus = 'clear';
-    } else if (fraudScore >= 60) {
+    } else if (fraudScore >= 70 || (!analysisResult.is_authentic_visual && !analysisResult.biometric_match)) {
+      // Rejeição automática: alto risco ou documentos claramente falsificados
       verificationStatus = 'rejected';
       backgroundCheckStatus = 'flagged';
     } else {
-      verificationStatus = 'analyzing'; // Needs manual review
+      // Casos intermediários (30-70): enviar para revisão manual do admin
+      verificationStatus = 'analyzing';
       backgroundCheckStatus = 'pending';
     }
 
     const verificationReason = analysisResult.verification_notes || 
-      (verificationStatus === 'approved' ? 'Documentos validados com sucesso pela IA.' :
-       verificationStatus === 'rejected' ? `Documentos rejeitados. Problemas: ${analysisResult.risk_flags?.join(', ')}` :
-       'Documentos em análise manual.');
+      (verificationStatus === 'approved' ? 'Documentos aprovados automaticamente pela IA. Verificação bem-sucedida.' :
+       verificationStatus === 'rejected' ? `Documentos rejeitados automaticamente. Problemas detectados: ${analysisResult.risk_flags?.join(', ')}` :
+       'Documentos enviados para revisão manual do administrador devido a inconsistências moderadas.');
 
     // Update profile with verification results
     const { error: profileError } = await supabase
