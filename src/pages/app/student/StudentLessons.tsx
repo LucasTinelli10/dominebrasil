@@ -3,8 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MessageSquare, Calendar, Clock, Car, MapPin } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { MessageSquare, Calendar, Clock, Car, CheckCircle2 } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -28,8 +28,22 @@ interface ConfirmedLesson {
 export default function StudentLessons() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [lessons, setLessons] = useState<ConfirmedLesson[]>([]);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Check for payment success redirect
+    const paymentStatus = searchParams.get('payment');
+    if (paymentStatus === 'success') {
+      toast.success('Pagamento confirmado! Sua aula foi agendada com sucesso.', {
+        icon: <CheckCircle2 className="h-5 w-5 text-success" />,
+        duration: 5000,
+      });
+      // Clean up URL
+      window.history.replaceState({}, '', '/app/student/lessons');
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (user?.id) {

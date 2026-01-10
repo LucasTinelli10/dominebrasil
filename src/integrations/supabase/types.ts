@@ -191,6 +191,33 @@ export type Database = {
           },
         ]
       }
+      instructor_schedule_blocks: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          instructor_id: string
+          reason: string | null
+          time_slot: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          instructor_id: string
+          reason?: string | null
+          time_slot: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          instructor_id?: string
+          reason?: string | null
+          time_slot?: string
+        }
+        Relationships: []
+      }
       instructors_details: {
         Row: {
           background_check_status: string | null
@@ -469,10 +496,15 @@ export type Database = {
         Args: { reason: string; user_id: string }
         Returns: undefined
       }
-      check_availability: {
-        Args: { check_date: string; check_time: string; instr_id: string }
-        Returns: boolean
-      }
+      check_availability:
+        | {
+            Args: { check_date: string; check_time: string; instr_id: string }
+            Returns: boolean
+          }
+        | {
+            Args: { check_date: string; check_time: string; instr_id: string }
+            Returns: boolean
+          }
       get_all_approved_instructors: {
         Args: never
         Returns: {

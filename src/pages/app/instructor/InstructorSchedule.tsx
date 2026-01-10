@@ -3,10 +3,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ChevronLeft, ChevronRight, Clock, MapPin, Calendar as CalendarIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Clock, Lock, Unlock, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 interface ScheduledLesson {
   id: string;
@@ -19,8 +30,15 @@ interface ScheduledLesson {
   };
 }
 
+interface ScheduleBlock {
+  id: string;
+  date: string;
+  time_slot: string;
+  reason: string | null;
+}
+
 const timeSlots = [
-  '08:00', '09:00', '10:00', '11:00', '12:00',
+  '07:00', '08:00', '09:00', '10:00', '11:00',
   '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'
 ];
 
@@ -30,45 +48,63 @@ export default function InstructorSchedule() {
   const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [lessons, setLessons] = useState<ScheduledLesson[]>([]);
+  const [blocks, setBlocks] = useState<ScheduleBlock[]>([]);
   const [loading, setLoading] = useState(true);
   const [todayStats, setTodayStats] = useState({ count: 0, hours: 0, revenue: 0 });
+  const [blockDialogOpen, setBlockDialogOpen] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<{ date: Date; time: string } | null>(null);
+  const [blockReason, setBlockReason] = useState('');
 
   useEffect(() => {
     if (user?.id) {
-      fetchLessons();
+      fetchScheduleData();
     }
   }, [user?.id, currentDate]);
 
-  const fetchLessons = async () => {
+  const fetchScheduleData = async () => {
     try {
       const weekStart = new Date(currentDate);
       weekStart.setDate(currentDate.getDate() - currentDate.getDay());
       const weekEnd = new Date(weekStart);
       weekEnd.setDate(weekStart.getDate() + 6);
 
-      const { data } = await supabase
+      const startDate = weekStart.toISOString().split('T')[0];
+      const endDate = weekEnd.toISOString().split('T')[0];
+
+      // Fetch lessons
+      const { data: lessonsData } = await supabase
         .from('bookings')
         .select(`
           id, date, time_slot, status,
           student:profiles!bookings_student_id_fkey(full_name, avatar_url)
         `)
         .eq('instructor_id', user?.id)
-        .gte('date', weekStart.toISOString().split('T')[0])
-        .lte('date', weekEnd.toISOString().split('T')[0])
+        .gte('date', startDate)
+        .lte('date', endDate)
         .in('status', ['confirmed', 'pending']);
 
-      setLessons(data as unknown as ScheduledLesson[] || []);
+      setLessons(lessonsData as unknown as ScheduledLesson[] || []);
+
+      // Fetch blocks
+      const { data: blocksData } = await supabase
+        .from('instructor_schedule_blocks')
+        .select('*')
+        .eq('instructor_id', user?.id)
+        .gte('date', startDate)
+        .lte('date', endDate);
+
+      setBlocks(blocksData || []);
 
       // Calculate today's stats
       const today = new Date().toISOString().split('T')[0];
-      const todayLessons = (data || []).filter(l => l.date === today && l.status === 'confirmed');
+      const todayLessons = (lessonsData || []).filter(l => l.date === today && l.status === 'confirmed');
       setTodayStats({
         count: todayLessons.length,
-        hours: todayLessons.length, // Assuming 1 hour per lesson
-        revenue: todayLessons.length * 90, // Using minimum price
+        hours: todayLessons.length,
+        revenue: todayLessons.length * 90,
       });
     } catch (error) {
-      console.error('Error fetching lessons:', error);
+      console.error('Error fetching schedule:', error);
     } finally {
       setLoading(false);
     }
@@ -103,6 +139,11 @@ export default function InstructorSchedule() {
     return lessons.find(lesson => lesson.date === dateStr && lesson.time_slot === time);
   };
 
+  const getBlockForSlot = (date: Date, time: string) => {
+    const dateStr = date.toISOString().split('T')[0];
+    return blocks.find(block => block.date === dateStr && block.time_slot === time);
+  };
+
   const formatMonth = () => {
     const start = weekDays[0];
     const end = weekDays[6];
@@ -112,6 +153,68 @@ export default function InstructorSchedule() {
     }
     
     return `${start.toLocaleDateString('pt-BR', { month: 'short' })} - ${end.toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}`;
+  };
+
+  const handleSlotClick = (date: Date, time: string) => {
+    const lesson = getLessonForSlot(date, time);
+    const block = getBlockForSlot(date, time);
+
+    // Can't modify slots with lessons
+    if (lesson) return;
+
+    // If slot is blocked, remove the block
+    if (block) {
+      removeBlock(block.id);
+      return;
+    }
+
+    // Otherwise, open dialog to create block
+    setSelectedSlot({ date, time });
+    setBlockReason('');
+    setBlockDialogOpen(true);
+  };
+
+  const createBlock = async () => {
+    if (!selectedSlot || !user?.id) return;
+
+    try {
+      const dateStr = selectedSlot.date.toISOString().split('T')[0];
+      
+      const { error } = await supabase
+        .from('instructor_schedule_blocks')
+        .insert({
+          instructor_id: user.id,
+          date: dateStr,
+          time_slot: selectedSlot.time,
+          reason: blockReason || null,
+        });
+
+      if (error) throw error;
+
+      toast.success('Horário bloqueado com sucesso');
+      setBlockDialogOpen(false);
+      fetchScheduleData();
+    } catch (error) {
+      console.error('Error creating block:', error);
+      toast.error('Erro ao bloquear horário');
+    }
+  };
+
+  const removeBlock = async (blockId: string) => {
+    try {
+      const { error } = await supabase
+        .from('instructor_schedule_blocks')
+        .delete()
+        .eq('id', blockId);
+
+      if (error) throw error;
+
+      toast.success('Horário desbloqueado');
+      fetchScheduleData();
+    } catch (error) {
+      console.error('Error removing block:', error);
+      toast.error('Erro ao desbloquear horário');
+    }
   };
 
   if (loading) {
@@ -130,13 +233,13 @@ export default function InstructorSchedule() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-display font-bold text-foreground">Minha Agenda</h1>
-          <p className="text-muted-foreground">Visualize e gerencie seus horários</p>
+          <p className="text-muted-foreground">Clique em um horário livre para bloquear</p>
         </div>
       </div>
 
       <Card>
         <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-4">
               <Button variant="outline" size="icon" onClick={() => navigateWeek('prev')}>
                 <ChevronLeft className="h-4 w-4" />
@@ -146,7 +249,7 @@ export default function InstructorSchedule() {
               </Button>
               <span className="font-medium text-foreground capitalize">{formatMonth()}</span>
             </div>
-            <div className="flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-4 text-sm flex-wrap">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded bg-instructor" />
                 <span className="text-muted-foreground">Confirmado</span>
@@ -154,6 +257,10 @@ export default function InstructorSchedule() {
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded bg-warning" />
                 <span className="text-muted-foreground">Pendente</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-destructive/50" />
+                <span className="text-muted-foreground">Bloqueado</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded bg-muted" />
@@ -189,17 +296,25 @@ export default function InstructorSchedule() {
                     <div className="p-2 text-sm text-muted-foreground text-right pr-4">{time}</div>
                     {weekDays.map((date, i) => {
                       const lesson = getLessonForSlot(date, time);
+                      const block = getBlockForSlot(date, time);
+                      const isPast = date < new Date() && !isToday(date);
                       
                       return (
                         <div
                           key={i}
+                          onClick={() => !isPast && handleSlotClick(date, time)}
                           className={cn(
-                            'min-h-[60px] rounded-lg border transition-all cursor-pointer',
+                            'min-h-[60px] rounded-lg border transition-all',
+                            !isPast && !lesson && 'cursor-pointer',
                             lesson
                               ? lesson.status === 'confirmed'
-                                ? 'bg-instructor/10 border-instructor/30 hover:bg-instructor/20'
-                                : 'bg-warning/10 border-warning/30 hover:bg-warning/20'
-                              : 'bg-muted/30 border-border/50 hover:bg-muted/50'
+                                ? 'bg-instructor/10 border-instructor/30'
+                                : 'bg-warning/10 border-warning/30'
+                              : block
+                                ? 'bg-destructive/10 border-destructive/30 hover:bg-destructive/20'
+                                : isPast
+                                  ? 'bg-muted/20 border-border/30 opacity-50'
+                                  : 'bg-muted/30 border-border/50 hover:bg-muted/50'
                           )}
                         >
                           {lesson && (
@@ -219,6 +334,12 @@ export default function InstructorSchedule() {
                                 <Clock className="h-3 w-3" />
                                 60min
                               </div>
+                            </div>
+                          )}
+                          {block && !lesson && (
+                            <div className="p-2 h-full flex flex-col items-center justify-center">
+                              <Lock className="h-4 w-4 text-destructive" />
+                              <span className="text-[10px] text-destructive mt-1">Bloqueado</span>
                             </div>
                           )}
                         </div>
@@ -254,6 +375,47 @@ export default function InstructorSchedule() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Block Dialog */}
+      <Dialog open={blockDialogOpen} onOpenChange={setBlockDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Bloquear Horário</DialogTitle>
+            <DialogDescription>
+              {selectedSlot && (
+                <>
+                  Bloquear {selectedSlot.time} em{' '}
+                  {selectedSlot.date.toLocaleDateString('pt-BR', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                  })}
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="reason">Motivo (opcional)</Label>
+              <Input
+                id="reason"
+                placeholder="Ex: Consulta médica"
+                value={blockReason}
+                onChange={(e) => setBlockReason(e.target.value)}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBlockDialogOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={createBlock} className="bg-instructor hover:bg-instructor/90">
+              <Lock className="h-4 w-4 mr-2" />
+              Bloquear
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

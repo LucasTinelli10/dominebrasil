@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
 import { useAuth } from '@/contexts/AuthContext';
@@ -8,7 +8,16 @@ import { cn } from '@/lib/utils';
 
 export function AppLayout() {
   const { profile } = useAuth();
+  const navigate = useNavigate();
   const role = profile?.role || 'student';
+
+  const handleNotificationsClick = () => {
+    navigate(`/app/${role}/messages`);
+  };
+
+  const handleSettingsClick = () => {
+    navigate(`/app/${role}/settings`);
+  };
 
   return (
     <SidebarProvider>
@@ -29,7 +38,12 @@ export function AppLayout() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" className="relative">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="relative"
+                onClick={handleNotificationsClick}
+              >
                 <Bell className="h-5 w-5 text-muted-foreground" />
                 <span className={cn(
                   'absolute top-1 right-1 w-2 h-2 rounded-full',
@@ -38,7 +52,11 @@ export function AppLayout() {
                   role === 'investor' && 'bg-investor',
                 )} />
               </Button>
-              <Button variant="ghost" size="icon">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={handleSettingsClick}
+              >
                 <Settings className="h-5 w-5 text-muted-foreground" />
               </Button>
             </div>
