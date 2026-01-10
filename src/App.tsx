@@ -22,6 +22,7 @@ import { AppLayout } from "./components/layouts/AppLayout";
 import InstructorHome from "./pages/app/instructor/InstructorHome";
 import InstructorRequests from "./pages/app/instructor/InstructorRequests";
 import InstructorSchedule from "./pages/app/instructor/InstructorSchedule";
+import InstructorWallet from "./pages/app/instructor/InstructorWallet";
 import InstructorMessages from "./pages/app/instructor/InstructorMessages";
 import InstructorProfile from "./pages/app/instructor/InstructorProfile";
 import InstructorCars from "./pages/app/instructor/InstructorCars";
@@ -77,6 +78,7 @@ const App = () => (
               <Route path="instructor" element={<ProtectedRoute allowedRoles={['instructor']}><InstructorHome /></ProtectedRoute>} />
               <Route path="instructor/requests" element={<ProtectedRoute allowedRoles={['instructor']}><InstructorRequests /></ProtectedRoute>} />
               <Route path="instructor/schedule" element={<ProtectedRoute allowedRoles={['instructor']}><InstructorSchedule /></ProtectedRoute>} />
+              <Route path="instructor/wallet" element={<ProtectedRoute allowedRoles={['instructor']}><InstructorWallet /></ProtectedRoute>} />
               <Route path="instructor/cars" element={<ProtectedRoute allowedRoles={['instructor']}><InstructorCars /></ProtectedRoute>} />
               <Route path="instructor/messages" element={<ProtectedRoute allowedRoles={['instructor']}><InstructorMessages /></ProtectedRoute>} />
               <Route path="instructor/profile" element={<ProtectedRoute allowedRoles={['instructor']}><InstructorProfile /></ProtectedRoute>} />

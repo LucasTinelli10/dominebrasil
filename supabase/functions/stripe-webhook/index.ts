@@ -113,6 +113,26 @@ serve(async (req) => {
           const validatedMetadata = validationResult.data;
           
           let bookingId: string;
+          const totalPrice = parseFloat(validatedMetadata.total_price);
+          const duration = parseInt(validatedMetadata.duration);
+          
+          // ====== REVENUE SHARE LOGIC ======
+          // 15% platform fee
+          const PLATFORM_FEE_PERCENTAGE = 0.15;
+          const CAR_RENTAL_PRICE_PER_HOUR = 50; // R$50/hour
+          
+          const platformFee = totalPrice * PLATFORM_FEE_PERCENTAGE;
+          const hasRentalCar = validatedMetadata.car_id && validatedMetadata.car_id.length > 0;
+          const carRentalFee = hasRentalCar ? CAR_RENTAL_PRICE_PER_HOUR * duration : 0;
+          const instructorNetProfit = totalPrice - platformFee - carRentalFee;
+          
+          logStep("Revenue split calculated", { 
+            totalPrice, 
+            platformFee, 
+            carRentalFee, 
+            instructorNetProfit,
+            hasRentalCar 
+          });
 
           // Check if this is a pre-existing booking (from request flow)
           if (validatedMetadata.booking_id) {
@@ -150,13 +170,13 @@ serve(async (req) => {
               instructor_id: validatedMetadata.instructor_id,
               date: validatedMetadata.lesson_date,
               time_slot: validatedMetadata.lesson_time,
-              total_price: parseFloat(validatedMetadata.total_price),
+              total_price: totalPrice,
               status: "confirmed",
               notes: `Pagamento confirmado via Stripe. Session ID: ${session.id}`,
             };
 
             // Only add car_id if it's a valid UUID
-            if (validatedMetadata.car_id && validatedMetadata.car_id.length > 0) {
+            if (hasRentalCar) {
               const carIdValidation = z.string().uuid().safeParse(validatedMetadata.car_id);
               if (carIdValidation.success) {
                 bookingData.car_id = carIdValidation.data;
@@ -180,8 +200,64 @@ serve(async (req) => {
             logStep("Booking created successfully", { bookingId });
           }
 
+          // ====== CREATE TRANSACTION RECORDS ======
+          // 1. Instructor income (net profit goes to pending balance)
+          await supabaseAdmin.from("transactions").insert({
+            user_id: validatedMetadata.instructor_id,
+            type: "lesson_income",
+            amount: instructorNetProfit,
+            status: "completed",
+            description: `Aula em ${validatedMetadata.lesson_date} - Líquido após taxas`,
+            reference_id: bookingId,
+          });
+          
+          // 2. Platform fee transaction (for tracking)
+          await supabaseAdmin.from("transactions").insert({
+            user_id: validatedMetadata.instructor_id,
+            type: "platform_fee",
+            amount: platformFee,
+            status: "completed",
+            description: `Taxa da plataforma (15%)`,
+            reference_id: bookingId,
+          });
+          
+          // 3. Car rental fee if applicable
+          if (carRentalFee > 0) {
+            await supabaseAdmin.from("transactions").insert({
+              user_id: validatedMetadata.instructor_id,
+              type: "car_rental_fee",
+              amount: carRentalFee,
+              status: "completed",
+              description: `Aluguel de veículo (${duration}h x R$50)`,
+              reference_id: bookingId,
+            });
+          }
+          
+          logStep("Transactions created");
+          
+          // ====== UPDATE INSTRUCTOR BALANCE ======
+          // Add net profit to pending balance (will be released later)
+          const { data: instructorProfile } = await supabaseAdmin
+            .from("profiles")
+            .select("balance_pending")
+            .eq("id", validatedMetadata.instructor_id)
+            .single();
+          
+          const currentPending = Number(instructorProfile?.balance_pending) || 0;
+          
+          await supabaseAdmin
+            .from("profiles")
+            .update({ balance_pending: currentPending + instructorNetProfit })
+            .eq("id", validatedMetadata.instructor_id);
+          
+          logStep("Instructor pending balance updated", { 
+            previousPending: currentPending, 
+            added: instructorNetProfit,
+            newPending: currentPending + instructorNetProfit 
+          });
+
           // Create automatic confirmation message
-          const confirmationMessage = `✅ Aula confirmada e paga!\n\n📅 Data: ${new Date(validatedMetadata.lesson_date + 'T00:00:00').toLocaleDateString('pt-BR')}\n⏰ Horário: ${validatedMetadata.lesson_time}\n💰 Valor: R$ ${parseFloat(validatedMetadata.total_price).toFixed(2)}\n\nAgora vocês podem conversar por aqui para combinar os detalhes. Nos vemos em breve!`;
+          const confirmationMessage = `✅ Aula confirmada e paga!\n\n📅 Data: ${new Date(validatedMetadata.lesson_date + 'T00:00:00').toLocaleDateString('pt-BR')}\n⏰ Horário: ${validatedMetadata.lesson_time}\n💰 Valor: R$ ${totalPrice.toFixed(2)}\n\nAgora vocês podem conversar por aqui para combinar os detalhes. Nos vemos em breve!`;
 
           await supabaseAdmin.from("messages").insert({
             sender_id: validatedMetadata.instructor_id,

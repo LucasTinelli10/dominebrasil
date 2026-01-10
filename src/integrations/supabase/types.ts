@@ -372,6 +372,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           balance: number | null
+          balance_pending: number | null
           city: string | null
           created_at: string | null
           fraud_score: number | null
@@ -379,7 +380,9 @@ export type Database = {
           id: string
           neighborhood: string | null
           phone: string | null
+          pix_key: string | null
           status: Database["public"]["Enums"]["profile_status"] | null
+          total_withdrawn: number | null
           updated_at: string | null
           verification_reason: string | null
           verification_status:
@@ -389,6 +392,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           balance?: number | null
+          balance_pending?: number | null
           city?: string | null
           created_at?: string | null
           fraud_score?: number | null
@@ -396,7 +400,9 @@ export type Database = {
           id: string
           neighborhood?: string | null
           phone?: string | null
+          pix_key?: string | null
           status?: Database["public"]["Enums"]["profile_status"] | null
+          total_withdrawn?: number | null
           updated_at?: string | null
           verification_reason?: string | null
           verification_status?:
@@ -406,6 +412,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           balance?: number | null
+          balance_pending?: number | null
           city?: string | null
           created_at?: string | null
           fraud_score?: number | null
@@ -413,7 +420,9 @@ export type Database = {
           id?: string
           neighborhood?: string | null
           phone?: string | null
+          pix_key?: string | null
           status?: Database["public"]["Enums"]["profile_status"] | null
+          total_withdrawn?: number | null
           updated_at?: string | null
           verification_reason?: string | null
           verification_status?:
@@ -421,6 +430,47 @@ export type Database = {
             | null
         }
         Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          description: string | null
+          id: string
+          reference_id: string | null
+          status: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          status?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          reference_id?: string | null
+          status?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -442,6 +492,53 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      withdrawals: {
+        Row: {
+          amount: number
+          created_at: string | null
+          fee: number | null
+          id: string
+          instructor_id: string
+          net_amount: number
+          pix_key: string
+          processed_at: string | null
+          status: string | null
+          type: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          fee?: number | null
+          id?: string
+          instructor_id: string
+          net_amount: number
+          pix_key: string
+          processed_at?: string | null
+          status?: string | null
+          type?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          fee?: number | null
+          id?: string
+          instructor_id?: string
+          net_amount?: number
+          pix_key?: string
+          processed_at?: string | null
+          status?: string | null
+          type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "withdrawals_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
