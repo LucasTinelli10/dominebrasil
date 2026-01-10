@@ -18,6 +18,8 @@ const LessonMetadataSchema = z.object({
   duration: z.string().regex(/^\d+$/),
   total_price: z.string().regex(/^\d+(\.\d+)?$/),
   car_id: z.string().optional(),
+  lesson_type: z.string().optional(),
+  booking_id: z.string().uuid().optional(), // For pre-existing bookings
 });
 
 const RentalMetadataSchema = z.object({
@@ -110,57 +112,82 @@ serve(async (req) => {
           
           const validatedMetadata = validationResult.data;
           
-          // Create or update booking
-          const bookingData: {
-            student_id: string;
-            instructor_id: string;
-            date: string;
-            time_slot: string;
-            total_price: number;
-            status: string;
-            notes: string;
-            car_id?: string;
-          } = {
-            student_id: validatedMetadata.student_id,
-            instructor_id: validatedMetadata.instructor_id,
-            date: validatedMetadata.lesson_date,
-            time_slot: validatedMetadata.lesson_time,
-            total_price: parseFloat(validatedMetadata.total_price),
-            status: "confirmed",
-            notes: `Pagamento confirmado via Stripe. Session ID: ${session.id}`,
-          };
+          let bookingId: string;
 
-          // Only add car_id if it's a valid UUID
-          if (validatedMetadata.car_id && validatedMetadata.car_id.length > 0) {
-            const carIdValidation = z.string().uuid().safeParse(validatedMetadata.car_id);
-            if (carIdValidation.success) {
-              bookingData.car_id = carIdValidation.data;
+          // Check if this is a pre-existing booking (from request flow)
+          if (validatedMetadata.booking_id) {
+            // Update existing booking to confirmed
+            const { data: updatedBooking, error: updateError } = await supabaseAdmin
+              .from("bookings")
+              .update({ 
+                status: "confirmed",
+                notes: `Pagamento confirmado via Stripe. Session ID: ${session.id}`,
+              })
+              .eq("id", validatedMetadata.booking_id)
+              .select()
+              .single();
+
+            if (updateError) {
+              logStep("ERROR updating booking", { error: updateError.message });
+              throw updateError;
             }
+
+            bookingId = updatedBooking.id;
+            logStep("Booking updated to confirmed", { bookingId });
+          } else {
+            // Create new booking (direct payment flow - legacy)
+            const bookingData: {
+              student_id: string;
+              instructor_id: string;
+              date: string;
+              time_slot: string;
+              total_price: number;
+              status: string;
+              notes: string;
+              car_id?: string;
+            } = {
+              student_id: validatedMetadata.student_id,
+              instructor_id: validatedMetadata.instructor_id,
+              date: validatedMetadata.lesson_date,
+              time_slot: validatedMetadata.lesson_time,
+              total_price: parseFloat(validatedMetadata.total_price),
+              status: "confirmed",
+              notes: `Pagamento confirmado via Stripe. Session ID: ${session.id}`,
+            };
+
+            // Only add car_id if it's a valid UUID
+            if (validatedMetadata.car_id && validatedMetadata.car_id.length > 0) {
+              const carIdValidation = z.string().uuid().safeParse(validatedMetadata.car_id);
+              if (carIdValidation.success) {
+                bookingData.car_id = carIdValidation.data;
+              }
+            }
+
+            logStep("Creating booking", bookingData);
+
+            const { data: booking, error: bookingError } = await supabaseAdmin
+              .from("bookings")
+              .insert(bookingData)
+              .select()
+              .single();
+
+            if (bookingError) {
+              logStep("ERROR creating booking", { error: bookingError.message });
+              throw bookingError;
+            }
+
+            bookingId = booking.id;
+            logStep("Booking created successfully", { bookingId });
           }
-
-          logStep("Creating booking", bookingData);
-
-          const { data: booking, error: bookingError } = await supabaseAdmin
-            .from("bookings")
-            .insert(bookingData)
-            .select()
-            .single();
-
-          if (bookingError) {
-            logStep("ERROR creating booking", { error: bookingError.message });
-            throw bookingError;
-          }
-
-          logStep("Booking created successfully", { bookingId: booking.id });
 
           // Create automatic confirmation message
-          const confirmationMessage = `✅ Aula confirmada!\n\n📅 Data: ${new Date(validatedMetadata.lesson_date + 'T00:00:00').toLocaleDateString('pt-BR')}\n⏰ Horário: ${validatedMetadata.lesson_time}\n💰 Valor: R$ ${parseFloat(validatedMetadata.total_price).toFixed(2)}\n\nNos vemos em breve!`;
+          const confirmationMessage = `✅ Aula confirmada e paga!\n\n📅 Data: ${new Date(validatedMetadata.lesson_date + 'T00:00:00').toLocaleDateString('pt-BR')}\n⏰ Horário: ${validatedMetadata.lesson_time}\n💰 Valor: R$ ${parseFloat(validatedMetadata.total_price).toFixed(2)}\n\nAgora vocês podem conversar por aqui para combinar os detalhes. Nos vemos em breve!`;
 
           await supabaseAdmin.from("messages").insert({
             sender_id: validatedMetadata.instructor_id,
             receiver_id: validatedMetadata.student_id,
             content: confirmationMessage,
-            booking_id: booking.id,
+            booking_id: bookingId,
           });
 
           logStep("Confirmation message sent");

@@ -77,27 +77,27 @@ export default function InstructorRequests() {
 
   const handleAccept = async (request: LessonRequest) => {
     try {
-      // Update booking status
-      const { error: updateError } = await supabase
-        .from('bookings')
-        .update({ status: 'confirmed' })
-        .eq('id', request.id);
-
-      if (updateError) throw updateError;
-
-      // Send confirmation message
-      const acceptanceMessage = `Olá ${request.student?.full_name?.split(' ')[0]}! Sua aula foi confirmada. 🎉\n\nDetalhes:\n📅 Data: ${new Date(request.date + 'T00:00:00').toLocaleDateString('pt-BR')}\n⏰ Horário: ${request.time_slot}\n\nNos vemos em breve!`;
-
-      await supabase.from('messages').insert({
-        sender_id: user?.id,
-        receiver_id: request.student?.id,
-        content: acceptanceMessage,
+      // Call edge function to send payment link to student
+      const { error: fnError } = await supabase.functions.invoke("send-payment-link", {
+        body: { bookingId: request.id },
       });
+
+      if (fnError) {
+        console.error("Error sending payment link:", fnError);
+        toast.error("Erro ao enviar link de pagamento");
+        return;
+      }
+
+      // Update booking notes to indicate instructor accepted
+      await supabase
+        .from('bookings')
+        .update({ notes: `Aceito pelo instrutor. Aguardando pagamento do aluno.` })
+        .eq('id', request.id);
 
       setRequests(prev => prev.filter(r => r.id !== request.id));
       
       toast.success('Solicitação aceita!', {
-        description: `Conversa iniciada com ${request.student?.full_name}. Acesse "Mensagens" para continuar.`,
+        description: `Um email com link de pagamento foi enviado para ${request.student?.full_name}. Após o pagamento, o chat será liberado.`,
       });
     } catch (error) {
       console.error('Error accepting request:', error);
