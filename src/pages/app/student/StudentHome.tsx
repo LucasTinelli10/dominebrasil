@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Progress } from '@/components/ui/progress';
 import { Search, Calendar, BookOpen, MessageSquare, Star, Clock, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
@@ -80,7 +79,7 @@ export default function StudentHome() {
         unreadMessages: unreadCount || 0,
       });
 
-      // Fetch recommended instructors
+      // Fetch recommended instructors from database
       const { data: instructorData } = await supabase.rpc('get_all_approved_instructors');
       setInstructors((instructorData || []).slice(0, 2));
     } catch (error) {
@@ -100,8 +99,8 @@ export default function StudentHome() {
   if (loading) {
     return (
       <div className="space-y-6 animate-fade-in">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(i => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map(i => (
             <Card key={i} className="animate-pulse">
               <CardContent className="p-6"><div className="h-16 bg-muted rounded" /></CardContent>
             </Card>
@@ -114,25 +113,15 @@ export default function StudentHome() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Progress Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <Card className="bg-gradient-to-br from-student/10 to-student/5 border-student/20">
           <CardContent className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <p className="text-sm text-muted-foreground">Aulas Completadas</p>
+              <p className="text-sm text-muted-foreground">Aulas Práticas</p>
               <BookOpen className="h-5 w-5 text-student" />
             </div>
             <p className="text-2xl font-bold">{stats.completedLessons}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Próximas Aulas</p>
-                <p className="text-2xl font-bold mt-2">{stats.upcomingCount}</p>
-              </div>
-              <div className="p-3 rounded-xl bg-student/10"><Clock className="h-6 w-6 text-student" /></div>
-            </div>
+            <p className="text-xs text-muted-foreground mt-1">Completadas</p>
           </CardContent>
         </Card>
         <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate('/app/student/messages')}>
@@ -205,7 +194,7 @@ export default function StudentHome() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Instrutores Recomendados</CardTitle>
+            <CardTitle>Instrutores Disponíveis</CardTitle>
             <Button variant="ghost" size="sm" className="text-student" onClick={() => navigate('/app/student/search')}>
               Ver mais <ArrowRight className="ml-1 h-4 w-4" />
             </Button>

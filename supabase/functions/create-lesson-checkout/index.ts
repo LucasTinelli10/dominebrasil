@@ -142,8 +142,8 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
-      success_url: `${origin}/app/student?payment=success`,
-      cancel_url: `${origin}/app/student?payment=canceled`,
+      success_url: `${origin}/app/student/lessons?payment=success`,
+      cancel_url: `${origin}/app/student/search?payment=canceled`,
       metadata: {
         booking_type: "lesson",
         student_id: user.id,

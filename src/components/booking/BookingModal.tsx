@@ -25,6 +25,7 @@ import {
   Loader2,
   GraduationCap,
   Heart,
+  Lock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -61,6 +62,8 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState<"type" | "date" | "time" | "confirm">("type");
   const [lessonType, setLessonType] = useState<LessonType>("primeira_cnh");
+  const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
 
   const today = startOfToday();
   const maxDate = addDays(today, 30);
@@ -72,10 +75,29 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
     setStep("date");
   };
 
-  const handleDateSelect = (date: Date | undefined) => {
+  const handleDateSelect = async (date: Date | undefined) => {
     setSelectedDate(date);
-    if (date) {
+    if (date && instructor) {
       setStep("time");
+      setLoadingSlots(true);
+      
+      // Check availability for each time slot
+      const dateStr = format(date, "yyyy-MM-dd");
+      const available: string[] = [];
+      
+      for (const time of TIME_SLOTS) {
+        const { data } = await supabase.rpc('check_availability', {
+          check_date: dateStr,
+          check_time: time,
+          instr_id: instructor.id,
+        });
+        if (data === true) {
+          available.push(time);
+        }
+      }
+      
+      setAvailableSlots(available);
+      setLoadingSlots(false);
     }
   };
 
@@ -123,6 +145,7 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
     setDuration(1);
     setStep("type");
     setLessonType("primeira_cnh");
+    setAvailableSlots([]);
   };
 
   const handleBack = () => {
@@ -288,21 +311,42 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
                 <span>Selecione o horário</span>
               </div>
 
-              <div className="grid grid-cols-3 gap-2">
-                {TIME_SLOTS.map((time) => (
-                  <Button
-                    key={time}
-                    variant={selectedTime === time ? "default" : "outline"}
-                    className={cn(
-                      "h-12",
-                      selectedTime === time && "bg-student hover:bg-student/90"
-                    )}
-                    onClick={() => handleTimeSelect(time)}
-                  >
-                    {time}
+              {loadingSlots ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-student" />
+                  <span className="ml-2 text-muted-foreground">Verificando horários...</span>
+                </div>
+              ) : availableSlots.length === 0 ? (
+                <div className="py-8 text-center">
+                  <Clock className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
+                  <p className="text-muted-foreground">Nenhum horário disponível nesta data</p>
+                  <Button variant="outline" className="mt-4" onClick={handleBack}>
+                    Escolher outra data
                   </Button>
-                ))}
-              </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-2">
+                  {TIME_SLOTS.map((time) => {
+                    const isAvailable = availableSlots.includes(time);
+                    return (
+                      <Button
+                        key={time}
+                        variant={selectedTime === time ? "default" : "outline"}
+                        className={cn(
+                          "h-12",
+                          selectedTime === time && "bg-student hover:bg-student/90",
+                          !isAvailable && "opacity-50 cursor-not-allowed"
+                        )}
+                        onClick={() => isAvailable && handleTimeSelect(time)}
+                        disabled={!isAvailable}
+                      >
+                        {time}
+                        {!isAvailable && <Lock className="h-3 w-3 ml-1" />}
+                      </Button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
