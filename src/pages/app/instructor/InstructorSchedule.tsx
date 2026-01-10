@@ -38,11 +38,11 @@ interface ScheduleBlock {
 }
 
 const timeSlots = [
-  '07:00', '08:00', '09:00', '10:00', '11:00',
-  '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'
+  '06:00', '07:00', '08:00', '09:00', '10:00', '11:00', '12:00',
+  '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'
 ];
 
-const daysOfWeek = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const daysOfWeek = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
 export default function InstructorSchedule() {
   const { user } = useAuth();
@@ -271,29 +271,42 @@ export default function InstructorSchedule() {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <div className="min-w-[800px]">
-              {/* Header - Days */}
-              <div className="grid grid-cols-8 gap-1 mb-2">
-                <div className="p-2" />
+            <div className="min-w-[900px]">
+              {/* Header - Days with dates */}
+              <div className="grid grid-cols-8 gap-1 mb-3 sticky top-0 bg-background z-10 pb-2 border-b">
+                <div className="p-3 flex items-center justify-center">
+                  <Clock className="h-5 w-5 text-muted-foreground" />
+                </div>
                 {weekDays.map((date, i) => (
                   <div
                     key={i}
                     className={cn(
-                      'text-center p-2 rounded-lg',
+                      'text-center p-3 rounded-lg transition-colors',
                       isToday(date) && 'bg-instructor text-instructor-foreground'
                     )}
                   >
-                    <div className="text-xs font-medium">{daysOfWeek[date.getDay()]}</div>
-                    <div className="text-lg font-bold">{date.getDate()}</div>
+                    <div className="text-xs font-medium uppercase tracking-wide opacity-80">
+                      {daysOfWeek[date.getDay()].slice(0, 3)}
+                    </div>
+                    <div className="text-2xl font-bold">{date.getDate()}</div>
+                    <div className="text-[10px] opacity-60">
+                      {date.toLocaleDateString('pt-BR', { month: 'short' })}
+                    </div>
                   </div>
                 ))}
               </div>
 
-              {/* Time Slots */}
+              {/* Time Slots Grid */}
               <div className="space-y-1">
                 {timeSlots.map((time) => (
-                  <div key={time} className="grid grid-cols-8 gap-1">
-                    <div className="p-2 text-sm text-muted-foreground text-right pr-4">{time}</div>
+                  <div key={time} className="grid grid-cols-8 gap-1 group">
+                    {/* Time column - more prominent */}
+                    <div className="p-3 flex items-center justify-end">
+                      <div className="bg-muted/50 px-2 py-1 rounded text-sm font-mono font-medium text-foreground">
+                        {time}
+                      </div>
+                    </div>
+                    {/* Day cells */}
                     {weekDays.map((date, i) => {
                       const lesson = getLessonForSlot(date, time);
                       const block = getBlockForSlot(date, time);
@@ -303,26 +316,32 @@ export default function InstructorSchedule() {
                         <div
                           key={i}
                           onClick={() => !isPast && handleSlotClick(date, time)}
+                          title={`${daysOfWeek[date.getDay()]}, ${date.getDate()} às ${time}`}
                           className={cn(
-                            'min-h-[60px] rounded-lg border transition-all',
+                            'min-h-[70px] rounded-lg border-2 transition-all relative',
                             !isPast && !lesson && 'cursor-pointer',
                             lesson
                               ? lesson.status === 'confirmed'
-                                ? 'bg-instructor/10 border-instructor/30'
-                                : 'bg-warning/10 border-warning/30'
+                                ? 'bg-instructor/10 border-instructor/40 shadow-sm'
+                                : 'bg-warning/10 border-warning/40 shadow-sm'
                               : block
-                                ? 'bg-destructive/10 border-destructive/30 hover:bg-destructive/20'
+                                ? 'bg-destructive/10 border-destructive/40 hover:bg-destructive/20'
                                 : isPast
-                                  ? 'bg-muted/20 border-border/30 opacity-50'
-                                  : 'bg-muted/30 border-border/50 hover:bg-muted/50'
+                                  ? 'bg-muted/20 border-muted/30 opacity-40'
+                                  : 'bg-muted/20 border-muted/40 hover:bg-primary/5 hover:border-primary/30'
                           )}
                         >
+                          {/* Show time in each cell for clarity */}
+                          <div className="absolute top-1 left-1.5 text-[9px] font-mono text-muted-foreground/60">
+                            {time}
+                          </div>
+                          
                           {lesson && (
-                            <div className="p-2 h-full">
-                              <div className="flex items-center gap-2">
-                                <Avatar className="h-6 w-6">
+                            <div className="p-2 pt-4 h-full">
+                              <div className="flex items-center gap-1.5">
+                                <Avatar className="h-5 w-5">
                                   <AvatarImage src={lesson.student?.avatar_url || ''} />
-                                  <AvatarFallback className="text-[10px] bg-instructor text-instructor-foreground">
+                                  <AvatarFallback className="text-[9px] bg-instructor text-instructor-foreground">
                                     {lesson.student?.full_name?.charAt(0) || 'A'}
                                   </AvatarFallback>
                                 </Avatar>
@@ -330,16 +349,28 @@ export default function InstructorSchedule() {
                                   {lesson.student?.full_name?.split(' ')[0]}
                                 </span>
                               </div>
-                              <div className="mt-1 text-[10px] text-muted-foreground flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                60min
-                              </div>
+                              <Badge 
+                                variant="outline" 
+                                className={cn(
+                                  "mt-1.5 text-[9px] px-1 py-0",
+                                  lesson.status === 'confirmed' 
+                                    ? 'border-instructor/50 text-instructor' 
+                                    : 'border-warning/50 text-warning'
+                                )}
+                              >
+                                {lesson.status === 'confirmed' ? 'Confirmado' : 'Pendente'}
+                              </Badge>
                             </div>
                           )}
                           {block && !lesson && (
-                            <div className="p-2 h-full flex flex-col items-center justify-center">
+                            <div className="p-2 pt-4 h-full flex flex-col items-center justify-center">
                               <Lock className="h-4 w-4 text-destructive" />
-                              <span className="text-[10px] text-destructive mt-1">Bloqueado</span>
+                              <span className="text-[10px] text-destructive mt-1 font-medium">Bloqueado</span>
+                            </div>
+                          )}
+                          {!lesson && !block && !isPast && (
+                            <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                              <Unlock className="h-4 w-4 text-muted-foreground/50" />
                             </div>
                           )}
                         </div>
