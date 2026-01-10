@@ -26,6 +26,7 @@ import {
   GraduationCap,
   Heart,
   Lock,
+  Send,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -113,27 +114,60 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
     try {
       const formattedDate = format(selectedDate, "yyyy-MM-dd");
       
-      const { data, error } = await supabase.functions.invoke("create-lesson-checkout", {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("Você precisa estar logado para solicitar uma aula");
+        return;
+      }
+
+      // Get student name
+      const { data: studentProfile } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", user.id)
+        .single();
+
+      const studentName = studentProfile?.full_name || "Aluno";
+
+      // Create booking with status "pending" (request, not yet paid)
+      const { data: booking, error: bookingError } = await supabase
+        .from("bookings")
+        .insert({
+          student_id: user.id,
+          instructor_id: instructor.id,
+          date: formattedDate,
+          time_slot: selectedTime,
+          total_price: lessonPrice * duration,
+          status: "pending",
+          notes: `Tipo: ${lessonType}. Duração: ${duration}h. Aguardando aprovação do instrutor.`,
+        })
+        .select()
+        .single();
+
+      if (bookingError) throw bookingError;
+
+      // Notify instructor via edge function
+      await supabase.functions.invoke("notify-lesson-request", {
         body: {
+          bookingId: booking.id,
+          studentName: studentName,
           instructorId: instructor.id,
           lessonDate: formattedDate,
           lessonTime: selectedTime,
-          duration: duration,
           lessonType: lessonType,
         },
       });
 
-      if (error) throw error;
-
-      if (data?.url) {
-        window.open(data.url, "_blank");
-        toast.success("Redirecionando para pagamento...");
-        onOpenChange(false);
-        resetModal();
-      }
+      toast.success("Solicitação enviada!", {
+        description: `O instrutor ${instructor.full_name} receberá sua solicitação e entrará em contato.`,
+      });
+      
+      onOpenChange(false);
+      resetModal();
     } catch (error) {
       console.error("Booking error:", error);
-      toast.error("Erro ao processar reserva. Tente novamente.");
+      toast.error("Erro ao enviar solicitação. Tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -427,18 +461,18 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Processando...
+                    Enviando...
                   </>
                 ) : (
                   <>
-                    <CreditCard className="h-4 w-4 mr-2" />
-                    Pagar {formatCurrency(totalPrice)}
+                    <Send className="h-4 w-4 mr-2" />
+                    Solicitar Aula
                   </>
                 )}
               </Button>
 
               <p className="text-xs text-center text-muted-foreground">
-                Pagamento seguro via Stripe. Você será redirecionado para concluir.
+                Após o instrutor aceitar, você receberá um link de pagamento por email.
               </p>
             </div>
           )}
