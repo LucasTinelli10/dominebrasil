@@ -38,6 +38,8 @@ export default function InstructorProfile() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
+  const [city, setCity] = useState('');
+
   // Fetch instructor details on mount
   useEffect(() => {
     const fetchInstructorDetails = async () => {
@@ -59,13 +61,18 @@ export default function InstructorProfile() {
           setPricePerHour(String(data.price_per_hour || BUSINESS_RULES.DEFAULT_LESSON_PRICE));
           setSelectedBadges(data.badges || []);
         }
+
+        // Fetch city from profile
+        if (profile?.city) {
+          setCity(profile.city);
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchInstructorDetails();
-  }, [user?.id]);
+  }, [user?.id, profile?.city]);
 
   const handlePriceChange = (value: string) => {
     setPricePerHour(value);
@@ -91,6 +98,14 @@ export default function InstructorProfile() {
 
     setIsSaving(true);
     try {
+      // Update city in profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ city })
+        .eq('id', user.id);
+
+      if (profileError) throw profileError;
+
       // Check if instructor details exist
       const { data: existing } = await supabase
         .from('instructors_details')
@@ -260,6 +275,16 @@ export default function InstructorProfile() {
                 <p className="text-xs text-muted-foreground">
                   {bio.length}/500 caracteres
                 </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="city">Cidade onde trabalha</Label>
+                <Input
+                  id="city"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  placeholder="Ex: São Paulo, SP"
+                />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

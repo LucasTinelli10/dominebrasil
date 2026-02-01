@@ -53,23 +53,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const isOnboardingPage = location.pathname === '/onboarding';
   const isVerificationStatusPage = location.pathname === '/verification-status';
   
-  if (requiresVerification && !isOnboardingPage && !isVerificationStatusPage) {
-    // If user hasn't completed verification, redirect appropriately
-    if (profile.verification_status === 'pending') {
-      // User needs to complete onboarding first
-      return <Navigate to="/onboarding" replace />;
-    }
-    
-    if (profile.verification_status === 'analyzing') {
-      // User completed onboarding, waiting for admin approval
-      return <Navigate to="/verification-status" replace />;
-    }
-    
-    if (profile.verification_status === 'rejected') {
-      // User was rejected, show status page with option to resubmit
-      return <Navigate to="/verification-status" replace />;
-    }
-  }
+  // Verification check removed - instructors go directly to dashboard
 
   if (allowedRoles && !allowedRoles.includes(profile.role)) {
     // Redirect to the correct dashboard based on role
