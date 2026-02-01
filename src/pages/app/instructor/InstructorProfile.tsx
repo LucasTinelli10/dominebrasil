@@ -277,6 +277,16 @@ export default function InstructorProfile() {
                 </p>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="city">Cidade onde trabalha</Label>
+                <Input
+                  id="city"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                  placeholder="Ex: São Paulo, SP"
+                />
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="price">Valor por hora (R$)</Label>

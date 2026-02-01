@@ -303,8 +303,8 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
             </div>
           )}
 
-          {/* Step 1: Date Selection */}
-          {step === "date" && (
+          {/* Step 1: Date and Time Selection (Combined) */}
+          {step === "datetime" && (
             <div className="space-y-4">
               <Button variant="ghost" size="sm" onClick={handleBack} className="mb-2">
                 ← Voltar
@@ -328,62 +328,64 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
                 locale={ptBR}
                 className="rounded-md border mx-auto"
               />
-            </div>
-          )}
 
-          {/* Step 2: Time Selection */}
-          {step === "time" && selectedDate && (
-            <div className="space-y-4">
-              <Button variant="ghost" size="sm" onClick={handleBack} className="mb-2">
-                ← Voltar
-              </Button>
-              
-              <div className="text-center mb-4">
-                <Badge variant="secondary" className="text-sm">
-                  {format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
-                </Badge>
-              </div>
+              {/* Time slots section - shows after date selection */}
+              {selectedDate && (
+                <div className="space-y-4 mt-4 pt-4 border-t">
+                  <div className="text-center mb-2">
+                    <Badge variant="secondary" className="text-sm">
+                      {format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
+                    </Badge>
+                  </div>
 
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <Clock className="h-4 w-4" />
-                <span>Selecione o horário</span>
-              </div>
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <Clock className="h-4 w-4" />
+                    <span>Selecione o horário</span>
+                  </div>
 
-              {loadingSlots ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-student" />
-                  <span className="ml-2 text-muted-foreground">Verificando horários...</span>
+                  {loadingSlots ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="h-6 w-6 animate-spin text-student" />
+                      <span className="ml-2 text-muted-foreground">Verificando horários...</span>
+                    </div>
+                  ) : availableSlots.length === 0 ? (
+                    <div className="py-4 text-center">
+                      <Clock className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
+                      <p className="text-muted-foreground text-sm">Nenhum horário disponível nesta data</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-2">
+                      {TIME_SLOTS.map((time) => {
+                        const isAvailable = availableSlots.includes(time);
+                        return (
+                          <Button
+                            key={time}
+                            variant={selectedTime === time ? "default" : "outline"}
+                            className={cn(
+                              "h-10",
+                              selectedTime === time && "bg-student hover:bg-student/90",
+                              !isAvailable && "opacity-50 cursor-not-allowed"
+                            )}
+                            onClick={() => isAvailable && handleTimeSelect(time)}
+                            disabled={!isAvailable}
+                          >
+                            {time}
+                            {!isAvailable && <Lock className="h-3 w-3 ml-1" />}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
-              ) : availableSlots.length === 0 ? (
-                <div className="py-8 text-center">
-                  <Clock className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
-                  <p className="text-muted-foreground">Nenhum horário disponível nesta data</p>
-                  <Button variant="outline" className="mt-4" onClick={handleBack}>
-                    Escolher outra data
-                  </Button>
-                </div>
-              ) : (
-                <div className="grid grid-cols-3 gap-2">
-                  {TIME_SLOTS.map((time) => {
-                    const isAvailable = availableSlots.includes(time);
-                    return (
-                      <Button
-                        key={time}
-                        variant={selectedTime === time ? "default" : "outline"}
-                        className={cn(
-                          "h-12",
-                          selectedTime === time && "bg-student hover:bg-student/90",
-                          !isAvailable && "opacity-50 cursor-not-allowed"
-                        )}
-                        onClick={() => isAvailable && handleTimeSelect(time)}
-                        disabled={!isAvailable}
-                      >
-                        {time}
-                        {!isAvailable && <Lock className="h-3 w-3 ml-1" />}
-                      </Button>
-                    );
-                  })}
-                </div>
+              )}
+
+              {selectedDate && selectedTime && (
+                <Button
+                  className="w-full bg-student hover:bg-student/90 mt-4"
+                  onClick={handleContinueToConfirm}
+                >
+                  Continuar
+                </Button>
               )}
             </div>
           )}
