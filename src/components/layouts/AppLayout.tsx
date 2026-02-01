@@ -66,6 +66,15 @@ export function AppLayout() {
           <main className="flex-1 p-6 overflow-auto">
             <Outlet />
           </main>
+
+          {/* Mobile always-available sidebar trigger (fallback) */}
+          <SidebarTrigger
+            className={cn(
+              "fixed bottom-4 left-4 z-50 md:hidden",
+              "bg-card border border-border shadow-lg",
+              "text-foreground hover:bg-accent",
+            )}
+          />
         </div>
       </div>
     </SidebarProvider>

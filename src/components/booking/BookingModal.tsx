@@ -81,24 +81,36 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
     setSelectedTime(null);
     if (date && instructor) {
       setLoadingSlots(true);
-      
-      // Check availability for each time slot
+
       const dateStr = format(date, "yyyy-MM-dd");
-      const available: string[] = [];
-      
-      for (const time of TIME_SLOTS) {
-        const { data } = await supabase.rpc('check_availability', {
-          check_date: dateStr,
-          check_time: time,
-          instr_id: instructor.id,
-        });
-        if (data === true) {
-          available.push(time);
+
+      try {
+        // Check availability for each time slot (in parallel)
+        const results = await Promise.all(
+          TIME_SLOTS.map(async (time) => {
+            const { data, error } = await supabase.rpc("check_availability", {
+              check_date: dateStr,
+              check_time: time,
+              instr_id: instructor.id,
+            });
+            return { time, available: data === true, error };
+          }),
+        );
+
+        const firstError = results.find((r) => r.error)?.error;
+        if (firstError) {
+          console.error("Erro ao verificar disponibilidade:", firstError);
+          toast.error("Erro ao carregar horários", {
+            description: "Tente novamente em alguns segundos.",
+          });
+          setAvailableSlots([]);
+          return;
         }
+
+        setAvailableSlots(results.filter((r) => r.available).map((r) => r.time));
+      } finally {
+        setLoadingSlots(false);
       }
-      
-      setAvailableSlots(available);
-      setLoadingSlots(false);
     }
   };
 
@@ -348,33 +360,38 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
                       <Loader2 className="h-6 w-6 animate-spin text-student" />
                       <span className="ml-2 text-muted-foreground">Verificando horários...</span>
                     </div>
-                  ) : availableSlots.length === 0 ? (
-                    <div className="py-4 text-center">
-                      <Clock className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                      <p className="text-muted-foreground text-sm">Nenhum horário disponível nesta data</p>
-                    </div>
                   ) : (
-                    <div className="grid grid-cols-3 gap-2">
-                      {TIME_SLOTS.map((time) => {
-                        const isAvailable = availableSlots.includes(time);
-                        return (
-                          <Button
-                            key={time}
-                            variant={selectedTime === time ? "default" : "outline"}
-                            className={cn(
-                              "h-10",
-                              selectedTime === time && "bg-student hover:bg-student/90",
-                              !isAvailable && "opacity-50 cursor-not-allowed"
-                            )}
-                            onClick={() => isAvailable && handleTimeSelect(time)}
-                            disabled={!isAvailable}
-                          >
-                            {time}
-                            {!isAvailable && <Lock className="h-3 w-3 ml-1" />}
-                          </Button>
-                        );
-                      })}
-                    </div>
+                    <>
+                      {availableSlots.length === 0 && (
+                        <div className="py-2 text-center">
+                          <p className="text-muted-foreground text-sm">
+                            Nenhum horário disponível nesta data
+                          </p>
+                        </div>
+                      )}
+
+                      <div className="grid grid-cols-3 gap-2">
+                        {TIME_SLOTS.map((time) => {
+                          const isAvailable = availableSlots.includes(time);
+                          return (
+                            <Button
+                              key={time}
+                              variant={selectedTime === time ? "default" : "outline"}
+                              className={cn(
+                                "h-10",
+                                selectedTime === time && "bg-student hover:bg-student/90",
+                                !isAvailable && "opacity-50 cursor-not-allowed",
+                              )}
+                              onClick={() => isAvailable && handleTimeSelect(time)}
+                              disabled={!isAvailable}
+                            >
+                              {time}
+                              {!isAvailable && <Lock className="h-3 w-3 ml-1" />}
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    </>
                   )}
                 </div>
               )}
