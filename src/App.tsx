@@ -93,9 +93,30 @@ const App = () => (
             </Route>
 
             {/* Legacy Routes (redirect support) */}
-            <Route path="/student/dashboard" element={<ProtectedRoute allowedRoles={['student']}><StudentHome /></ProtectedRoute>} />
-            <Route path="/instructor/dashboard" element={<ProtectedRoute allowedRoles={['instructor']}><InstructorHome /></ProtectedRoute>} />
-            <Route path="/investor/dashboard" element={<ProtectedRoute allowedRoles={['investor']}><InvestorHome /></ProtectedRoute>} />
+            <Route
+              path="/student/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <Navigate to="/app/student" replace />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/instructor/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['instructor']}>
+                  <Navigate to="/app/instructor" replace />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/investor/dashboard"
+              element={
+                <ProtectedRoute allowedRoles={['investor']}>
+                  <Navigate to="/app/investor" replace />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/onboarding" element={<ProtectedRoute allowedRoles={['instructor', 'investor']}><InstructorOnboarding /></ProtectedRoute>} />
             <Route path="/verification-status" element={<ProtectedRoute allowedRoles={['instructor', 'investor']}><VerificationStatus /></ProtectedRoute>} />
 
