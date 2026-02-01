@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { format, addDays, isBefore, startOfToday } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -35,6 +35,7 @@ import { BUSINESS_RULES, formatCurrency } from "@/lib/businessRules";
 
 interface Instructor {
   id: string;
+  profile_id?: string | null;
   full_name: string;
   avatar_url: string | null;
   city: string | null;
@@ -65,12 +66,54 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
   const [lessonType, setLessonType] = useState<LessonType>("primeira_cnh");
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [instructorProfileId, setInstructorProfileId] = useState<string | null>(null);
+  const [resolvingInstructorId, setResolvingInstructorId] = useState(false);
 
   const today = startOfToday();
   const maxDate = addDays(today, 30);
 
   const lessonPrice = instructor?.price_per_hour || BUSINESS_RULES.DEFAULT_LESSON_PRICE;
   const totalPrice = lessonPrice * duration;
+
+  useEffect(() => {
+    // Reset cached resolved ID when instructor changes
+    setInstructorProfileId(null);
+  }, [instructor?.id]);
+
+  useEffect(() => {
+    // Cleanup when modal closes
+    if (!open) {
+      setInstructorProfileId(null);
+      setResolvingInstructorId(false);
+    }
+  }, [open]);
+
+  const ensureInstructorProfileId = async (): Promise<string | null> => {
+    if (!instructor) return null;
+    if (instructor.profile_id) return instructor.profile_id;
+    if (instructorProfileId) return instructorProfileId;
+
+    // Some lists use the instructor_details id; booking/availability require profile/user id.
+    setResolvingInstructorId(true);
+    try {
+      const { data, error } = await supabase.rpc("get_public_instructor_profile", {
+        instructor_id: instructor.id,
+      });
+
+      if (!error && data && data[0]?.id) {
+        setInstructorProfileId(data[0].id);
+        return data[0].id;
+      }
+    } catch (e) {
+      // ignore and fallback
+    } finally {
+      setResolvingInstructorId(false);
+    }
+
+    // Fallback: assume instructor.id is already the profile/user id.
+    setInstructorProfileId(instructor.id);
+    return instructor.id;
+  };
 
   const handleTypeSelect = () => {
     setStep("datetime");
@@ -84,6 +127,16 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
 
       const dateStr = format(date, "yyyy-MM-dd");
 
+      const instrId = await ensureInstructorProfileId();
+      if (!instrId) {
+        setLoadingSlots(false);
+        setAvailableSlots([]);
+        toast.error("Erro ao carregar horários", {
+          description: "Não foi possível identificar o instrutor. Tente novamente.",
+        });
+        return;
+      }
+
       try {
         // Check availability for each time slot (in parallel)
         const results = await Promise.all(
@@ -91,7 +144,7 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
             const { data, error } = await supabase.rpc("check_availability", {
               check_date: dateStr,
               check_time: time,
-              instr_id: instructor.id,
+              instr_id: instrId,
             });
             return { time, available: data === true, error };
           }),
@@ -130,6 +183,14 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
     setLoading(true);
     try {
       const formattedDate = format(selectedDate, "yyyy-MM-dd");
+
+      const instrId = await ensureInstructorProfileId();
+      if (!instrId) {
+        toast.error("Erro ao enviar solicitação", {
+          description: "Não foi possível identificar o instrutor. Tente novamente.",
+        });
+        return;
+      }
       
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
@@ -152,7 +213,7 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
         .from("bookings")
         .insert({
           student_id: user.id,
-          instructor_id: instructor.id,
+          instructor_id: instrId,
           date: formattedDate,
           time_slot: selectedTime,
           total_price: lessonPrice * duration,
@@ -169,7 +230,7 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
         body: {
           bookingId: booking.id,
           studentName: studentName,
-          instructorId: instructor.id,
+          instructorId: instrId,
           lessonDate: formattedDate,
           lessonTime: selectedTime,
           lessonType: lessonType,

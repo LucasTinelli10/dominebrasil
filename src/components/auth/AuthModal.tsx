@@ -137,11 +137,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({ open, onOpenChange, presel
 
       onOpenChange(false);
       
-      // Redirect based on role - instructors go to onboarding after signup
+       // Redirect: aluno sempre cai em /app/student (Início). Para login, usamos /app/student
+       // como destino padrão e o ProtectedRoute redireciona conforme o papel real do usuário.
       setTimeout(() => {
         if (selectedRole) {
           if (authMode === 'signup' && selectedRole === 'instructor') {
             navigate('/onboarding');
+           } else if (authMode === 'login') {
+             navigate('/app/student');
+           } else if (selectedRole === 'student') {
+             navigate('/app/student');
           } else {
             navigate(`/${selectedRole}/dashboard`);
           }
