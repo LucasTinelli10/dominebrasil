@@ -38,6 +38,8 @@ export default function InstructorProfile() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
+  const [city, setCity] = useState('');
+
   // Fetch instructor details on mount
   useEffect(() => {
     const fetchInstructorDetails = async () => {
@@ -59,13 +61,18 @@ export default function InstructorProfile() {
           setPricePerHour(String(data.price_per_hour || BUSINESS_RULES.DEFAULT_LESSON_PRICE));
           setSelectedBadges(data.badges || []);
         }
+
+        // Fetch city from profile
+        if (profile?.city) {
+          setCity(profile.city);
+        }
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchInstructorDetails();
-  }, [user?.id]);
+  }, [user?.id, profile?.city]);
 
   const handlePriceChange = (value: string) => {
     setPricePerHour(value);
