@@ -98,6 +98,14 @@ export default function InstructorProfile() {
 
     setIsSaving(true);
     try {
+      // Update city in profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ city })
+        .eq('id', user.id);
+
+      if (profileError) throw profileError;
+
       // Check if instructor details exist
       const { data: existing } = await supabase
         .from('instructors_details')
