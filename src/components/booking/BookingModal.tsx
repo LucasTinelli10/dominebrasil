@@ -188,13 +188,12 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
   };
 
   const handleBack = () => {
-    if (step === "date") {
+    if (step === "datetime") {
       setStep("type");
-    } else if (step === "time") {
-      setStep("date");
+      setSelectedDate(undefined);
       setSelectedTime(null);
     } else if (step === "confirm") {
-      setStep("time");
+      setStep("datetime");
     }
   };
 
