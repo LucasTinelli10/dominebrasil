@@ -61,7 +61,7 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [duration, setDuration] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [step, setStep] = useState<"type" | "date" | "time" | "confirm">("type");
+  const [step, setStep] = useState<"type" | "datetime" | "confirm">("type");
   const [lessonType, setLessonType] = useState<LessonType>("primeira_cnh");
   const [availableSlots, setAvailableSlots] = useState<string[]>([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
