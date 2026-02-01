@@ -76,12 +76,17 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
   const totalPrice = lessonPrice * duration;
 
   useEffect(() => {
-    // Reset cached resolved ID when instructor changes or modal closes
+    // Reset cached resolved ID when instructor changes
+    setInstructorProfileId(null);
+  }, [instructor?.id]);
+
+  useEffect(() => {
+    // Cleanup when modal closes
     if (!open) {
       setInstructorProfileId(null);
       setResolvingInstructorId(false);
     }
-  }, [open, instructor?.id]);
+  }, [open]);
 
   const ensureInstructorProfileId = async (): Promise<string | null> => {
     if (!instructor) return null;
