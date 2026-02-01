@@ -73,13 +73,13 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
   const totalPrice = lessonPrice * duration;
 
   const handleTypeSelect = () => {
-    setStep("date");
+    setStep("datetime");
   };
 
   const handleDateSelect = async (date: Date | undefined) => {
     setSelectedDate(date);
+    setSelectedTime(null);
     if (date && instructor) {
-      setStep("time");
       setLoadingSlots(true);
       
       // Check availability for each time slot
@@ -104,7 +104,12 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
 
   const handleTimeSelect = (time: string) => {
     setSelectedTime(time);
-    setStep("confirm");
+  };
+
+  const handleContinueToConfirm = () => {
+    if (selectedDate && selectedTime) {
+      setStep("confirm");
+    }
   };
 
   const handleConfirmBooking = async () => {
