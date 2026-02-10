@@ -173,6 +173,9 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
 
   const handleTimeSelect = (time: string) => {
     setSelectedTime(time);
+    setTimeout(() => {
+      document.getElementById("continue-btn")?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }, 100);
   };
 
   const handleContinueToConfirm = () => {
@@ -463,6 +466,7 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
 
               {selectedDate && selectedTime && (
                 <Button
+                  id="continue-btn"
                   className="w-full bg-student hover:bg-student/90 mt-4"
                   onClick={handleContinueToConfirm}
                 >
