@@ -29,6 +29,7 @@ import {
   Bell,
   Wrench,
   PieChart,
+  Package,
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -51,6 +52,7 @@ const instructorMenuItems: MenuItem[] = [
   { title: 'Visão Geral', url: '/app/instructor', icon: Home },
   { title: 'Solicitações', url: '/app/instructor/requests', icon: Bell },
   { title: 'Minha Agenda', url: '/app/instructor/schedule', icon: Calendar },
+  { title: 'Preços e Pacotes', url: '/app/instructor/packages', icon: Package },
   { title: 'Minha Carteira', url: '/app/instructor/wallet', icon: Wallet },
   { title: 'Carros para Alugar', url: '/app/instructor/cars', icon: Car },
   { title: 'Mensagens', url: '/app/instructor/messages', icon: MessageSquare },

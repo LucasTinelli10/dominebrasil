@@ -191,6 +191,50 @@ export type Database = {
           },
         ]
       }
+      instructor_packages: {
+        Row: {
+          active: boolean
+          created_at: string
+          id: string
+          includes_exam: boolean
+          instructor_id: string
+          lesson_count: number
+          name: string
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          includes_exam?: boolean
+          instructor_id: string
+          lesson_count: number
+          name: string
+          price: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          id?: string
+          includes_exam?: boolean
+          instructor_id?: string
+          lesson_count?: number
+          name?: string
+          price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instructor_packages_instructor_id_fkey"
+            columns: ["instructor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       instructor_schedule_blocks: {
         Row: {
           created_at: string
@@ -232,6 +276,7 @@ export type Database = {
           credential_number: string | null
           documents_url: Json | null
           id: string
+          is_vehicle_owner: boolean
           price_per_hour: number | null
           profile_id: string | null
           rating: number | null
@@ -251,6 +296,7 @@ export type Database = {
           credential_number?: string | null
           documents_url?: Json | null
           id?: string
+          is_vehicle_owner?: boolean
           price_per_hour?: number | null
           profile_id?: string | null
           rating?: number | null
@@ -270,6 +316,7 @@ export type Database = {
           credential_number?: string | null
           documents_url?: Json | null
           id?: string
+          is_vehicle_owner?: boolean
           price_per_hour?: number | null
           profile_id?: string | null
           rating?: number | null
@@ -593,15 +640,10 @@ export type Database = {
         Args: { reason: string; user_id: string }
         Returns: undefined
       }
-      check_availability:
-        | {
-            Args: { check_date: string; check_time: string; instr_id: string }
-            Returns: boolean
-          }
-        | {
-            Args: { check_date: string; check_time: string; instr_id: string }
-            Returns: boolean
-          }
+      check_availability: {
+        Args: { check_date: string; check_time: string; instr_id: string }
+        Returns: boolean
+      }
       get_all_approved_instructors: {
         Args: never
         Returns: {
@@ -656,6 +698,18 @@ export type Database = {
           transmission: Database["public"]["Enums"]["transmission_type"]
         }[]
       }
+      get_instructor_packages: {
+        Args: { p_instructor_id: string }
+        Returns: {
+          active: boolean
+          id: string
+          includes_exam: boolean
+          instructor_id: string
+          lesson_count: number
+          name: string
+          price: number
+        }[]
+      }
       get_public_instructor_details: {
         Args: { instructor_id: string }
         Returns: {
@@ -691,6 +745,10 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      resolve_instructor_profile_id: {
+        Args: { instructor_ref: string }
+        Returns: string
+      }
     }
     Enums: {
       app_role: "student" | "instructor" | "investor" | "admin"

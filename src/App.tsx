@@ -26,6 +26,7 @@ import InstructorWallet from "./pages/app/instructor/InstructorWallet";
 import InstructorMessages from "./pages/app/instructor/InstructorMessages";
 import InstructorProfile from "./pages/app/instructor/InstructorProfile";
 import InstructorCars from "./pages/app/instructor/InstructorCars";
+import InstructorPackages from "./pages/app/instructor/InstructorPackages";
 
 // Investor App Pages
 import InvestorHome from "./pages/app/investor/InvestorHome";
@@ -82,6 +83,7 @@ const App = () => (
               <Route path="instructor/cars" element={<ProtectedRoute allowedRoles={['instructor']}><InstructorCars /></ProtectedRoute>} />
               <Route path="instructor/messages" element={<ProtectedRoute allowedRoles={['instructor']}><InstructorMessages /></ProtectedRoute>} />
               <Route path="instructor/profile" element={<ProtectedRoute allowedRoles={['instructor']}><InstructorProfile /></ProtectedRoute>} />
+              <Route path="instructor/packages" element={<ProtectedRoute allowedRoles={['instructor']}><InstructorPackages /></ProtectedRoute>} />
               <Route path="instructor/settings" element={<ProtectedRoute allowedRoles={['instructor']}><Settings /></ProtectedRoute>} />
 
               {/* Investor Routes */}
