@@ -96,13 +96,13 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
     // Some lists use the instructor_details id; booking/availability require profile/user id.
     setResolvingInstructorId(true);
     try {
-      const { data, error } = await supabase.rpc("get_public_instructor_profile", {
-        instructor_id: instructor.id,
+      const { data, error } = await supabase.rpc("resolve_instructor_profile_id", {
+        instructor_ref: instructor.id,
       });
 
-      if (!error && data && data[0]?.id) {
-        setInstructorProfileId(data[0].id);
-        return data[0].id;
+      if (!error && data) {
+        setInstructorProfileId(data);
+        return data;
       }
     } catch (e) {
       // ignore and fallback
