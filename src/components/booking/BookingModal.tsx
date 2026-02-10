@@ -138,7 +138,6 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
       }
 
       try {
-        // Check availability for each time slot (in parallel)
         const results = await Promise.all(
           TIME_SLOTS.map(async (time) => {
             const { data, error } = await supabase.rpc("check_availability", {
@@ -161,6 +160,11 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
         }
 
         setAvailableSlots(results.filter((r) => r.available).map((r) => r.time));
+        
+        // Auto-scroll to time slots after loading
+        setTimeout(() => {
+          document.getElementById("time-slots-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 100);
       } finally {
         setLoadingSlots(false);
       }
@@ -404,7 +408,7 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
 
               {/* Time slots section - shows after date selection */}
               {selectedDate && (
-                <div className="space-y-4 mt-4 pt-4 border-t">
+                <div id="time-slots-section" className="space-y-4 mt-4 pt-4 border-t">
                   <div className="text-center mb-2">
                     <Badge variant="secondary" className="text-sm">
                       {format(selectedDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
