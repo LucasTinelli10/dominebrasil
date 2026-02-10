@@ -19,7 +19,7 @@ const LessonMetadataSchema = z.object({
   total_price: z.string().regex(/^\d+(\.\d+)?$/),
   car_id: z.string().optional(),
   lesson_type: z.string().optional(),
-  booking_id: z.string().uuid().optional(), // For pre-existing bookings
+  booking_id: z.string().uuid().optional(),
 });
 
 const RentalMetadataSchema = z.object({
@@ -29,6 +29,17 @@ const RentalMetadataSchema = z.object({
   rental_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   rental_time: z.string().regex(/^\d{2}:\d{2}$/),
   duration: z.string().regex(/^\d+$/),
+});
+
+const PackageMetadataSchema = z.object({
+  booking_type: z.literal("package"),
+  student_id: z.string().uuid(),
+  instructor_id: z.string().uuid(),
+  package_id: z.string().uuid(),
+  package_name: z.string(),
+  total_price: z.string().regex(/^\d+(\.\d+)?$/),
+  lesson_count: z.string().regex(/^\d+$/),
+  includes_exam: z.string(),
 });
 
 const logStep = (step: string, details?: any) => {
@@ -57,7 +68,6 @@ serve(async (req) => {
     
     logStep("Webhook received", { hasSignature: !!signature });
 
-    // Verify webhook signature for security
     const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
     if (!webhookSecret) {
       logStep("ERROR: STRIPE_WEBHOOK_SECRET not configured");
@@ -101,9 +111,8 @@ serve(async (req) => {
       });
 
       if (session.payment_status === "paid") {
-        // Check if this is a lesson booking or car rental
+        // ============ LESSON BOOKING ============
         if (metadata?.booking_type === "lesson") {
-          // Validate lesson metadata
           const validationResult = LessonMetadataSchema.safeParse(metadata);
           if (!validationResult.success) {
             logStep("Invalid lesson metadata", { errors: validationResult.error.errors });
@@ -116,27 +125,17 @@ serve(async (req) => {
           const totalPrice = parseFloat(validatedMetadata.total_price);
           const duration = parseInt(validatedMetadata.duration);
           
-          // ====== REVENUE SHARE LOGIC ======
-          // 15% platform fee
           const PLATFORM_FEE_PERCENTAGE = 0.15;
-          const CAR_RENTAL_PRICE_PER_HOUR = 50; // R$50/hour
+          const CAR_RENTAL_PRICE_PER_HOUR = 50;
           
           const platformFee = totalPrice * PLATFORM_FEE_PERCENTAGE;
           const hasRentalCar = validatedMetadata.car_id && validatedMetadata.car_id.length > 0;
           const carRentalFee = hasRentalCar ? CAR_RENTAL_PRICE_PER_HOUR * duration : 0;
           const instructorNetProfit = totalPrice - platformFee - carRentalFee;
           
-          logStep("Revenue split calculated", { 
-            totalPrice, 
-            platformFee, 
-            carRentalFee, 
-            instructorNetProfit,
-            hasRentalCar 
-          });
+          logStep("Revenue split calculated", { totalPrice, platformFee, carRentalFee, instructorNetProfit, hasRentalCar });
 
-          // Check if this is a pre-existing booking (from request flow)
           if (validatedMetadata.booking_id) {
-            // Update existing booking to confirmed
             const { data: updatedBooking, error: updateError } = await supabaseAdmin
               .from("bookings")
               .update({ 
@@ -155,17 +154,7 @@ serve(async (req) => {
             bookingId = updatedBooking.id;
             logStep("Booking updated to confirmed", { bookingId });
           } else {
-            // Create new booking (direct payment flow - legacy)
-            const bookingData: {
-              student_id: string;
-              instructor_id: string;
-              date: string;
-              time_slot: string;
-              total_price: number;
-              status: string;
-              notes: string;
-              car_id?: string;
-            } = {
+            const bookingData: any = {
               student_id: validatedMetadata.student_id,
               instructor_id: validatedMetadata.instructor_id,
               date: validatedMetadata.lesson_date,
@@ -175,15 +164,12 @@ serve(async (req) => {
               notes: `Pagamento confirmado via Stripe. Session ID: ${session.id}`,
             };
 
-            // Only add car_id if it's a valid UUID
             if (hasRentalCar) {
               const carIdValidation = z.string().uuid().safeParse(validatedMetadata.car_id);
               if (carIdValidation.success) {
                 bookingData.car_id = carIdValidation.data;
               }
             }
-
-            logStep("Creating booking", bookingData);
 
             const { data: booking, error: bookingError } = await supabaseAdmin
               .from("bookings")
@@ -200,8 +186,7 @@ serve(async (req) => {
             logStep("Booking created successfully", { bookingId });
           }
 
-          // ====== CREATE TRANSACTION RECORDS ======
-          // 1. Instructor income (net profit goes to pending balance)
+          // Transactions
           await supabaseAdmin.from("transactions").insert({
             user_id: validatedMetadata.instructor_id,
             type: "lesson_income",
@@ -211,7 +196,6 @@ serve(async (req) => {
             reference_id: bookingId,
           });
           
-          // 2. Platform fee transaction (for tracking)
           await supabaseAdmin.from("transactions").insert({
             user_id: validatedMetadata.instructor_id,
             type: "platform_fee",
@@ -221,7 +205,6 @@ serve(async (req) => {
             reference_id: bookingId,
           });
           
-          // 3. Car rental fee if applicable
           if (carRentalFee > 0) {
             await supabaseAdmin.from("transactions").insert({
               user_id: validatedMetadata.instructor_id,
@@ -233,10 +216,7 @@ serve(async (req) => {
             });
           }
           
-          logStep("Transactions created");
-          
-          // ====== UPDATE INSTRUCTOR BALANCE ======
-          // Add net profit to pending balance (will be released later)
+          // Update instructor pending balance
           const { data: instructorProfile } = await supabaseAdmin
             .from("profiles")
             .select("balance_pending")
@@ -250,13 +230,9 @@ serve(async (req) => {
             .update({ balance_pending: currentPending + instructorNetProfit })
             .eq("id", validatedMetadata.instructor_id);
           
-          logStep("Instructor pending balance updated", { 
-            previousPending: currentPending, 
-            added: instructorNetProfit,
-            newPending: currentPending + instructorNetProfit 
-          });
+          logStep("Instructor pending balance updated", { added: instructorNetProfit });
 
-          // Create automatic confirmation message
+          // Confirmation message
           const confirmationMessage = `✅ Aula confirmada e paga!\n\n📅 Data: ${new Date(validatedMetadata.lesson_date + 'T00:00:00').toLocaleDateString('pt-BR')}\n⏰ Horário: ${validatedMetadata.lesson_time}\n💰 Valor: R$ ${totalPrice.toFixed(2)}\n\nAgora vocês podem conversar por aqui para combinar os detalhes. Nos vemos em breve!`;
 
           await supabaseAdmin.from("messages").insert({
@@ -266,10 +242,10 @@ serve(async (req) => {
             booking_id: bookingId,
           });
 
-          logStep("Confirmation message sent");
+          logStep("Lesson flow completed");
 
+        // ============ CAR RENTAL ============
         } else if (metadata?.booking_type === "car_rental") {
-          // Validate rental metadata
           const validationResult = RentalMetadataSchema.safeParse(metadata);
           if (!validationResult.success) {
             logStep("Invalid rental metadata", { errors: validationResult.error.errors });
@@ -278,7 +254,6 @@ serve(async (req) => {
           
           const validatedMetadata = validationResult.data;
           
-          // Create car rental record
           const rentalData = {
             instructor_id: validatedMetadata.instructor_id,
             car_id: validatedMetadata.car_id,
@@ -286,8 +261,6 @@ serve(async (req) => {
             time_slot: validatedMetadata.rental_time,
             status: "confirmed",
           };
-
-          logStep("Creating car rental", rentalData);
 
           const { data: rental, error: rentalError } = await supabaseAdmin
             .from("car_rentals")
@@ -301,6 +274,112 @@ serve(async (req) => {
           }
 
           logStep("Car rental created successfully", { rentalId: rental.id });
+
+        // ============ PACKAGE PURCHASE ============
+        } else if (metadata?.booking_type === "package") {
+          const validationResult = PackageMetadataSchema.safeParse(metadata);
+          if (!validationResult.success) {
+            logStep("Invalid package metadata", { errors: validationResult.error.errors });
+            throw new Error("Invalid package metadata in webhook");
+          }
+
+          const vm = validationResult.data;
+          const totalPrice = parseFloat(vm.total_price);
+          const lessonCount = parseInt(vm.lesson_count);
+          const includesExam = vm.includes_exam === "true";
+
+          logStep("Processing package purchase", { packageId: vm.package_id, totalPrice, lessonCount, includesExam });
+
+          // ====== SPLIT LOGIC ======
+          const PLATFORM_FEE_PERCENTAGE = 0.15;
+          const platformFee = totalPrice * PLATFORM_FEE_PERCENTAGE;
+
+          // Determine if instructor owns a vehicle
+          const { data: instrDetails } = await supabaseAdmin
+            .from("instructors_details")
+            .select("is_vehicle_owner")
+            .eq("profile_id", vm.instructor_id)
+            .single();
+
+          const isVehicleOwner = instrDetails?.is_vehicle_owner ?? false;
+
+          let carRentalFee = 0;
+          if (!isVehicleOwner) {
+            // Get car rental price per hour (from investor's car or default)
+            const CAR_RENTAL_PRICE_PER_HOUR = 50; // Default R$50/hour
+            let rentalHours = lessonCount; // 1 hour per lesson
+            if (includesExam) {
+              rentalHours += 4; // Exam blocks 4 hours
+            }
+            carRentalFee = rentalHours * CAR_RENTAL_PRICE_PER_HOUR;
+          }
+          // Scenario A: owner → only platform fee deducted
+          // Scenario B: partner → platform fee + rental hours deducted
+
+          const instructorNetProfit = totalPrice - platformFee - carRentalFee;
+
+          logStep("Package split calculated", {
+            isVehicleOwner,
+            platformFee,
+            carRentalFee,
+            instructorNetProfit,
+          });
+
+          // Create transaction records
+          await supabaseAdmin.from("transactions").insert({
+            user_id: vm.instructor_id,
+            type: "package_income",
+            amount: instructorNetProfit,
+            status: "completed",
+            description: `Pacote "${vm.package_name}" — Líquido após taxas`,
+          });
+
+          await supabaseAdmin.from("transactions").insert({
+            user_id: vm.instructor_id,
+            type: "platform_fee",
+            amount: platformFee,
+            status: "completed",
+            description: `Taxa Domine (15%) — Pacote "${vm.package_name}"`,
+          });
+
+          if (carRentalFee > 0) {
+            const rentalHours = lessonCount + (includesExam ? 4 : 0);
+            await supabaseAdmin.from("transactions").insert({
+              user_id: vm.instructor_id,
+              type: "car_rental_fee",
+              amount: carRentalFee,
+              status: "completed",
+              description: `Aluguel de veículo (${rentalHours}h x R$50) — Pacote "${vm.package_name}"`,
+            });
+          }
+
+          // Update instructor pending balance
+          const { data: instructorProfile } = await supabaseAdmin
+            .from("profiles")
+            .select("balance_pending")
+            .eq("id", vm.instructor_id)
+            .single();
+
+          const currentPending = Number(instructorProfile?.balance_pending) || 0;
+
+          await supabaseAdmin
+            .from("profiles")
+            .update({ balance_pending: currentPending + instructorNetProfit })
+            .eq("id", vm.instructor_id);
+
+          logStep("Instructor pending balance updated", { added: instructorNetProfit });
+
+          // Send confirmation message to student
+          const examText = includesExam ? " + acompanhamento no exame" : "";
+          const confirmationMessage = `✅ Pacote contratado!\n\n📦 ${vm.package_name}\n📚 ${lessonCount} aula(s)${examText}\n💰 Valor: R$ ${totalPrice.toFixed(2)}\n\nEntre em contato com seu instrutor para agendar as aulas!`;
+
+          await supabaseAdmin.from("messages").insert({
+            sender_id: vm.instructor_id,
+            receiver_id: vm.student_id,
+            content: confirmationMessage,
+          });
+
+          logStep("Package flow completed");
         }
       }
     }
