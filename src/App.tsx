@@ -39,6 +39,7 @@ import StudentHome from "./pages/app/student/StudentHome";
 import StudentLessons from "./pages/app/student/StudentLessons";
 import StudentProgress from "./pages/app/student/StudentProgress";
 import StudentMessages from "./pages/app/student/StudentMessages";
+import PaymentSuccess from "./pages/app/student/PaymentSuccess";
 
 // Settings
 import Settings from "./pages/app/Settings";
@@ -93,6 +94,9 @@ const App = () => (
               <Route path="investor/finances" element={<ProtectedRoute allowedRoles={['investor']}><InvestorFinances /></ProtectedRoute>} />
               <Route path="investor/settings" element={<ProtectedRoute allowedRoles={['investor']}><Settings /></ProtectedRoute>} />
             </Route>
+
+            {/* Payment Success (outside AppLayout - redirected from Stripe) */}
+            <Route path="/app/student/payment-success" element={<ProtectedRoute allowedRoles={['student']}><PaymentSuccess /></ProtectedRoute>} />
 
             {/* Legacy Routes (redirect support) */}
             <Route
