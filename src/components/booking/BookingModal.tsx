@@ -284,8 +284,8 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
       onOpenChange(isOpen);
       if (!isOpen) resetModal();
     }}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-2">
           <DialogTitle className="flex items-center gap-3">
             <Avatar className="h-12 w-12">
               <AvatarImage src={instructor.avatar_url || undefined} />
@@ -315,7 +315,7 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 pr-4">
+        <div className="flex-1 overflow-y-auto px-6 pb-6" style={{ maxHeight: 'calc(90vh - 140px)' }}>
           {/* Step 0: Lesson Type Selection */}
           {step === "type" && (
             <div className="space-y-4">
@@ -568,7 +568,7 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
               </p>
             </div>
           )}
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );
