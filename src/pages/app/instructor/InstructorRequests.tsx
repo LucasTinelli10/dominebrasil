@@ -32,11 +32,12 @@ interface LessonRequest {
   time_slot: string;
   notes: string;
   created_at: string;
+  student_id: string | null;
   student: {
     id: string;
     full_name: string;
     avatar_url: string;
-  };
+  } | null;
 }
 
 export default function InstructorRequests() {
