@@ -108,7 +108,7 @@ serve(async (req) => {
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : studentEmail,
-      payment_method_types: ["card", "boleto"],
+      payment_method_types: ["card"],
       line_items: [
         {
           price_data: {
@@ -150,7 +150,7 @@ serve(async (req) => {
 
     // Send email to student
     const { data: emailData, error: emailError } = await resend.emails.send({
-      from: "DomineBrasil <noreply@dominebrasil.com.br>",
+      from: "DomineBrasil <onboarding@resend.dev>",
       to: [studentEmail],
       subject: `✅ ${instructorName} aceitou sua solicitação! Pague agora para confirmar`,
       html: `
