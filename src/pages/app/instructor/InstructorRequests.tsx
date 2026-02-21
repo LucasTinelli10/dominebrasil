@@ -60,7 +60,7 @@ export default function InstructorRequests() {
       const { data, error } = await supabase
         .from('bookings')
         .select(`
-          id, date, time_slot, notes, created_at,
+          id, date, time_slot, notes, created_at, student_id,
           student:profiles!bookings_student_id_fkey(id, full_name, avatar_url)
         `)
         .eq('instructor_id', user?.id)
