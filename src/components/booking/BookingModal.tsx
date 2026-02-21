@@ -568,7 +568,7 @@ export function BookingModal({ open, onOpenChange, instructor }: BookingModalPro
               </p>
             </div>
           )}
-        </ScrollArea>
+        </div>
       </DialogContent>
     </Dialog>
   );
