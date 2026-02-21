@@ -103,7 +103,7 @@ serve(async (req) => {
       customerId = customers.data[0].id;
     }
 
-    const origin = "https://dominebrasil.com.br";
+    const origin = "https://dominebrasil.lovable.app";
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -123,7 +123,7 @@ serve(async (req) => {
         },
       ],
       mode: "payment",
-      success_url: `${origin}/app/student/lessons?payment=success`,
+      success_url: `${origin}/app/student/payment-success`,
       cancel_url: `${origin}/app/student/lessons?payment=canceled`,
       metadata: {
         booking_type: "lesson",
