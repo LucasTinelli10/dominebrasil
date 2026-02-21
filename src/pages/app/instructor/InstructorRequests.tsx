@@ -126,14 +126,24 @@ export default function InstructorRequests() {
     }
   };
 
+  const getStudentId = (request: LessonRequest): string | null => {
+    return request.student?.id || request.student_id || null;
+  };
+
   const handleOpenChat = async (request: LessonRequest) => {
     setSelectedRequest(request);
+    const studentId = getStudentId(request);
     
+    if (!studentId) {
+      toast.error('Não foi possível identificar o aluno.');
+      return;
+    }
+
     // Fetch existing messages
     const { data: messages } = await supabase
       .from('messages')
       .select('*')
-      .or(`and(sender_id.eq.${user?.id},receiver_id.eq.${request.student?.id}),and(sender_id.eq.${request.student?.id},receiver_id.eq.${user?.id})`)
+      .or(`and(sender_id.eq.${user?.id},receiver_id.eq.${studentId}),and(sender_id.eq.${studentId},receiver_id.eq.${user?.id})`)
       .order('created_at', { ascending: true });
 
     setChatMessages(messages || []);
@@ -143,23 +153,34 @@ export default function InstructorRequests() {
   const handleSendMessage = async () => {
     if (!message.trim() || !selectedRequest) return;
     
+    const studentId = getStudentId(selectedRequest);
+    if (!studentId) {
+      toast.error('Não foi possível identificar o destinatário.');
+      return;
+    }
+
     try {
       const { data, error } = await supabase
         .from('messages')
         .insert({
           sender_id: user?.id,
-          receiver_id: selectedRequest.student?.id,
+          receiver_id: studentId,
           content: message.trim(),
         })
         .select()
         .single();
 
-      if (!error && data) {
-        setChatMessages(prev => [...prev, data]);
-        setMessage('');
+      if (error) {
+        console.error('Error sending message:', error);
+        toast.error('Erro ao enviar mensagem. Tente novamente.');
+        return;
       }
+
+      setChatMessages(prev => [...prev, data]);
+      setMessage('');
     } catch (error) {
       console.error('Error sending message:', error);
+      toast.error('Erro ao enviar mensagem. Tente novamente.');
     }
   };
 
