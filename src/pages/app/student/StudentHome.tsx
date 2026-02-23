@@ -52,7 +52,7 @@ export default function StudentHome() {
           instructor:profiles!bookings_instructor_id_fkey(full_name, avatar_url)
         `)
         .eq('student_id', user?.id)
-        .eq('status', 'confirmed')
+        .in('status', ['confirmed', 'pending'])
         .gte('date', new Date().toISOString().split('T')[0])
         .order('date', { ascending: true })
         .limit(3);
