@@ -298,7 +298,10 @@ export default function InstructorPackages() {
                       <BookOpen className="h-4 w-4 text-muted-foreground" />
                       <span>{pkg.lesson_count} aula(s) de 50min</span>
                     </div>
-                    {pkg.includes_exam && (
+                    <div className="flex items-center gap-2">
+                      <Package className="h-4 w-4 text-muted-foreground" />
+                      <span>{pkg.use_own_car ? 'Carro próprio' : 'Carro alugado'}</span>
+                    </div>
                       <div className="flex items-center gap-2">
                         <GraduationCap className="h-4 w-4 text-instructor" />
                         <span>Inclui acompanhamento no exame</span>
