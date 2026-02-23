@@ -60,11 +60,12 @@ export default function StudentLessons() {
           date,
           time_slot,
           total_price,
+          status,
           instructor:profiles!bookings_instructor_id_fkey(id, full_name, avatar_url),
           car:cars!bookings_car_id_fkey(model, plate)
         `)
         .eq('student_id', user?.id)
-        .eq('status', 'confirmed')
+        .in('status', ['confirmed', 'pending'])
         .gte('date', new Date().toISOString().split('T')[0])
         .order('date', { ascending: true });
 
