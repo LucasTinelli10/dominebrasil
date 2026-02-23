@@ -60,11 +60,12 @@ export default function StudentLessons() {
           date,
           time_slot,
           total_price,
+          status,
           instructor:profiles!bookings_instructor_id_fkey(id, full_name, avatar_url),
           car:cars!bookings_car_id_fkey(model, plate)
         `)
         .eq('student_id', user?.id)
-        .eq('status', 'confirmed')
+        .in('status', ['confirmed', 'pending'])
         .gte('date', new Date().toISOString().split('T')[0])
         .order('date', { ascending: true });
 
@@ -108,7 +109,7 @@ export default function StudentLessons() {
     <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-2xl font-display font-bold text-foreground">Minhas Aulas</h1>
-        <p className="text-muted-foreground">Aulas confirmadas e pagas</p>
+        <p className="text-muted-foreground">Aulas agendadas e confirmadas</p>
       </div>
 
       {lessons.length === 0 ? (
@@ -139,8 +140,12 @@ export default function StudentLessons() {
                     <div className="flex items-start justify-between mb-2">
                       <div>
                         <h3 className="font-semibold text-lg">{lesson.instructor?.full_name}</h3>
-                        <Badge variant="outline" className="border-student text-student mt-1">
-                          Confirmada
+                        <Badge variant="outline" className={
+                          (lesson as any).status === 'confirmed' 
+                            ? 'border-student text-student' 
+                            : 'border-warning text-warning'
+                        }>
+                          {(lesson as any).status === 'confirmed' ? 'Confirmada' : 'Aguardando Pagamento'}
                         </Badge>
                       </div>
                       <p className="text-lg font-bold text-student">
