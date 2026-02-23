@@ -52,7 +52,7 @@ export default function StudentHome() {
           instructor:profiles!bookings_instructor_id_fkey(full_name, avatar_url)
         `)
         .eq('student_id', user?.id)
-        .in('status', ['confirmed', 'pending'])
+        .in('status', ['confirmed', 'pending', 'in_progress'])
         .gte('date', new Date().toISOString().split('T')[0])
         .order('date', { ascending: true })
         .limit(3);
@@ -185,9 +185,10 @@ export default function StudentHome() {
                       </p>
                     </div>
                     <Badge variant="outline" className={cn(
+                      lesson.status === 'in_progress' ? 'border-success text-success bg-success/10 animate-pulse' :
                       lesson.status === 'confirmed' ? 'border-student text-student' : 'border-warning text-warning'
                     )}>
-                      {lesson.status === 'confirmed' ? 'Confirmada' : 'Pendente'}
+                      {lesson.status === 'in_progress' ? 'Em Andamento' : lesson.status === 'confirmed' ? 'Confirmada' : 'Pendente'}
                     </Badge>
                   </div>
                 </div>
