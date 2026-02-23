@@ -647,6 +647,16 @@ export type Database = {
         Args: { check_date: string; check_time: string; instr_id: string }
         Returns: boolean
       }
+      complete_lesson: {
+        Args: {
+          p_areas_to_improve?: string[]
+          p_booking_id: string
+          p_feedback?: string
+          p_rating?: number
+          p_strengths?: string[]
+        }
+        Returns: undefined
+      }
       get_all_approved_instructors: {
         Args: never
         Returns: {
@@ -752,6 +762,7 @@ export type Database = {
         Args: { instructor_ref: string }
         Returns: string
       }
+      start_lesson: { Args: { p_booking_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "student" | "instructor" | "investor" | "admin"
