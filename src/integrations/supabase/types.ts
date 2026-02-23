@@ -202,6 +202,7 @@ export type Database = {
           name: string
           price: number
           updated_at: string
+          use_own_car: boolean
         }
         Insert: {
           active?: boolean
@@ -213,6 +214,7 @@ export type Database = {
           name: string
           price: number
           updated_at?: string
+          use_own_car?: boolean
         }
         Update: {
           active?: boolean
@@ -224,6 +226,7 @@ export type Database = {
           name?: string
           price?: number
           updated_at?: string
+          use_own_car?: boolean
         }
         Relationships: [
           {
