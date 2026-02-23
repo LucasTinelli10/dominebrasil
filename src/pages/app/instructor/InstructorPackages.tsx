@@ -37,6 +37,7 @@ interface InstructorPackage {
   lesson_count: number;
   includes_exam: boolean;
   active: boolean;
+  use_own_car: boolean;
 }
 
 const EXAM_HOURS = 4;
@@ -56,6 +57,7 @@ export default function InstructorPackages() {
   const [formLessonCount, setFormLessonCount] = useState('1');
   const [formIncludesExam, setFormIncludesExam] = useState(false);
   const [formActive, setFormActive] = useState(true);
+  const [formUseOwnCar, setFormUseOwnCar] = useState(false);
 
   useEffect(() => {
     if (user?.id) {
@@ -95,6 +97,7 @@ export default function InstructorPackages() {
     setFormLessonCount('1');
     setFormIncludesExam(false);
     setFormActive(true);
+    setFormUseOwnCar(isVehicleOwner);
     setDialogOpen(true);
   };
 
@@ -105,6 +108,7 @@ export default function InstructorPackages() {
     setFormLessonCount(pkg.lesson_count.toString());
     setFormIncludesExam(pkg.includes_exam);
     setFormActive(pkg.active);
+    setFormUseOwnCar(pkg.use_own_car);
     setDialogOpen(true);
   };
 
@@ -134,6 +138,7 @@ export default function InstructorPackages() {
         lesson_count: lessonCount,
         includes_exam: formIncludesExam,
         active: formActive,
+        use_own_car: formUseOwnCar,
       };
 
       if (editingPackage) {
@@ -192,9 +197,9 @@ export default function InstructorPackages() {
   const rentalCost = rentalHours * BUSINESS_RULES.CAR_RENTAL_PRICE_PER_HOUR;
   const formPriceNum = parseFloat(formPrice || '0');
   const platformFee = formPriceNum * 0.15;
-  const totalDeductions = platformFee + (!isVehicleOwner ? rentalCost : 0);
+  const totalDeductions = platformFee + (!formUseOwnCar ? rentalCost : 0);
   const netProfit = formPriceNum - totalDeductions;
-  const suggestedMinPrice = Math.ceil(((!isVehicleOwner ? rentalCost : 0) + 10) / 0.85); // 15% fee + rental + R$10 min profit
+  const suggestedMinPrice = Math.ceil(((!formUseOwnCar ? rentalCost : 0) + 10) / 0.85);
 
   if (loading) {
     return (
@@ -259,7 +264,7 @@ export default function InstructorPackages() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {packages.map((pkg) => {
             const pkgRentalHours = pkg.lesson_count + (pkg.includes_exam ? EXAM_HOURS : 0);
-            const pkgRentalCost = !isVehicleOwner ? pkgRentalHours * BUSINESS_RULES.CAR_RENTAL_PRICE_PER_HOUR : 0;
+            const pkgRentalCost = !pkg.use_own_car ? pkgRentalHours * BUSINESS_RULES.CAR_RENTAL_PRICE_PER_HOUR : 0;
             const pkgPlatformFee = pkg.price * 0.15;
             const pkgNet = pkg.price - pkgPlatformFee - pkgRentalCost;
 
@@ -398,8 +403,27 @@ export default function InstructorPackages() {
               </div>
             </div>
 
-            {/* Smart Warning for non-vehicle-owner with exam */}
-            {!isVehicleOwner && formIncludesExam && (
+            {/* Vehicle choice toggle */}
+            <div className="flex items-center space-x-3 p-3 rounded-lg border">
+              <Switch
+                id="pkg-own-car"
+                checked={formUseOwnCar}
+                onCheckedChange={setFormUseOwnCar}
+              />
+              <div>
+                <Label htmlFor="pkg-own-car" className="cursor-pointer font-medium">
+                  Vou usar meu carro próprio
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  {formUseOwnCar
+                    ? 'Sem custo de aluguel — maior lucro'
+                    : `Aluguel de R$${BUSINESS_RULES.CAR_RENTAL_PRICE_PER_HOUR}/hora será descontado`}
+                </p>
+              </div>
+            </div>
+
+            {/* Smart Warning for rented car with exam */}
+            {!formUseOwnCar && formIncludesExam && (
               <div className="flex items-start gap-3 p-3 rounded-lg bg-warning/10 border border-warning/30">
                 <AlertTriangle className="h-5 w-5 text-warning flex-shrink-0 mt-0.5" />
                 <div className="text-sm">
@@ -425,7 +449,7 @@ export default function InstructorPackages() {
                     <span>Taxa Domine (15%)</span>
                     <span>-{formatCurrency(platformFee)}</span>
                   </div>
-                  {!isVehicleOwner && rentalCost > 0 && (
+                  {!formUseOwnCar && rentalCost > 0 && (
                     <div className="flex justify-between text-destructive">
                       <span>Aluguel ({rentalHours}h × R${BUSINESS_RULES.CAR_RENTAL_PRICE_PER_HOUR})</span>
                       <span>-{formatCurrency(rentalCost)}</span>
