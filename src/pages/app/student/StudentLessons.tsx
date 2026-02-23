@@ -140,8 +140,12 @@ export default function StudentLessons() {
                     <div className="flex items-start justify-between mb-2">
                       <div>
                         <h3 className="font-semibold text-lg">{lesson.instructor?.full_name}</h3>
-                        <Badge variant="outline" className="border-student text-student mt-1">
-                          Confirmada
+                        <Badge variant="outline" className={
+                          (lesson as any).status === 'confirmed' 
+                            ? 'border-student text-student' 
+                            : 'border-warning text-warning'
+                        }>
+                          {(lesson as any).status === 'confirmed' ? 'Confirmada' : 'Aguardando Pagamento'}
                         </Badge>
                       </div>
                       <p className="text-lg font-bold text-student">
