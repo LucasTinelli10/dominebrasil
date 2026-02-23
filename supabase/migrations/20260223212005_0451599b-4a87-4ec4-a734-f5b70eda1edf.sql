@@ -1,0 +1,1 @@
+ALTER TABLE public.instructor_packages ADD COLUMN use_own_car boolean NOT NULL DEFAULT false;
