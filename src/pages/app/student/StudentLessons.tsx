@@ -109,7 +109,7 @@ export default function StudentLessons() {
     <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-2xl font-display font-bold text-foreground">Minhas Aulas</h1>
-        <p className="text-muted-foreground">Aulas confirmadas e pagas</p>
+        <p className="text-muted-foreground">Aulas agendadas e confirmadas</p>
       </div>
 
       {lessons.length === 0 ? (
