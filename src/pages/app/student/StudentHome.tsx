@@ -48,7 +48,7 @@ export default function StudentHome() {
       const { data: lessons } = await supabase
         .from('bookings')
         .select(`
-          id, date, time_slot,
+          id, date, time_slot, status,
           instructor:profiles!bookings_instructor_id_fkey(full_name, avatar_url)
         `)
         .eq('student_id', user?.id)
