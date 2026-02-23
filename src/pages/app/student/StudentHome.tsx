@@ -48,11 +48,11 @@ export default function StudentHome() {
       const { data: lessons } = await supabase
         .from('bookings')
         .select(`
-          id, date, time_slot,
+          id, date, time_slot, status,
           instructor:profiles!bookings_instructor_id_fkey(full_name, avatar_url)
         `)
         .eq('student_id', user?.id)
-        .eq('status', 'confirmed')
+        .in('status', ['confirmed', 'pending'])
         .gte('date', new Date().toISOString().split('T')[0])
         .order('date', { ascending: true })
         .limit(3);
@@ -169,7 +169,7 @@ export default function StudentHome() {
                 </Button>
               </div>
             ) : (
-              upcomingLessons.map((lesson) => (
+              upcomingLessons.map((lesson: any) => (
                 <div key={lesson.id} className="p-4 rounded-lg bg-student-accent/30 border border-student/20">
                   <div className="flex items-center gap-3">
                     <Avatar>
@@ -184,7 +184,11 @@ export default function StudentHome() {
                         {formatDate(lesson.date)} às {lesson.time_slot}
                       </p>
                     </div>
-                    <Badge variant="outline" className="border-student text-student">Confirmada</Badge>
+                    <Badge variant="outline" className={cn(
+                      lesson.status === 'confirmed' ? 'border-student text-student' : 'border-warning text-warning'
+                    )}>
+                      {lesson.status === 'confirmed' ? 'Confirmada' : 'Pendente'}
+                    </Badge>
                   </div>
                 </div>
               ))
