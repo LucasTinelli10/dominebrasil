@@ -169,7 +169,7 @@ export default function StudentHome() {
                 </Button>
               </div>
             ) : (
-              upcomingLessons.map((lesson) => (
+              upcomingLessons.map((lesson: any) => (
                 <div key={lesson.id} className="p-4 rounded-lg bg-student-accent/30 border border-student/20">
                   <div className="flex items-center gap-3">
                     <Avatar>
@@ -184,7 +184,11 @@ export default function StudentHome() {
                         {formatDate(lesson.date)} às {lesson.time_slot}
                       </p>
                     </div>
-                    <Badge variant="outline" className="border-student text-student">Confirmada</Badge>
+                    <Badge variant="outline" className={cn(
+                      lesson.status === 'confirmed' ? 'border-student text-student' : 'border-warning text-warning'
+                    )}>
+                      {lesson.status === 'confirmed' ? 'Confirmada' : 'Pendente'}
+                    </Badge>
                   </div>
                 </div>
               ))
