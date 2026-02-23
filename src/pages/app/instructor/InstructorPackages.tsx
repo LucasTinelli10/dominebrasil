@@ -302,6 +302,7 @@ export default function InstructorPackages() {
                       <Package className="h-4 w-4 text-muted-foreground" />
                       <span>{pkg.use_own_car ? 'Carro próprio' : 'Carro alugado'}</span>
                     </div>
+                    {pkg.includes_exam && (
                       <div className="flex items-center gap-2">
                         <GraduationCap className="h-4 w-4 text-instructor" />
                         <span>Inclui acompanhamento no exame</span>
