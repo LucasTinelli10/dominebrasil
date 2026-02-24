@@ -73,14 +73,18 @@ serve(async (req) => {
       });
     }
 
-    const bookingId = payment.external_reference;
-    if (!bookingId) {
-      logStep("No booking ID in external_reference");
+    const externalRef = payment.external_reference;
+    if (!externalRef) {
+      logStep("No external_reference in payment");
       return new Response(JSON.stringify({ received: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
     }
+
+    // Determine if this is a package or a single booking payment
+    const isPackage = externalRef.startsWith("pkg_");
+    const bookingId = isPackage ? null : externalRef;
 
     // Check if booking already processed
     const { data: existingBooking } = await supabaseAdmin
