@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, MapPin, Star, Shield, ArrowLeft, CalendarDays, User } from 'lucide-react';
+import { Search, MapPin, Star, Shield, ArrowLeft, CalendarDays, User, Package } from 'lucide-react';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { BookingModal } from '@/components/booking/BookingModal';
 import { InstructorProfileModal } from '@/components/instructor/InstructorProfileModal';
@@ -34,6 +34,7 @@ const InstructorSearch = () => {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [selectedInstructor, setSelectedInstructor] = useState<Instructor | null>(null);
+  const [pendingPackageId, setPendingPackageId] = useState<string | null>(null);
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -90,12 +91,25 @@ const InstructorSearch = () => {
     }
   };
 
-  // After auth, open booking modal
+  const handleBuyPackage = (packageId: string) => {
+    if (!user) {
+      setPendingPackageId(packageId);
+      setIsAuthModalOpen(true);
+    } else {
+      setIsProfileModalOpen(false);
+      navigate(`/app/student/checkout/package/${packageId}`);
+    }
+  };
+
+  // After auth, open booking modal or redirect to package checkout
   useEffect(() => {
-    if (user && selectedInstructor && !isBookingModalOpen && !isAuthModalOpen && !isProfileModalOpen) {
+    if (user && pendingPackageId) {
+      setPendingPackageId(null);
+      navigate(`/app/student/checkout/package/${pendingPackageId}`);
+    } else if (user && selectedInstructor && !isBookingModalOpen && !isAuthModalOpen && !isProfileModalOpen) {
       setIsBookingModalOpen(true);
     }
-  }, [user, selectedInstructor]);
+  }, [user, selectedInstructor, pendingPackageId]);
 
   return (
     <div className={isInsideApp ? "" : "min-h-screen bg-gradient-to-b from-slate-50 to-white"}>
@@ -310,6 +324,7 @@ const InstructorSearch = () => {
         onOpenChange={setIsProfileModalOpen}
         instructor={selectedInstructor}
         onBookNow={() => handleBookInstructor(selectedInstructor!)}
+        onBuyPackage={handleBuyPackage}
       />
     </div>
   );
