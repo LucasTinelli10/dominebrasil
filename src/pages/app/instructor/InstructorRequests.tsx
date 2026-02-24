@@ -89,12 +89,7 @@ export default function InstructorRequests() {
         return;
       }
 
-      // Update booking notes to indicate instructor accepted
-      await supabase
-        .from('bookings')
-        .update({ notes: `Aceito pelo instrutor. Aguardando pagamento do aluno.` })
-        .eq('id', request.id);
-
+      // Note: send-payment-link already updates the booking notes/status
       setRequests(prev => prev.filter(r => r.id !== request.id));
       
       toast.success('Solicitação aceita!', {

@@ -81,13 +81,21 @@ serve(async (req) => {
       throw new Error(`Preço fora do limite permitido`);
     }
 
-    // Parse lesson type and duration from notes
+    // Get instructor price_per_hour to calculate duration reliably
+    const { data: instructorDetails } = await supabaseAdmin
+      .from("instructors_details")
+      .select("price_per_hour")
+      .eq("profile_id", instructorId)
+      .single();
+
+    const pricePerHour = Number(instructorDetails?.price_per_hour) || totalPrice;
+    const duration = pricePerHour > 0 ? Math.round(totalPrice / pricePerHour) : 1;
+
+    // Parse lesson type from notes
     const lessonType = booking.notes?.includes("perder_medo") ? "perder_medo" : "primeira_cnh";
     const lessonTypeLabel = lessonType === "primeira_cnh" ? "1ª CNH" : "Perder o Medo";
-    const durationMatch = booking.notes?.match(/Duração:\s*(\d+)h/);
-    const duration = durationMatch ? parseInt(durationMatch[1]) : 1;
 
-    logStep("Using booking total_price", { totalPrice, duration, lessonType });
+    logStep("Using booking total_price", { totalPrice, pricePerHour, duration, lessonType });
 
     // Create Stripe checkout session
     const customers = await stripe.customers.list({ email: studentEmail, limit: 1 });
