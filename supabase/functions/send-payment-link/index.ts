@@ -180,12 +180,12 @@ serve(async (req) => {
 
     logStep("Email sent successfully", { emailId: emailData?.id });
 
-    // Update booking notes
+    // Update booking to confirmed (awaiting payment)
     await supabaseAdmin
       .from("bookings")
       .update({ 
         notes: `Aguardando pagamento via Mercado Pago. Tipo: ${lessonType}.`,
-        status: "pending"
+        status: "confirmed"
       })
       .eq("id", bookingId);
 
