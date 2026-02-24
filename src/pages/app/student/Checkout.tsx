@@ -7,17 +7,20 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { 
-  CreditCard, Smartphone, Banknote, Loader2, Shield, 
-  Calendar, Clock, ArrowLeft, CheckCircle2 
+import {
+  CreditCard, Smartphone, Banknote, Loader2, Shield,
+  Calendar, Clock, ArrowLeft, CheckCircle2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { 
-  BUSINESS_RULES, formatCurrency, calculateGatewayFee, 
-  calculateTotalWithSurcharge, type PaymentMethod 
+import {
+  BUSINESS_RULES, formatCurrency, calculateGatewayFee,
+  calculateTotalWithSurcharge, type PaymentMethod
 } from '@/lib/businessRules';
+import { PixQRCode } from '@/components/checkout/PixQRCode';
+import { CardForm } from '@/components/checkout/CardForm';
+import { PaymentSuccessInline } from '@/components/checkout/PaymentSuccess';
 
 interface BookingDetails {
   id: string;
@@ -28,28 +31,12 @@ interface BookingDetails {
   instructor: { id: string; full_name: string; avatar_url: string | null };
 }
 
-const PAYMENT_METHODS: { id: PaymentMethod; label: string; icon: typeof CreditCard; description: string; feeLabel: string }[] = [
-  {
-    id: 'pix',
-    label: 'PIX',
-    icon: Smartphone,
-    description: 'Pagamento instantâneo, sem taxa adicional',
-    feeLabel: 'Sem taxa',
-  },
-  {
-    id: 'debit',
-    label: 'Cartão de Débito',
-    icon: Banknote,
-    description: `Taxa de ${BUSINESS_RULES.GATEWAY_FEE.DEBIT}% do gateway`,
-    feeLabel: `+${BUSINESS_RULES.GATEWAY_FEE.DEBIT}%`,
-  },
-  {
-    id: 'credit',
-    label: 'Cartão de Crédito',
-    icon: CreditCard,
-    description: `Taxa de ${BUSINESS_RULES.GATEWAY_FEE.CREDIT}% do gateway`,
-    feeLabel: `+${BUSINESS_RULES.GATEWAY_FEE.CREDIT}%`,
-  },
+type CheckoutStep = 'select' | 'pix' | 'card' | 'success' | 'error';
+
+const PAYMENT_METHODS: { id: PaymentMethod; label: string; icon: typeof CreditCard; description: string }[] = [
+  { id: 'pix', label: 'PIX', icon: Smartphone, description: 'Pagamento instantâneo, sem taxa adicional' },
+  { id: 'debit', label: 'Cartão de Débito', icon: Banknote, description: `Taxa de ${BUSINESS_RULES.GATEWAY_FEE.DEBIT}%` },
+  { id: 'credit', label: 'Cartão de Crédito', icon: CreditCard, description: `Taxa de ${BUSINESS_RULES.GATEWAY_FEE.CREDIT}%` },
 ];
 
 function formatCpf(value: string): string {
@@ -69,43 +56,39 @@ export default function Checkout() {
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('pix');
   const [cpf, setCpf] = useState('');
   const [cpfSaved, setCpfSaved] = useState(false);
+  const [userEmail, setUserEmail] = useState('');
+  const [step, setStep] = useState<CheckoutStep>('select');
+  const [pixData, setPixData] = useState<{ qrCode: string; qrCodeBase64: string; paymentId: number } | null>(null);
+  const [errorMessage, setErrorMessage] = useState('');
 
   useEffect(() => {
     if (bookingId) fetchBooking();
   }, [bookingId]);
 
   useEffect(() => {
-    // Load saved CPF
-    const loadCpf = async () => {
+    const loadProfile = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+      setUserEmail(user.email || '');
       const { data } = await supabase.from('profiles').select('cpf').eq('id', user.id).single();
       if (data?.cpf) {
         setCpf(formatCpf(data.cpf));
         setCpfSaved(true);
       }
     };
-    loadCpf();
+    loadProfile();
   }, []);
 
   const fetchBooking = async () => {
     try {
       const { data, error } = await supabase
         .from('bookings')
-        .select(`
-          id, date, time_slot, total_price, notes,
-          instructor:profiles!bookings_instructor_id_fkey(id, full_name, avatar_url)
-        `)
+        .select(`id, date, time_slot, total_price, notes, instructor:profiles!bookings_instructor_id_fkey(id, full_name, avatar_url)`)
         .eq('id', bookingId!)
         .single();
-
       if (error) throw error;
-      setBooking({
-        ...data,
-        instructor: data.instructor as any,
-      } as BookingDetails);
-    } catch (error) {
-      console.error('Error fetching booking:', error);
+      setBooking({ ...data, instructor: data.instructor as any } as BookingDetails);
+    } catch {
       toast.error('Agendamento não encontrado');
       navigate('/app/student/lessons');
     } finally {
@@ -113,46 +96,83 @@ export default function Checkout() {
     }
   };
 
-  const handlePayment = async () => {
-    if (!booking) return;
-    
-    const cpfDigits = cpf.replace(/\D/g, '');
-    if (cpfDigits.length !== 11) {
-      toast.error('Informe um CPF válido com 11 dígitos');
-      return;
+  const saveCpfIfNeeded = async () => {
+    if (cpfSaved) return;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await supabase.from('profiles').update({ cpf: cpf.replace(/\D/g, '') } as any).eq('id', user.id);
+      setCpfSaved(true);
     }
+  };
+
+  const handlePixPayment = async () => {
+    if (!booking) return;
+    const cpfDigits = cpf.replace(/\D/g, '');
+    if (cpfDigits.length !== 11) { toast.error('Informe um CPF válido'); return; }
 
     setProcessing(true);
-
     try {
-      // Save CPF if not saved yet
-      if (!cpfSaved) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          await supabase.from('profiles').update({ cpf: cpfDigits } as any).eq('id', user.id);
-          setCpfSaved(true);
-        }
+      await saveCpfIfNeeded();
+      const { data, error } = await supabase.functions.invoke('create-mp-checkout', {
+        body: { bookingId: booking.id, paymentMethod: 'pix' },
+      });
+      if (error) throw error;
+      if (data?.pix) {
+        setPixData({
+          qrCode: data.pix.qr_code,
+          qrCodeBase64: data.pix.qr_code_base64,
+          paymentId: data.payment_id,
+        });
+        setStep('pix');
+      } else {
+        throw new Error(data?.error || 'Erro ao gerar PIX');
       }
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao iniciar pagamento PIX');
+    } finally {
+      setProcessing(false);
+    }
+  };
 
+  const handleCardToken = async (tokenData: { token: string; paymentMethodId: string; installments: number; issuerId?: string }) => {
+    if (!booking) return;
+    setProcessing(true);
+    try {
+      await saveCpfIfNeeded();
       const { data, error } = await supabase.functions.invoke('create-mp-checkout', {
         body: {
           bookingId: booking.id,
           paymentMethod: selectedMethod,
+          cardToken: tokenData.token,
+          paymentMethodId: tokenData.paymentMethodId,
+          installments: tokenData.installments,
+          issuerId: tokenData.issuerId,
         },
       });
-
       if (error) throw error;
-
-      if (data?.init_point) {
-        window.location.href = data.init_point;
+      if (data?.status === 'approved') {
+        setStep('success');
+      } else if (data?.status === 'rejected') {
+        setErrorMessage(getStatusMessage(data.status_detail));
+        setStep('error');
+      } else if (data?.status === 'in_process') {
+        toast.info('Pagamento em análise. Você será notificado quando for aprovado.');
+        setStep('success');
       } else {
-        throw new Error('URL de pagamento não gerada');
+        throw new Error(data?.error || 'Pagamento não aprovado');
       }
-    } catch (error) {
-      console.error('Checkout error:', error);
-      toast.error('Erro ao iniciar pagamento. Tente novamente.');
+    } catch (err: any) {
+      toast.error(err.message || 'Erro ao processar pagamento');
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const handleProceed = () => {
+    if (selectedMethod === 'pix') {
+      handlePixPayment();
+    } else {
+      setStep('card');
     }
   };
 
@@ -169,21 +189,110 @@ export default function Checkout() {
   const subtotal = booking.total_price;
   const gatewayFee = calculateGatewayFee(subtotal, selectedMethod);
   const total = calculateTotalWithSurcharge(subtotal, selectedMethod);
-
-  const formattedDate = new Date(booking.date + 'T00:00:00').toLocaleDateString('pt-BR', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  });
-
-  const lessonType = booking.notes?.includes('perder_medo') ? 'Perder o Medo' : '1ª CNH';
   const cpfValid = cpf.replace(/\D/g, '').length === 11;
 
+  const formattedDate = new Date(booking.date + 'T00:00:00').toLocaleDateString('pt-BR', {
+    weekday: 'long', day: 'numeric', month: 'long',
+  });
+  const lessonType = booking.notes?.includes('perder_medo') ? 'Perder o Medo' : '1ª CNH';
+
+  // SUCCESS
+  if (step === 'success') {
+    return (
+      <div className="max-w-lg mx-auto">
+        <PaymentSuccessInline type="lesson" />
+      </div>
+    );
+  }
+
+  // ERROR
+  if (step === 'error') {
+    return (
+      <div className="max-w-lg mx-auto space-y-6 text-center py-10">
+        <div className="mx-auto w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center">
+          <CreditCard className="h-8 w-8 text-destructive" />
+        </div>
+        <h2 className="text-xl font-bold">Pagamento Recusado</h2>
+        <p className="text-muted-foreground">{errorMessage}</p>
+        <Button onClick={() => { setStep('select'); setErrorMessage(''); }}>
+          Tentar novamente
+        </Button>
+      </div>
+    );
+  }
+
+  // PIX QR CODE
+  if (step === 'pix' && pixData) {
+    return (
+      <div className="max-w-lg mx-auto space-y-4">
+        <Button variant="ghost" size="sm" onClick={() => setStep('select')}>
+          <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
+        </Button>
+        {/* Booking summary mini */}
+        <div className="flex items-center gap-3 px-2">
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={booking.instructor.avatar_url || undefined} />
+            <AvatarFallback className="bg-student text-student-foreground text-xs">
+              {booking.instructor.full_name?.charAt(0)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="text-sm">
+            <p className="font-medium">{booking.instructor.full_name}</p>
+            <p className="text-xs text-muted-foreground">{formattedDate} · {booking.time_slot}</p>
+          </div>
+          <Badge className="ml-auto bg-student/10 text-student border-0 text-sm font-bold">
+            {formatCurrency(total)}
+          </Badge>
+        </div>
+        <PixQRCode
+          qrCode={pixData.qrCode}
+          qrCodeBase64={pixData.qrCodeBase64}
+          paymentId={pixData.paymentId}
+          onPaymentApproved={() => setStep('success')}
+        />
+      </div>
+    );
+  }
+
+  // CARD FORM
+  if (step === 'card') {
+    return (
+      <div className="max-w-lg mx-auto space-y-4">
+        <Button variant="ghost" size="sm" onClick={() => setStep('select')}>
+          <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
+        </Button>
+        <div className="flex items-center gap-3 px-2">
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={booking.instructor.avatar_url || undefined} />
+            <AvatarFallback className="bg-student text-student-foreground text-xs">
+              {booking.instructor.full_name?.charAt(0)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="text-sm">
+            <p className="font-medium">{booking.instructor.full_name}</p>
+            <p className="text-xs text-muted-foreground">{formattedDate} · {booking.time_slot}</p>
+          </div>
+          <Badge className="ml-auto bg-student/10 text-student border-0 text-sm font-bold">
+            {formatCurrency(total)}
+          </Badge>
+        </div>
+        <CardForm
+          amount={total}
+          paymentMethod={selectedMethod as 'credit' | 'debit'}
+          cpf={cpf}
+          email={userEmail}
+          onTokenReady={handleCardToken}
+          processing={processing}
+        />
+      </div>
+    );
+  }
+
+  // SELECT PAYMENT METHOD (default step)
   return (
     <div className="max-w-lg mx-auto space-y-6 animate-fade-in">
       <Button variant="ghost" size="sm" onClick={() => navigate('/app/student/lessons')}>
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Voltar
+        <ArrowLeft className="h-4 w-4 mr-2" /> Voltar
       </Button>
 
       <div className="text-center">
@@ -207,14 +316,8 @@ export default function Checkout() {
             </div>
           </div>
           <div className="flex gap-4 text-sm text-muted-foreground">
-            <span className="flex items-center gap-1">
-              <Calendar className="h-3.5 w-3.5" />
-              {formattedDate}
-            </span>
-            <span className="flex items-center gap-1">
-              <Clock className="h-3.5 w-3.5" />
-              {booking.time_slot}
-            </span>
+            <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />{formattedDate}</span>
+            <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{booking.time_slot}</span>
           </div>
         </CardContent>
       </Card>
@@ -255,9 +358,7 @@ export default function Checkout() {
                 onClick={() => setSelectedMethod(method.id)}
                 className={cn(
                   'w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left',
-                  isSelected
-                    ? 'border-student bg-student/5'
-                    : 'border-border hover:border-student/40'
+                  isSelected ? 'border-student bg-student/5' : 'border-border hover:border-student/40'
                 )}
               >
                 <div className={cn(
@@ -269,11 +370,7 @@ export default function Checkout() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{method.label}</span>
-                    {method.id === 'pix' && (
-                      <Badge variant="secondary" className="text-[10px]">
-                        Sem taxa
-                      </Badge>
-                    )}
+                    {method.id === 'pix' && <Badge variant="secondary" className="text-[10px]">Sem taxa</Badge>}
                   </div>
                   <p className="text-xs text-muted-foreground">{method.description}</p>
                 </div>
@@ -301,9 +398,7 @@ export default function Checkout() {
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">
                 Taxa do {selectedMethod === 'debit' ? 'Débito' : 'Crédito'} ({
-                  selectedMethod === 'debit' 
-                    ? BUSINESS_RULES.GATEWAY_FEE.DEBIT 
-                    : BUSINESS_RULES.GATEWAY_FEE.CREDIT
+                  selectedMethod === 'debit' ? BUSINESS_RULES.GATEWAY_FEE.DEBIT : BUSINESS_RULES.GATEWAY_FEE.CREDIT
                 }%)
               </span>
               <span className="text-muted-foreground">+{formatCurrency(gatewayFee)}</span>
@@ -314,30 +409,19 @@ export default function Checkout() {
             <span className="font-semibold">Total</span>
             <span className="text-2xl font-bold text-student">{formatCurrency(total)}</span>
           </div>
-          {gatewayFee > 0 && (
-            <p className="text-[11px] text-muted-foreground text-center">
-              A taxa do cartão cobre os custos do gateway de pagamento. O instrutor e a plataforma recebem com base no subtotal.
-            </p>
-          )}
         </CardContent>
       </Card>
 
-      {/* Pay Button */}
+      {/* Proceed Button */}
       <Button
         className="w-full h-12 bg-student hover:bg-student/90 text-lg"
-        onClick={handlePayment}
+        onClick={handleProceed}
         disabled={processing || !cpfValid}
       >
         {processing ? (
-          <>
-            <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-            Processando...
-          </>
+          <><Loader2 className="h-5 w-5 mr-2 animate-spin" /> Processando...</>
         ) : (
-          <>
-            <Shield className="h-5 w-5 mr-2" />
-            Pagar {formatCurrency(total)}
-          </>
+          <><Shield className="h-5 w-5 mr-2" /> {selectedMethod === 'pix' ? 'Gerar PIX' : `Pagar ${formatCurrency(total)}`}</>
         )}
       </Button>
 
@@ -346,4 +430,23 @@ export default function Checkout() {
       </p>
     </div>
   );
+}
+
+function getStatusMessage(statusDetail: string): string {
+  const messages: Record<string, string> = {
+    cc_rejected_bad_filled_card_number: 'Número do cartão incorreto.',
+    cc_rejected_bad_filled_date: 'Data de validade incorreta.',
+    cc_rejected_bad_filled_other: 'Dados do cartão incorretos.',
+    cc_rejected_bad_filled_security_code: 'Código de segurança incorreto.',
+    cc_rejected_blacklist: 'Cartão não autorizado. Use outro cartão.',
+    cc_rejected_call_for_authorize: 'Ligue para a operadora do cartão para autorizar.',
+    cc_rejected_card_disabled: 'Cartão desabilitado. Ligue para a operadora.',
+    cc_rejected_duplicated_payment: 'Pagamento duplicado. Tente mais tarde.',
+    cc_rejected_high_risk: 'Pagamento recusado por medidas de segurança.',
+    cc_rejected_insufficient_amount: 'Saldo insuficiente.',
+    cc_rejected_invalid_installments: 'Parcelamento não disponível.',
+    cc_rejected_max_attempts: 'Limite de tentativas atingido. Use outro cartão.',
+    cc_rejected_other_reason: 'Cartão recusado. Use outro cartão.',
+  };
+  return messages[statusDetail] || 'Pagamento recusado. Tente outro método ou cartão.';
 }
