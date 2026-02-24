@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Calendar, Clock, Star, Car, History } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import StudentRatingModal from '@/components/student/StudentRatingModal';
 
 interface CompletedLesson {
   id: string;
@@ -32,6 +34,9 @@ export default function StudentHistory() {
   const { user } = useAuth();
   const [lessons, setLessons] = useState<CompletedLesson[]>([]);
   const [loading, setLoading] = useState(true);
+  const [ratingModal, setRatingModal] = useState<{ open: boolean; bookingId: string; instructorName: string }>({
+    open: false, bookingId: '', instructorName: '',
+  });
 
   useEffect(() => {
     if (user?.id) fetchHistory();
@@ -139,24 +144,10 @@ export default function StudentHistory() {
                       )}
                     </div>
 
-                    {/* Feedback section */}
+                    {/* Feedback pedagógico do instrutor */}
                     {lesson.feedback && (
                       <div className="mt-4 p-3 rounded-lg bg-muted/50 border">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="text-sm font-medium">Avaliação do Instrutor:</span>
-                          <div className="flex items-center gap-0.5">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <Star
-                                key={star}
-                                className={`h-4 w-4 ${
-                                  star <= (lesson.feedback?.rating || 0)
-                                    ? 'text-warning fill-warning'
-                                    : 'text-muted-foreground'
-                                }`}
-                              />
-                            ))}
-                          </div>
-                        </div>
+                        <span className="text-sm font-medium mb-2 block">Feedback do Instrutor:</span>
 
                         {lesson.feedback.feedback && (
                           <p className="text-sm text-muted-foreground mb-2">
@@ -178,6 +169,38 @@ export default function StudentHistory() {
                         </div>
                       </div>
                     )}
+
+                    {/* Avaliação do aluno para o instrutor */}
+                    {lesson.feedback?.rating ? (
+                      <div className="mt-3 flex items-center gap-2">
+                        <span className="text-sm font-medium">Sua avaliação:</span>
+                        <div className="flex items-center gap-0.5">
+                          {[1, 2, 3, 4, 5].map((star) => (
+                            <Star
+                              key={star}
+                              className={`h-4 w-4 ${
+                                star <= (lesson.feedback?.rating || 0)
+                                  ? 'text-warning fill-warning'
+                                  : 'text-muted-foreground'
+                              }`}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    ) : lesson.feedback ? (
+                      <Button
+                        size="sm"
+                        className="mt-3 bg-student hover:bg-student/90"
+                        onClick={() => setRatingModal({
+                          open: true,
+                          bookingId: lesson.id,
+                          instructorName: lesson.instructor?.full_name || '',
+                        })}
+                      >
+                        <Star className="h-4 w-4 mr-1" />
+                        Avaliar Instrutor
+                      </Button>
+                    ) : null}
                   </div>
                 </div>
               </CardContent>
@@ -185,6 +208,14 @@ export default function StudentHistory() {
           ))}
         </div>
       )}
+
+      <StudentRatingModal
+        open={ratingModal.open}
+        onOpenChange={(open) => setRatingModal(prev => ({ ...prev, open }))}
+        bookingId={ratingModal.bookingId}
+        instructorName={ratingModal.instructorName}
+        onCompleted={fetchHistory}
+      />
     </div>
   );
 }
