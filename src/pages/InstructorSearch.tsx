@@ -34,6 +34,7 @@ const InstructorSearch = () => {
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [selectedInstructor, setSelectedInstructor] = useState<Instructor | null>(null);
+  const [pendingPackageId, setPendingPackageId] = useState<string | null>(null);
   const { user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
