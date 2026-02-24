@@ -217,7 +217,7 @@ export default function InstructorHome() {
     }
     if (lesson.status === 'confirmed') {
       return (
-        <Button size="sm" className="bg-instructor hover:bg-instructor/90 text-xs" onClick={() => handleStartLesson(lesson.id)}>
+        <Button size="sm" className="bg-instructor hover:bg-instructor/90 text-xs" onClick={() => handleStartLesson(lesson.id, lesson.student?.full_name || '')}>
           <Play className="h-3 w-3 mr-1" /> Iniciar
         </Button>
       );
