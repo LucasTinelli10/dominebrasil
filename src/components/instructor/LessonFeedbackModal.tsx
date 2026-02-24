@@ -42,6 +42,9 @@ export default function LessonFeedbackModal({
   onOpenChange,
   bookingId,
   studentName,
+  verificationCode,
+  verificationLat,
+  verificationLng,
   onCompleted,
 }: LessonFeedbackModalProps) {
   const [rating, setRating] = useState(5);
