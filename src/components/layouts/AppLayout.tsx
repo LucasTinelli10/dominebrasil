@@ -5,11 +5,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Bell, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useBookingRealtime } from '@/hooks/useBookingRealtime';
 
 export function AppLayout() {
   const { profile } = useAuth();
   const navigate = useNavigate();
   const role = profile?.role || 'student';
+  useBookingRealtime();
 
   const handleNotificationsClick = () => {
     navigate(`/app/${role}/messages`);
