@@ -16,6 +16,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import LessonFeedbackModal from '@/components/instructor/LessonFeedbackModal';
+import VerificationCodeModal from '@/components/instructor/VerificationCodeModal';
 
 interface UpcomingLesson {
   id: string;
@@ -43,8 +44,11 @@ export default function InstructorHome() {
   });
   const [earningsData, setEarningsData] = useState<EarningsData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [feedbackModal, setFeedbackModal] = useState<{ open: boolean; bookingId: string; studentName: string }>({
+  const [feedbackModal, setFeedbackModal] = useState<{ open: boolean; bookingId: string; studentName: string; code?: string; lat?: number | null; lng?: number | null }>({
     open: false, bookingId: '', studentName: '',
+  });
+  const [verificationModal, setVerificationModal] = useState<{ open: boolean; bookingId: string; type: 'start' | 'finish'; studentName: string }>({
+    open: false, bookingId: '', type: 'start', studentName: '',
   });
 
   useEffect(() => {
@@ -159,19 +163,37 @@ export default function InstructorHome() {
     return `${hours}h ${minutes}min`;
   };
 
-  const handleStartLesson = async (bookingId: string) => {
-    try {
-      const { error } = await supabase.rpc('start_lesson', { p_booking_id: bookingId });
-      if (error) throw error;
-      toast.success('Aula iniciada!');
-      fetchDashboardData();
-    } catch (error: any) {
-      toast.error('Erro ao iniciar aula: ' + error.message);
-    }
+  const handleStartLesson = async (bookingId: string, studentName: string) => {
+    setVerificationModal({ open: true, bookingId, type: 'start', studentName });
+  };
+
+  const handleVerifiedStart = async (code: string, lat: number | null, lng: number | null) => {
+    const { error } = await supabase.rpc('start_lesson', {
+      p_booking_id: verificationModal.bookingId,
+      p_code: code,
+      p_lat: lat,
+      p_lng: lng,
+    });
+    if (error) throw error;
+    toast.success('Aula iniciada!');
+    fetchDashboardData();
   };
 
   const handleFinishLesson = (bookingId: string, studentName: string) => {
-    setFeedbackModal({ open: true, bookingId, studentName });
+    setVerificationModal({ open: true, bookingId, type: 'finish', studentName });
+  };
+
+  const handleVerifiedFinish = async (code: string, lat: number | null, lng: number | null) => {
+    // Store code/GPS for use in feedback modal
+    setVerificationModal(prev => ({ ...prev, open: false }));
+    setFeedbackModal({
+      open: true,
+      bookingId: verificationModal.bookingId,
+      studentName: verificationModal.studentName,
+      code,
+      lat,
+      lng,
+    });
   };
 
   const getStatusBadge = (status: string) => {
@@ -195,7 +217,7 @@ export default function InstructorHome() {
     }
     if (lesson.status === 'confirmed') {
       return (
-        <Button size="sm" className="bg-instructor hover:bg-instructor/90 text-xs" onClick={() => handleStartLesson(lesson.id)}>
+        <Button size="sm" className="bg-instructor hover:bg-instructor/90 text-xs" onClick={() => handleStartLesson(lesson.id, lesson.student?.full_name || '')}>
           <Play className="h-3 w-3 mr-1" /> Iniciar
         </Button>
       );
@@ -377,12 +399,23 @@ export default function InstructorHome() {
         </Card>
       )}
 
+      {/* Verification Code Modal */}
+      <VerificationCodeModal
+        open={verificationModal.open}
+        onOpenChange={(open) => setVerificationModal(prev => ({ ...prev, open }))}
+        type={verificationModal.type}
+        onSubmit={verificationModal.type === 'start' ? handleVerifiedStart : handleVerifiedFinish}
+      />
+
       {/* Feedback Modal */}
       <LessonFeedbackModal
         open={feedbackModal.open}
         onOpenChange={(open) => setFeedbackModal(prev => ({ ...prev, open }))}
         bookingId={feedbackModal.bookingId}
         studentName={feedbackModal.studentName}
+        verificationCode={feedbackModal.code}
+        verificationLat={feedbackModal.lat}
+        verificationLng={feedbackModal.lng}
         onCompleted={fetchDashboardData}
       />
     </div>
