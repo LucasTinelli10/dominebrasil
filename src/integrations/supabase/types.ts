@@ -380,6 +380,59 @@ export type Database = {
           },
         ]
       }
+      lesson_verifications: {
+        Row: {
+          booking_id: string
+          code: string
+          created_at: string | null
+          distance_meters: number | null
+          expires_at: string
+          id: string
+          instructor_lat: number | null
+          instructor_lng: number | null
+          student_lat: number | null
+          student_lng: number | null
+          type: string
+          verified: boolean | null
+        }
+        Insert: {
+          booking_id: string
+          code: string
+          created_at?: string | null
+          distance_meters?: number | null
+          expires_at: string
+          id?: string
+          instructor_lat?: number | null
+          instructor_lng?: number | null
+          student_lat?: number | null
+          student_lng?: number | null
+          type: string
+          verified?: boolean | null
+        }
+        Update: {
+          booking_id?: string
+          code?: string
+          created_at?: string | null
+          distance_meters?: number | null
+          expires_at?: string
+          id?: string
+          instructor_lat?: number | null
+          instructor_lng?: number | null
+          student_lat?: number | null
+          student_lng?: number | null
+          type?: string
+          verified?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_verifications_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           booking_id: string | null
@@ -647,15 +700,38 @@ export type Database = {
         Args: { check_date: string; check_time: string; instr_id: string }
         Returns: boolean
       }
-      complete_lesson: {
+      complete_lesson:
+        | {
+            Args: {
+              p_areas_to_improve?: string[]
+              p_booking_id: string
+              p_feedback?: string
+              p_rating?: number
+              p_strengths?: string[]
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_areas_to_improve?: string[]
+              p_booking_id: string
+              p_code?: string
+              p_feedback?: string
+              p_lat?: number
+              p_lng?: number
+              p_rating?: number
+              p_strengths?: string[]
+            }
+            Returns: undefined
+          }
+      generate_lesson_code: {
         Args: {
-          p_areas_to_improve?: string[]
           p_booking_id: string
-          p_feedback?: string
-          p_rating?: number
-          p_strengths?: string[]
+          p_lat?: number
+          p_lng?: number
+          p_type: string
         }
-        Returns: undefined
+        Returns: string
       }
       get_all_approved_instructors: {
         Args: never
@@ -762,7 +838,17 @@ export type Database = {
         Args: { instructor_ref: string }
         Returns: string
       }
-      start_lesson: { Args: { p_booking_id: string }; Returns: undefined }
+      start_lesson:
+        | { Args: { p_booking_id: string }; Returns: undefined }
+        | {
+            Args: {
+              p_booking_id: string
+              p_code?: string
+              p_lat?: number
+              p_lng?: number
+            }
+            Returns: undefined
+          }
     }
     Enums: {
       app_role: "student" | "instructor" | "investor" | "admin"
