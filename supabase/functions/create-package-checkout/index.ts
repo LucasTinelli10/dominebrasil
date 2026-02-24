@@ -77,6 +77,13 @@ serve(async (req) => {
       .eq("id", pkg.instructor_id)
       .single();
 
+    // Fetch student profile for payer info
+    const { data: studentProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("full_name")
+      .eq("id", user.id)
+      .single();
+
     const instructorName = profileData?.full_name || "Instrutor";
     logStep("Package found", { name: pkg.name, price: pkg.price, instructorName });
 
@@ -116,6 +123,8 @@ serve(async (req) => {
       ],
       payer: {
         email: user.email,
+        first_name: studentProfile?.full_name?.split(" ")[0] || "",
+        last_name: studentProfile?.full_name?.split(" ").slice(1).join(" ") || "",
       },
       payment_methods: {
         excluded_payment_types: excludedPaymentMethods,

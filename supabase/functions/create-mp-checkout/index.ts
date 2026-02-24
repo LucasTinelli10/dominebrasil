@@ -96,6 +96,13 @@ serve(async (req) => {
     const pricePerHour = Number(instrDetails?.price_per_hour) || subtotal;
     const duration = pricePerHour > 0 ? Math.round(subtotal / pricePerHour) : 1;
 
+    // Fetch student profile for payer info
+    const { data: studentProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("full_name")
+      .eq("id", user.id)
+      .single();
+
     logStep("Calculated amounts", { subtotal, gatewayFee, totalAmount, paymentMethod, duration });
 
     // Map payment method to MP excluded types
@@ -136,6 +143,8 @@ serve(async (req) => {
       ],
       payer: {
         email: user.email,
+        first_name: studentProfile?.full_name?.split(" ")[0] || "",
+        last_name: studentProfile?.full_name?.split(" ").slice(1).join(" ") || "",
       },
       payment_methods: {
         excluded_payment_types: excludedPaymentMethods,
