@@ -11,8 +11,8 @@ export function PaymentSuccessInline({ type }: PaymentSuccessProps) {
 
   return (
     <div className="text-center space-y-6 py-6 animate-fade-in">
-      <div className="mx-auto w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-        <CheckCircle2 className="h-12 w-12 text-green-600" />
+      <div className="mx-auto w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+        <CheckCircle2 className="h-12 w-12 text-primary" />
       </div>
 
       <div className="space-y-2">
@@ -46,7 +46,7 @@ export function PaymentSuccessInline({ type }: PaymentSuccessProps) {
       <div className="flex flex-col gap-3 max-w-sm mx-auto">
         <Button
           onClick={() => navigate('/app/student/lessons')}
-          className="w-full bg-green-600 hover:bg-green-700 text-white"
+          className="w-full bg-student hover:bg-student/90"
           size="lg"
         >
           Ver Minhas Aulas
