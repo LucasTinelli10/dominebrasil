@@ -204,6 +204,13 @@ export default function StudentLessons() {
           ))}
         </div>
       )}
+
+      <LessonCodeModal
+        open={codeModal.open}
+        onOpenChange={(open) => setCodeModal(prev => ({ ...prev, open }))}
+        bookingId={codeModal.bookingId}
+        type={codeModal.type}
+      />
     </div>
   );
 }
