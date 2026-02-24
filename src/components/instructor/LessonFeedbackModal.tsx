@@ -66,6 +66,9 @@ export default function LessonFeedbackModal({
         p_feedback: feedback || null,
         p_strengths: strengths.length > 0 ? strengths : null,
         p_areas_to_improve: improvements.length > 0 ? improvements : null,
+        p_code: verificationCode || null,
+        p_lat: verificationLat ?? null,
+        p_lng: verificationLng ?? null,
       });
 
       if (error) throw error;
