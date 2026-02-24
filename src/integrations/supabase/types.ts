@@ -14,6 +14,27 @@ export type Database = {
   }
   public: {
     Tables: {
+      archived_conversations: {
+        Row: {
+          archived_at: string
+          id: string
+          participant_id: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string
+          id?: string
+          participant_id: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string
+          id?: string
+          participant_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       bookings: {
         Row: {
           car_id: string | null
