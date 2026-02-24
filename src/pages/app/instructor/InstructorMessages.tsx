@@ -181,6 +181,21 @@ export default function InstructorMessages() {
     }
   };
 
+  const handleArchiveConversation = async () => {
+    if (!selectedConversation) return;
+    const { error } = await supabase
+      .from('archived_conversations')
+      .insert({
+        user_id: user?.id,
+        participant_id: selectedConversation.participant_id,
+      });
+    if (!error) {
+      toast.success('Conversa arquivada');
+      setSelectedConversation(null);
+      fetchConversations();
+    }
+  };
+
   const formatTime = (dateStr: string) => {
     const date = new Date(dateStr);
     const now = new Date();
