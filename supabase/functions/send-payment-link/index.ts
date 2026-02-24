@@ -194,8 +194,8 @@ serve(async (req) => {
               </div>
             </div>
             
-            <div class="price">
-              R$ ${lessonPrice.toFixed(2)}
+             <div class="price">
+              R$ ${totalPrice.toFixed(2)}
             </div>
             
             <div style="text-align: center;">
