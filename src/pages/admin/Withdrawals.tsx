@@ -196,18 +196,27 @@ export default function AdminWithdrawals() {
         <div className="flex gap-2">
           <Button
             size="sm"
-            className="flex-1 bg-green-600 hover:bg-green-700"
-            onClick={() => handleUpdateStatus(w.id, 'completed')}
+            className="flex-1 bg-teal-600 hover:bg-teal-700"
+            onClick={() => handlePayViaPix(w.id)}
             disabled={processingId === w.id}
           >
             {processingId === w.id ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <>
-                <CheckCircle className="h-4 w-4 mr-1" />
-                Marcar como Pago
+                <Zap className="h-4 w-4 mr-1" />
+                Pagar via PIX
               </>
             )}
+          </Button>
+          <Button
+            size="sm"
+            className="bg-green-600 hover:bg-green-700"
+            onClick={() => handleUpdateStatus(w.id, 'completed')}
+            disabled={processingId === w.id}
+          >
+            <CheckCircle className="h-4 w-4 mr-1" />
+            Manual
           </Button>
           <Button
             size="sm"
