@@ -47,7 +47,6 @@ import Settings from "./pages/app/Settings";
 
 // Legacy pages
 import InstructorOnboarding from "./pages/instructor/Onboarding";
-import InstructorOnboarding from "./pages/instructor/Onboarding";
 import AdminVerifications from "./pages/admin/Verifications";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminRevenue from "./pages/admin/Revenue";
