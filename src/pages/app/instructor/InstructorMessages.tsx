@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Search, Send, MessageSquare, Archive } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Search, Send, MessageSquare, Archive, ArchiveRestore } from 'lucide-react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,10 +33,12 @@ interface Message {
 export default function InstructorMessages() {
   const { user } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [archivedConversations, setArchivedConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('active');
 
   useEffect(() => {
     if (user?.id) {
@@ -52,14 +55,12 @@ export default function InstructorMessages() {
 
   const fetchConversations = async () => {
     try {
-      // Get archived conversation IDs
       const { data: archivedData } = await supabase
         .from('archived_conversations')
         .select('participant_id')
         .eq('user_id', user?.id);
       const archivedIds = new Set(archivedData?.map(a => a.participant_id) || []);
 
-      // Get unique conversation partners
       const { data: sentMessages } = await supabase
         .from('messages')
         .select('receiver_id, content, created_at')
@@ -76,10 +77,10 @@ export default function InstructorMessages() {
       sentMessages?.forEach(m => participantIds.add(m.receiver_id));
       receivedMessages?.forEach(m => participantIds.add(m.sender_id));
 
-      const convos: Conversation[] = [];
+      const activeConvos: Conversation[] = [];
+      const archivedConvos: Conversation[] = [];
+
       for (const participantId of participantIds) {
-        if (archivedIds.has(participantId)) continue;
-        
         const { data: profile } = await supabase
           .from('profiles')
           .select('id, full_name, avatar_url')
@@ -94,23 +95,31 @@ export default function InstructorMessages() {
 
           const unread = receivedMessages?.filter(m => m.sender_id === participantId && !m.read).length || 0;
 
-          convos.push({
+          const convo: Conversation = {
             participant_id: profile.id,
             participant_name: profile.full_name || 'Usuário',
             participant_avatar: profile.avatar_url || '',
             last_message: allMessages[0]?.content || '',
             last_message_time: allMessages[0]?.created_at || '',
             unread_count: unread,
-          });
+          };
+
+          if (archivedIds.has(participantId)) {
+            archivedConvos.push(convo);
+          } else {
+            activeConvos.push(convo);
+          }
         }
       }
 
-      setConversations(convos.sort((a, b) => 
-        new Date(b.last_message_time).getTime() - new Date(a.last_message_time).getTime()
-      ));
+      const sortByTime = (a: Conversation, b: Conversation) =>
+        new Date(b.last_message_time).getTime() - new Date(a.last_message_time).getTime();
 
-      if (convos.length > 0 && !selectedConversation) {
-        setSelectedConversation(convos[0]);
+      setConversations(activeConvos.sort(sortByTime));
+      setArchivedConversations(archivedConvos.sort(sortByTime));
+
+      if (activeConvos.length > 0 && !selectedConversation) {
+        setSelectedConversation(activeConvos[0]);
       }
     } catch (error) {
       console.error('Error fetching conversations:', error);
@@ -128,7 +137,6 @@ export default function InstructorMessages() {
 
     if (data) {
       setMessages(data);
-      // Mark as read
       await supabase
         .from('messages')
         .update({ read: true })
@@ -142,11 +150,7 @@ export default function InstructorMessages() {
       .channel('instructor-messages')
       .on(
         'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'messages',
-        },
+        { event: 'INSERT', schema: 'public', table: 'messages' },
         (payload) => {
           const newMsg = payload.new as Message;
           if (
@@ -159,22 +163,14 @@ export default function InstructorMessages() {
       )
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    return () => { supabase.removeChannel(channel); };
   };
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedConversation) return;
-
     const { error } = await supabase
       .from('messages')
-      .insert({
-        sender_id: user?.id,
-        receiver_id: selectedConversation.participant_id,
-        content: newMessage.trim(),
-      });
-
+      .insert({ sender_id: user?.id, receiver_id: selectedConversation.participant_id, content: newMessage.trim() });
     if (!error) {
       setNewMessage('');
       fetchConversations();
@@ -185,13 +181,25 @@ export default function InstructorMessages() {
     if (!selectedConversation) return;
     const { error } = await supabase
       .from('archived_conversations')
-      .insert({
-        user_id: user?.id,
-        participant_id: selectedConversation.participant_id,
-      });
+      .insert({ user_id: user?.id, participant_id: selectedConversation.participant_id });
     if (!error) {
       toast.success('Conversa arquivada');
       setSelectedConversation(null);
+      fetchConversations();
+    }
+  };
+
+  const handleUnarchiveConversation = async (participantId: string) => {
+    const { error } = await supabase
+      .from('archived_conversations')
+      .delete()
+      .eq('user_id', user?.id)
+      .eq('participant_id', participantId);
+    if (!error) {
+      toast.success('Conversa desarquivada');
+      if (selectedConversation?.participant_id === participantId) {
+        setSelectedConversation(null);
+      }
       fetchConversations();
     }
   };
@@ -200,15 +208,54 @@ export default function InstructorMessages() {
     const date = new Date(dateStr);
     const now = new Date();
     const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) {
-      return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    } else if (diffDays === 1) {
-      return 'Ontem';
-    } else {
-      return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-    }
+    if (diffDays === 0) return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    if (diffDays === 1) return 'Ontem';
+    return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
   };
+
+  const renderConversationItem = (conv: Conversation, isArchived = false) => (
+    <div
+      key={conv.participant_id}
+      className={cn(
+        'flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all',
+        selectedConversation?.participant_id === conv.participant_id
+          ? 'bg-instructor/10'
+          : 'hover:bg-muted/50'
+      )}
+      onClick={() => setSelectedConversation(conv)}
+    >
+      <Avatar className="h-12 w-12">
+        <AvatarImage src={conv.participant_avatar} />
+        <AvatarFallback className="bg-instructor text-instructor-foreground">
+          {conv.participant_name.charAt(0)}
+        </AvatarFallback>
+      </Avatar>
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between">
+          <p className="font-medium text-foreground truncate">{conv.participant_name}</p>
+          <span className="text-xs text-muted-foreground">{formatTime(conv.last_message_time)}</span>
+        </div>
+        <p className="text-sm text-muted-foreground truncate">{conv.last_message}</p>
+      </div>
+      {isArchived ? (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 shrink-0 text-muted-foreground hover:text-primary"
+          onClick={(e) => { e.stopPropagation(); handleUnarchiveConversation(conv.participant_id); }}
+          title="Desarquivar"
+        >
+          <ArchiveRestore className="h-4 w-4" />
+        </Button>
+      ) : (
+        conv.unread_count > 0 && (
+          <Badge className="bg-instructor h-5 w-5 p-0 flex items-center justify-center">
+            {conv.unread_count}
+          </Badge>
+        )
+      )}
+    </div>
+  );
 
   if (loading) {
     return (
@@ -230,50 +277,50 @@ export default function InstructorMessages() {
             <Input placeholder="Buscar conversa..." className="pl-9" />
           </div>
         </div>
-        <ScrollArea className="flex-1">
-          <div className="p-2 space-y-1">
-            {conversations.length === 0 ? (
-              <div className="p-4 text-center text-muted-foreground">
-                <MessageSquare className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                <p>Nenhuma conversa ainda</p>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+          <TabsList className="mx-4 mt-2">
+            <TabsTrigger value="active" className="flex-1">Ativas</TabsTrigger>
+            <TabsTrigger value="archived" className="flex-1">
+              Arquivadas
+              {archivedConversations.length > 0 && (
+                <Badge variant="secondary" className="ml-1.5 h-5 px-1.5 text-[10px]">
+                  {archivedConversations.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="active" className="flex-1 m-0">
+            <ScrollArea className="h-full">
+              <div className="p-2 space-y-1">
+                {conversations.length === 0 ? (
+                  <div className="p-4 text-center text-muted-foreground">
+                    <MessageSquare className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                    <p>Nenhuma conversa ainda</p>
+                  </div>
+                ) : (
+                  conversations.map((conv) => renderConversationItem(conv))
+                )}
               </div>
-            ) : (
-              conversations.map((conv) => (
-                <div
-                  key={conv.participant_id}
-                  onClick={() => setSelectedConversation(conv)}
-                  className={cn(
-                    'flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all',
-                    selectedConversation?.participant_id === conv.participant_id
-                      ? 'bg-instructor/10'
-                      : 'hover:bg-muted/50'
-                  )}
-                >
-                  <div className="relative">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={conv.participant_avatar} />
-                      <AvatarFallback className="bg-instructor text-instructor-foreground">
-                        {conv.participant_name.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
+            </ScrollArea>
+          </TabsContent>
+
+          <TabsContent value="archived" className="flex-1 m-0">
+            <ScrollArea className="h-full">
+              <div className="p-2 space-y-1">
+                {archivedConversations.length === 0 ? (
+                  <div className="p-4 text-center text-muted-foreground">
+                    <Archive className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                    <p>Nenhuma conversa arquivada</p>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <p className="font-medium text-foreground truncate">{conv.participant_name}</p>
-                      <span className="text-xs text-muted-foreground">{formatTime(conv.last_message_time)}</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground truncate">{conv.last_message}</p>
-                  </div>
-                  {conv.unread_count > 0 && (
-                    <Badge className="bg-instructor h-5 w-5 p-0 flex items-center justify-center">
-                      {conv.unread_count}
-                    </Badge>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
-        </ScrollArea>
+                ) : (
+                  archivedConversations.map((conv) => renderConversationItem(conv, true))
+                )}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+        </Tabs>
       </Card>
 
       {/* Chat Area */}
@@ -291,51 +338,48 @@ export default function InstructorMessages() {
                 <p className="font-medium text-foreground">{selectedConversation.participant_name}</p>
                 <p className="text-xs text-muted-foreground">Aluno</p>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-muted-foreground hover:text-destructive"
-                onClick={handleArchiveConversation}
-              >
-                <Archive className="h-4 w-4 mr-1" />
-                Arquivar
-              </Button>
+              {archivedConversations.some(c => c.participant_id === selectedConversation.participant_id) ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground hover:text-primary"
+                  onClick={() => handleUnarchiveConversation(selectedConversation.participant_id)}
+                >
+                  <ArchiveRestore className="h-4 w-4 mr-1" />
+                  Desarquivar
+                </Button>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground hover:text-destructive"
+                  onClick={handleArchiveConversation}
+                >
+                  <Archive className="h-4 w-4 mr-1" />
+                  Arquivar
+                </Button>
+              )}
             </div>
 
             <ScrollArea className="flex-1 p-4">
               <div className="space-y-4">
                 {messages.length === 0 && (
-                  <div className="text-center text-muted-foreground py-8">
-                    Nenhuma mensagem ainda
-                  </div>
+                  <div className="text-center text-muted-foreground py-8">Nenhuma mensagem ainda</div>
                 )}
                 {messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={cn(
-                      'flex',
-                      msg.sender_id === user?.id ? 'justify-end' : 'justify-start'
-                    )}
-                  >
-                    <div
-                      className={cn(
-                        'max-w-[70%] rounded-2xl px-4 py-2.5',
-                        msg.sender_id === user?.id
-                          ? 'bg-instructor text-instructor-foreground rounded-br-sm'
-                          : 'bg-muted rounded-bl-sm'
-                      )}
-                    >
+                  <div key={msg.id} className={cn('flex', msg.sender_id === user?.id ? 'justify-end' : 'justify-start')}>
+                    <div className={cn(
+                      'max-w-[70%] rounded-2xl px-4 py-2.5',
+                      msg.sender_id === user?.id
+                        ? 'bg-instructor text-instructor-foreground rounded-br-sm'
+                        : 'bg-muted rounded-bl-sm'
+                    )}>
                       <p className="text-sm leading-relaxed">{msg.content}</p>
                       <p className={cn(
                         'text-[10px] mt-1 text-right',
-                        msg.sender_id === user?.id 
-                          ? 'text-instructor-foreground/70' 
-                          : 'text-muted-foreground'
+                        msg.sender_id === user?.id ? 'text-instructor-foreground/70' : 'text-muted-foreground'
                       )}>
-                        {new Date(msg.created_at).toLocaleTimeString('pt-BR', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        })}
+                        {new Date(msg.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                   </div>
