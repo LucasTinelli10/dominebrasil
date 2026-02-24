@@ -182,14 +182,14 @@ export default function StudentLessons() {
                         <MessageSquare className="h-4 w-4 mr-2" />
                         Chat
                       </Button>
-                      {((lesson as any).status === 'confirmed' || (lesson as any).status === 'in_progress') && (
+                      {(lesson as any).status === 'confirmed' && (
                         <Button
                           variant="outline"
                           className="border-student text-student hover:bg-student/10"
                           onClick={() => setCodeModal({
                             open: true,
                             bookingId: lesson.id,
-                            type: (lesson as any).status === 'confirmed' ? 'start' : 'finish',
+                            type: 'start',
                           })}
                         >
                           <Shield className="h-4 w-4 mr-2" />
