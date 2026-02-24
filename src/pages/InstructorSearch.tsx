@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,6 +36,8 @@ const InstructorSearch = () => {
   const [selectedInstructor, setSelectedInstructor] = useState<Instructor | null>(null);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const isInsideApp = location.pathname.startsWith('/app/');
 
   const handleSearch = async () => {
     if (!city.trim()) return;
@@ -96,29 +98,31 @@ const InstructorSearch = () => {
   }, [user, selectedInstructor]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      {/* Header */}
-      <header className="bg-slate-900 text-white py-4">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => navigate('/')}
-              className="text-white hover:text-teal-300"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Voltar
-            </Button>
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center">
-              <span className="text-white font-display font-bold">D</span>
+    <div className={isInsideApp ? "" : "min-h-screen bg-gradient-to-b from-slate-50 to-white"}>
+      {/* Header - only on public route */}
+      {!isInsideApp && (
+        <header className="bg-slate-900 text-white py-4">
+          <div className="container mx-auto px-4">
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => navigate('/')}
+                className="text-white hover:text-teal-300"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Voltar
+              </Button>
+              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center">
+                <span className="text-white font-display font-bold">D</span>
+              </div>
+              <span className="font-display font-bold text-lg">
+                Domine<span className="text-teal-400">Brasil</span>
+              </span>
             </div>
-            <span className="font-display font-bold text-lg">
-              Domine<span className="text-teal-400">Brasil</span>
-            </span>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       <div className="container mx-auto px-4 py-12">
         {/* Search Section */}
