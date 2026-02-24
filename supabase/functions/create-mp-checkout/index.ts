@@ -4,10 +4,9 @@ import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Gateway fee percentages (must match frontend)
 const GATEWAY_FEES: Record<string, number> = {
   pix: 0,
   debit: 1.99,
@@ -17,6 +16,11 @@ const GATEWAY_FEES: Record<string, number> = {
 const CheckoutSchema = z.object({
   bookingId: z.string().uuid("ID do agendamento inválido"),
   paymentMethod: z.enum(["pix", "debit", "credit"]),
+  // Card-specific fields (required for debit/credit)
+  cardToken: z.string().optional(),
+  paymentMethodId: z.string().optional(), // visa, master, etc.
+  installments: z.number().optional(),
+  issuerId: z.string().optional(),
 });
 
 const logStep = (step: string, details?: any) => {
@@ -32,7 +36,6 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
-    // Auth
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? ""
@@ -44,16 +47,19 @@ serve(async (req) => {
     if (!user) throw new Error("Usuário não autenticado");
     logStep("User authenticated", { userId: user.id });
 
-    // Validate input
     const rawInput = await req.json();
     const validation = CheckoutSchema.safeParse(rawInput);
     if (!validation.success) {
       throw new Error(`Dados inválidos: ${validation.error.errors.map(e => e.message).join(", ")}`);
     }
 
-    const { bookingId, paymentMethod } = validation.data;
+    const { bookingId, paymentMethod, cardToken, paymentMethodId, installments, issuerId } = validation.data;
 
-    // Fetch booking with admin client
+    // Validate card fields for card payments
+    if ((paymentMethod === "credit" || paymentMethod === "debit") && !cardToken) {
+      throw new Error("Token do cartão é obrigatório para pagamentos com cartão");
+    }
+
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -68,14 +74,8 @@ serve(async (req) => {
       .eq("id", bookingId)
       .single();
 
-    if (bookingError || !booking) {
-      throw new Error("Agendamento não encontrado");
-    }
-
-    // Verify student owns this booking
-    if (booking.student_id !== user.id) {
-      throw new Error("Você não tem permissão para pagar este agendamento");
-    }
+    if (bookingError || !booking) throw new Error("Agendamento não encontrado");
+    if (booking.student_id !== user.id) throw new Error("Você não tem permissão para pagar este agendamento");
 
     const subtotal = Number(booking.total_price);
     const feePercentage = GATEWAY_FEES[paymentMethod] || 0;
@@ -83,10 +83,14 @@ serve(async (req) => {
     const totalAmount = subtotal + gatewayFee;
     const instructorName = (booking.instructor as any)?.full_name || "Instrutor";
 
-    // Parse lesson type from notes
-    const lessonType = booking.notes?.includes("perder_medo") ? "Perder o Medo" : "1ª CNH";
+    // Fetch student profile
+    const { data: studentProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("full_name, cpf")
+      .eq("id", user.id)
+      .single();
 
-    // Get instructor price_per_hour to calculate duration
+    // Get duration
     const { data: instrDetails } = await supabaseAdmin
       .from("instructors_details")
       .select("price_per_hour")
@@ -95,70 +99,25 @@ serve(async (req) => {
 
     const pricePerHour = Number(instrDetails?.price_per_hour) || subtotal;
     const duration = pricePerHour > 0 ? Math.round(subtotal / pricePerHour) : 1;
-
-    // Fetch student profile for payer info
-    const { data: studentProfile } = await supabaseAdmin
-      .from("profiles")
-      .select("full_name, cpf")
-      .eq("id", user.id)
-      .single();
+    const lessonType = booking.notes?.includes("perder_medo") ? "Perder o Medo" : "1ª CNH";
 
     logStep("Calculated amounts", { subtotal, gatewayFee, totalAmount, paymentMethod, duration });
-
-    // Map payment method to MP excluded types
-    const excludedPaymentMethods: { id: string }[] = [];
-    if (paymentMethod === "pix") {
-      excludedPaymentMethods.push(
-        { id: "credit_card" },
-        { id: "debit_card" },
-        { id: "ticket" }
-      );
-    } else if (paymentMethod === "debit") {
-      excludedPaymentMethods.push(
-        { id: "credit_card" },
-        { id: "ticket" }
-      );
-    } else if (paymentMethod === "credit") {
-      excludedPaymentMethods.push(
-        { id: "debit_card" },
-        { id: "ticket" }
-      );
-    }
 
     const mpAccessToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
     if (!mpAccessToken) throw new Error("MERCADOPAGO_ACCESS_TOKEN não configurado");
 
-    const origin = "https://dominebrasil.lovable.app";
+    const cpfClean = studentProfile?.cpf?.replace(/\D/g, "") || "";
 
-    // Create Mercado Pago preference
-    const preferenceBody = {
-      items: [
-        {
-          title: `Aula Prática com ${instructorName} (${lessonType})`,
-          description: `${duration}h de aula em ${booking.date} às ${booking.time_slot}`,
-          quantity: 1,
-          currency_id: "BRL",
-          unit_price: totalAmount,
-        },
-      ],
+    // Build payment body for Payments API (transparent checkout)
+    const paymentBody: any = {
+      transaction_amount: totalAmount,
+      description: `Aula Prática com ${instructorName} (${lessonType}) - ${duration}h em ${booking.date} às ${booking.time_slot}`,
       payer: {
         email: user.email,
         first_name: studentProfile?.full_name?.split(" ")[0] || "",
         last_name: studentProfile?.full_name?.split(" ").slice(1).join(" ") || "",
-        identification: studentProfile?.cpf ? {
-          type: "CPF",
-          number: studentProfile.cpf.replace(/\D/g, ""),
-        } : undefined,
+        identification: cpfClean ? { type: "CPF", number: cpfClean } : undefined,
       },
-      payment_methods: {
-        excluded_payment_types: excludedPaymentMethods,
-      },
-      back_urls: {
-        success: `${origin}/app/student/payment-success`,
-        failure: `${origin}/app/student/checkout/${bookingId}?payment=failed`,
-        pending: `${origin}/app/student/checkout/${bookingId}?payment=pending`,
-      },
-      auto_return: "approved",
       external_reference: bookingId,
       metadata: {
         booking_id: bookingId,
@@ -175,28 +134,55 @@ serve(async (req) => {
       notification_url: `${Deno.env.get("SUPABASE_URL")}/functions/v1/mp-webhook`,
     };
 
-    logStep("Creating MP preference", { items: preferenceBody.items });
+    if (paymentMethod === "pix") {
+      paymentBody.payment_method_id = "pix";
+    } else {
+      // Card payment (credit or debit)
+      paymentBody.token = cardToken;
+      paymentBody.installments = installments || 1;
+      if (paymentMethodId) paymentBody.payment_method_id = paymentMethodId;
+      if (issuerId) paymentBody.issuer_id = issuerId;
+    }
 
-    const mpResponse = await fetch("https://api.mercadopago.com/checkout/preferences", {
+    logStep("Creating MP payment", { payment_method: paymentMethod });
+
+    const mpResponse = await fetch("https://api.mercadopago.com/v1/payments", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${mpAccessToken}`,
+        "X-Idempotency-Key": `booking_${bookingId}_${Date.now()}`,
       },
-      body: JSON.stringify(preferenceBody),
+      body: JSON.stringify(paymentBody),
     });
 
     const mpData = await mpResponse.json();
 
     if (!mpResponse.ok) {
       logStep("MP error response", mpData);
-      throw new Error(`Erro do Mercado Pago: ${mpData.message || JSON.stringify(mpData)}`);
+      const errorMsg = mpData.message || mpData.cause?.[0]?.description || JSON.stringify(mpData);
+      throw new Error(`Erro do Mercado Pago: ${errorMsg}`);
     }
 
-    logStep("MP preference created", { id: mpData.id, init_point: mpData.init_point });
+    logStep("MP payment created", { id: mpData.id, status: mpData.status });
+
+    // Build response based on payment method
+    const response: any = {
+      payment_id: mpData.id,
+      status: mpData.status,
+      status_detail: mpData.status_detail,
+    };
+
+    if (paymentMethod === "pix" && mpData.point_of_interaction?.transaction_data) {
+      response.pix = {
+        qr_code: mpData.point_of_interaction.transaction_data.qr_code,
+        qr_code_base64: mpData.point_of_interaction.transaction_data.qr_code_base64,
+        ticket_url: mpData.point_of_interaction.transaction_data.ticket_url,
+      };
+    }
 
     return new Response(
-      JSON.stringify({ init_point: mpData.init_point, preference_id: mpData.id }),
+      JSON.stringify(response),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
   } catch (error) {

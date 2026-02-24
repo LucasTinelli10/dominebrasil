@@ -4,7 +4,7 @@ import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
 const GATEWAY_FEES: Record<string, number> = {
@@ -16,6 +16,10 @@ const GATEWAY_FEES: Record<string, number> = {
 const PackageCheckoutSchema = z.object({
   packageId: z.string().uuid("ID do pacote inválido"),
   paymentMethod: z.enum(["pix", "debit", "credit"]),
+  cardToken: z.string().optional(),
+  paymentMethodId: z.string().optional(),
+  installments: z.number().optional(),
+  issuerId: z.string().optional(),
 });
 
 const logStep = (step: string, details?: any) => {
@@ -31,7 +35,6 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
-    // Auth
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_ANON_KEY") ?? ""
@@ -43,21 +46,23 @@ serve(async (req) => {
     if (!user?.email) throw new Error("Usuário não autenticado");
     logStep("User authenticated", { email: user.email });
 
-    // Validate input
     const rawInput = await req.json();
     const validation = PackageCheckoutSchema.safeParse(rawInput);
     if (!validation.success) {
       throw new Error(`Dados inválidos: ${validation.error.errors.map(e => e.message).join(", ")}`);
     }
 
-    const { packageId, paymentMethod } = validation.data;
+    const { packageId, paymentMethod, cardToken, paymentMethodId, installments, issuerId } = validation.data;
+
+    if ((paymentMethod === "credit" || paymentMethod === "debit") && !cardToken) {
+      throw new Error("Token do cartão é obrigatório para pagamentos com cartão");
+    }
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Fetch package details
     const { data: pkg, error: pkgError } = await supabaseAdmin
       .from("instructor_packages")
       .select("*")
@@ -65,19 +70,14 @@ serve(async (req) => {
       .eq("active", true)
       .single();
 
-    if (pkgError || !pkg) {
-      logStep("Package not found", { error: pkgError?.message });
-      throw new Error("Pacote não encontrado ou inativo");
-    }
+    if (pkgError || !pkg) throw new Error("Pacote não encontrado ou inativo");
 
-    // Fetch instructor name
     const { data: profileData } = await supabaseAdmin
       .from("profiles")
       .select("full_name")
       .eq("id", pkg.instructor_id)
       .single();
 
-    // Fetch student profile for payer info
     const { data: studentProfile } = await supabaseAdmin
       .from("profiles")
       .select("full_name, cpf")
@@ -85,60 +85,29 @@ serve(async (req) => {
       .single();
 
     const instructorName = profileData?.full_name || "Instrutor";
-    logStep("Package found", { name: pkg.name, price: pkg.price, instructorName });
-
     const subtotal = Number(pkg.price);
     const feePercentage = GATEWAY_FEES[paymentMethod] || 0;
     const gatewayFee = Math.round((subtotal * feePercentage / 100) * 100) / 100;
     const totalAmount = subtotal + gatewayFee;
+    const cpfClean = studentProfile?.cpf?.replace(/\D/g, "") || "";
 
     logStep("Calculated amounts", { subtotal, gatewayFee, totalAmount, paymentMethod });
-
-    // Map payment method to MP excluded types
-    const excludedPaymentMethods: { id: string }[] = [];
-    if (paymentMethod === "pix") {
-      excludedPaymentMethods.push({ id: "credit_card" }, { id: "debit_card" }, { id: "ticket" });
-    } else if (paymentMethod === "debit") {
-      excludedPaymentMethods.push({ id: "credit_card" }, { id: "ticket" });
-    } else if (paymentMethod === "credit") {
-      excludedPaymentMethods.push({ id: "debit_card" }, { id: "ticket" });
-    }
 
     const mpAccessToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
     if (!mpAccessToken) throw new Error("MERCADOPAGO_ACCESS_TOKEN não configurado");
 
-    const origin = "https://dominebrasil.lovable.app";
     const examLabel = pkg.includes_exam ? " + Exame" : "";
-    const description = `${pkg.lesson_count} aula(s) de 50min${examLabel} com ${instructorName}`;
+    const description = `${pkg.name} — ${pkg.lesson_count} aula(s)${examLabel} com ${instructorName}`;
 
-    const preferenceBody = {
-      items: [
-        {
-          title: `${pkg.name} — ${instructorName}`,
-          description,
-          quantity: 1,
-          currency_id: "BRL",
-          unit_price: totalAmount,
-        },
-      ],
+    const paymentBody: any = {
+      transaction_amount: totalAmount,
+      description,
       payer: {
         email: user.email,
         first_name: studentProfile?.full_name?.split(" ")[0] || "",
         last_name: studentProfile?.full_name?.split(" ").slice(1).join(" ") || "",
-        identification: studentProfile?.cpf ? {
-          type: "CPF",
-          number: studentProfile.cpf.replace(/\D/g, ""),
-        } : undefined,
+        identification: cpfClean ? { type: "CPF", number: cpfClean } : undefined,
       },
-      payment_methods: {
-        excluded_payment_types: excludedPaymentMethods,
-      },
-      back_urls: {
-        success: `${origin}/app/student/payment-success`,
-        failure: `${origin}/app/student/checkout/package/${packageId}?payment=failed`,
-        pending: `${origin}/app/student/checkout/package/${packageId}?payment=pending`,
-      },
-      auto_return: "approved",
       external_reference: `pkg_${packageId}_${user.id}`,
       metadata: {
         booking_type: "package",
@@ -157,28 +126,53 @@ serve(async (req) => {
       notification_url: `${Deno.env.get("SUPABASE_URL")}/functions/v1/mp-webhook`,
     };
 
-    logStep("Creating MP preference", { items: preferenceBody.items });
+    if (paymentMethod === "pix") {
+      paymentBody.payment_method_id = "pix";
+    } else {
+      paymentBody.token = cardToken;
+      paymentBody.installments = installments || 1;
+      if (paymentMethodId) paymentBody.payment_method_id = paymentMethodId;
+      if (issuerId) paymentBody.issuer_id = issuerId;
+    }
 
-    const mpResponse = await fetch("https://api.mercadopago.com/checkout/preferences", {
+    logStep("Creating MP payment", { payment_method: paymentMethod });
+
+    const mpResponse = await fetch("https://api.mercadopago.com/v1/payments", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${mpAccessToken}`,
+        "X-Idempotency-Key": `pkg_${packageId}_${user.id}_${Date.now()}`,
       },
-      body: JSON.stringify(preferenceBody),
+      body: JSON.stringify(paymentBody),
     });
 
     const mpData = await mpResponse.json();
 
     if (!mpResponse.ok) {
       logStep("MP error response", mpData);
-      throw new Error(`Erro do Mercado Pago: ${mpData.message || JSON.stringify(mpData)}`);
+      const errorMsg = mpData.message || mpData.cause?.[0]?.description || JSON.stringify(mpData);
+      throw new Error(`Erro do Mercado Pago: ${errorMsg}`);
     }
 
-    logStep("MP preference created", { id: mpData.id, init_point: mpData.init_point });
+    logStep("MP payment created", { id: mpData.id, status: mpData.status });
+
+    const response: any = {
+      payment_id: mpData.id,
+      status: mpData.status,
+      status_detail: mpData.status_detail,
+    };
+
+    if (paymentMethod === "pix" && mpData.point_of_interaction?.transaction_data) {
+      response.pix = {
+        qr_code: mpData.point_of_interaction.transaction_data.qr_code,
+        qr_code_base64: mpData.point_of_interaction.transaction_data.qr_code_base64,
+        ticket_url: mpData.point_of_interaction.transaction_data.ticket_url,
+      };
+    }
 
     return new Response(
-      JSON.stringify({ init_point: mpData.init_point, preference_id: mpData.id }),
+      JSON.stringify(response),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
     );
   } catch (error) {
