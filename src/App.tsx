@@ -41,6 +41,7 @@ import StudentProgress from "./pages/app/student/StudentProgress";
 import StudentHistory from "./pages/app/student/StudentHistory";
 import StudentMessages from "./pages/app/student/StudentMessages";
 import PaymentSuccess from "./pages/app/student/PaymentSuccess";
+import Checkout from "./pages/app/student/Checkout";
 
 // Settings
 import Settings from "./pages/app/Settings";
@@ -99,7 +100,8 @@ const App = () => (
               <Route path="investor/settings" element={<ProtectedRoute allowedRoles={['investor']}><Settings /></ProtectedRoute>} />
             </Route>
 
-            {/* Payment Success (outside AppLayout - redirected from Stripe) */}
+            {/* Checkout & Payment Success (outside AppLayout) */}
+            <Route path="/app/student/checkout/:bookingId" element={<ProtectedRoute allowedRoles={['student']}><Checkout /></ProtectedRoute>} />
             <Route path="/app/student/payment-success" element={<ProtectedRoute allowedRoles={['student']}><PaymentSuccess /></ProtectedRoute>} />
 
             {/* Legacy Routes (redirect support) */}

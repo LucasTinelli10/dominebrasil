@@ -14,6 +14,16 @@ export const BUSINESS_RULES = {
   INVESTOR_PROFIT_PERCENTAGE: 75, // 75% para o investidor
   PLATFORM_PROFIT_PERCENTAGE: 25, // 25% para a Domine
   
+  // Taxa da plataforma sobre aulas
+  PLATFORM_FEE_PERCENTAGE: 15, // 15% para a Domine
+  
+  // Taxas do gateway de pagamento (Mercado Pago) - repassadas ao comprador
+  GATEWAY_FEE: {
+    PIX: 0,        // 0% - sem taxa adicional
+    DEBIT: 1.99,   // 1.99% - taxa do débito
+    CREDIT: 4.98,  // 4.98% - taxa do crédito
+  } as const,
+  
   // Valores sugeridos/padrão
   DEFAULT_LESSON_PRICE: 120, // R$ 120,00 - preço sugerido
   
@@ -22,6 +32,23 @@ export const BUSINESS_RULES = {
   MIN_INSTRUCTOR_AGE: 21,
   MAX_CAR_AGE_YEARS: 12,
 } as const;
+
+export type PaymentMethod = 'pix' | 'debit' | 'credit';
+
+// Calcula a taxa do gateway baseada no método de pagamento
+export function calculateGatewayFee(subtotal: number, method: PaymentMethod): number {
+  const feePercentage = {
+    pix: BUSINESS_RULES.GATEWAY_FEE.PIX,
+    debit: BUSINESS_RULES.GATEWAY_FEE.DEBIT,
+    credit: BUSINESS_RULES.GATEWAY_FEE.CREDIT,
+  }[method];
+  return Math.round((subtotal * feePercentage / 100) * 100) / 100;
+}
+
+// Calcula o total com surcharge do gateway
+export function calculateTotalWithSurcharge(subtotal: number, method: PaymentMethod): number {
+  return subtotal + calculateGatewayFee(subtotal, method);
+}
 
 // Funções auxiliares para cálculos financeiros
 export function calculateInstructorNetProfit(
