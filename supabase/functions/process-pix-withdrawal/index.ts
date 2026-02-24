@@ -86,6 +86,18 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Detect PIX key type
+    const detectPixKeyType = (key: string): string => {
+      const cleanKey = key.replace(/[.\-\/]/g, "");
+      if (/^\d{11}$/.test(cleanKey)) return "CPF";
+      if (/^\d{14}$/.test(cleanKey)) return "CNPJ";
+      if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(key)) return "EMAIL";
+      if (/^\+?\d{10,13}$/.test(cleanKey)) return "PHONE";
+      return "EVP"; // Random key
+    };
+
+    const pixKeyType = detectPixKeyType(pixKey);
+
     // Call Mercado Pago PIX Payout API (transaction-intents)
     const mpResponse = await fetch("https://api.mercadopago.com/v1/transaction-intents/process", {
       method: "POST",
@@ -98,40 +110,40 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         external_reference: withdrawal_id,
         point_of_interaction: {
-          type: "PIX",
-          transaction_data: {
-            first_time_use: false,
-            subscription_id: null,
-            subscription_sequence: null,
-            invoice_period: null,
-          },
+          type: "PSP_TRANSFER",
         },
         seller_configuration: {
           notification_url: null,
         },
-        from: {
-          accounts: [
-            {
-              amount: Number(withdrawal.net_amount),
-            },
-          ],
-        },
-        to: {
-          accounts: [
-            {
-              type: "current",
-              owner: {
-                identification: {
-                  type: "PIX",
-                  number: pixKey,
+        transaction: {
+          from: {
+            accounts: [
+              {
+                amount: Number(withdrawal.net_amount),
+              },
+            ],
+          },
+          to: {
+            accounts: [
+              {
+                type: "current",
+                amount: Number(withdrawal.net_amount),
+                chave: {
+                  type: pixKeyType,
+                  value: pixKey,
+                },
+                owner: {
+                  identification: {
+                    type: pixKeyType === "CPF" ? "CPF" : pixKeyType === "CNPJ" ? "CNPJ" : "CPF",
+                    number: pixKeyType === "CPF" || pixKeyType === "CNPJ" ? pixKey.replace(/[.\-\/]/g, "") : "",
+                  },
                 },
               },
-              amount: Number(withdrawal.net_amount),
-              chave_id: pixKey,
-            },
-          ],
+            ],
+          },
+          total_amount: Number(withdrawal.net_amount),
+          description: `Saque Domine - ${withdrawal_id.substring(0, 8)}`,
         },
-        description: `Saque Domine - ${withdrawal_id.substring(0, 8)}`,
       }),
     });
 
