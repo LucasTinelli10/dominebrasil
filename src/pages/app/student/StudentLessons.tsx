@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MessageSquare, Calendar, Clock, Car, CheckCircle2, Shield } from 'lucide-react';
+import { MessageSquare, Calendar, Clock, Car, CheckCircle2, Shield, CreditCard } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,6 +15,8 @@ interface ConfirmedLesson {
   date: string;
   time_slot: string;
   total_price: number;
+  status: string;
+  notes: string | null;
   instructor: {
     id: string;
     full_name: string;
@@ -58,11 +60,9 @@ export default function StudentLessons() {
       const { data, error } = await supabase
         .from('bookings')
         .select(`
-          id,
-          date,
-          time_slot,
-          total_price,
-          status,
+          id, date, time_slot, total_price, status, notes,
+          instructor:profiles!bookings_instructor_id_fkey(id, full_name, avatar_url),
+          car:cars!bookings_car_id_fkey(model, plate)
           instructor:profiles!bookings_instructor_id_fkey(id, full_name, avatar_url),
           car:cars!bookings_car_id_fkey(model, plate)
         `)
@@ -143,13 +143,18 @@ export default function StudentLessons() {
                       <div>
                         <h3 className="font-semibold text-lg">{lesson.instructor?.full_name}</h3>
                         <Badge variant="outline" className={
-                          (lesson as any).status === 'in_progress' 
+                          lesson.status === 'in_progress' 
                             ? 'border-success text-success bg-success/10 animate-pulse'
-                            : (lesson as any).status === 'confirmed' 
-                              ? 'border-student text-student' 
-                              : 'border-warning text-warning'
+                            : lesson.status === 'confirmed' && lesson.notes?.includes('Aguardando pagamento')
+                              ? 'border-warning text-warning'
+                              : lesson.status === 'confirmed' 
+                                ? 'border-student text-student' 
+                                : 'border-warning text-warning'
                         }>
-                          {(lesson as any).status === 'in_progress' ? 'Em Andamento' : (lesson as any).status === 'confirmed' ? 'Confirmada' : 'Aguardando Pagamento'}
+                          {lesson.status === 'in_progress' ? 'Em Andamento' 
+                            : lesson.status === 'confirmed' && lesson.notes?.includes('Aguardando pagamento') ? 'Aguardando Pagamento'
+                            : lesson.status === 'confirmed' ? 'Confirmada' 
+                            : 'Pendente'}
                         </Badge>
                       </div>
                       <p className="text-lg font-bold text-student">
@@ -174,15 +179,24 @@ export default function StudentLessons() {
                       )}
                     </div>
 
-                    <div className="flex gap-2 mt-4">
+                    <div className="flex gap-2 mt-4 flex-wrap">
+                      {lesson.status === 'confirmed' && lesson.notes?.includes('Aguardando pagamento') && (
+                        <Button
+                          className="bg-warning hover:bg-warning/90 text-warning-foreground"
+                          onClick={() => navigate(`/app/student/checkout/${lesson.id}`)}
+                        >
+                          <CreditCard className="h-4 w-4 mr-2" />
+                          Pagar
+                        </Button>
+                      )}
                       <Button
-                        className="bg-student hover:bg-student/90"
+                        variant="outline"
                         onClick={() => handleOpenChat(lesson.instructor?.id)}
                       >
                         <MessageSquare className="h-4 w-4 mr-2" />
                         Chat
                       </Button>
-                      {(lesson as any).status === 'confirmed' && (
+                      {lesson.status === 'confirmed' && !lesson.notes?.includes('Aguardando pagamento') && (
                         <Button
                           variant="outline"
                           className="border-student text-student hover:bg-student/10"
