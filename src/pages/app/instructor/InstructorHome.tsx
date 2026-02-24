@@ -399,12 +399,23 @@ export default function InstructorHome() {
         </Card>
       )}
 
+      {/* Verification Code Modal */}
+      <VerificationCodeModal
+        open={verificationModal.open}
+        onOpenChange={(open) => setVerificationModal(prev => ({ ...prev, open }))}
+        type={verificationModal.type}
+        onSubmit={verificationModal.type === 'start' ? handleVerifiedStart : handleVerifiedFinish}
+      />
+
       {/* Feedback Modal */}
       <LessonFeedbackModal
         open={feedbackModal.open}
         onOpenChange={(open) => setFeedbackModal(prev => ({ ...prev, open }))}
         bookingId={feedbackModal.bookingId}
         studentName={feedbackModal.studentName}
+        verificationCode={feedbackModal.code}
+        verificationLat={feedbackModal.lat}
+        verificationLng={feedbackModal.lng}
         onCompleted={fetchDashboardData}
       />
     </div>
