@@ -163,19 +163,37 @@ export default function InstructorHome() {
     return `${hours}h ${minutes}min`;
   };
 
-  const handleStartLesson = async (bookingId: string) => {
-    try {
-      const { error } = await supabase.rpc('start_lesson', { p_booking_id: bookingId });
-      if (error) throw error;
-      toast.success('Aula iniciada!');
-      fetchDashboardData();
-    } catch (error: any) {
-      toast.error('Erro ao iniciar aula: ' + error.message);
-    }
+  const handleStartLesson = async (bookingId: string, studentName: string) => {
+    setVerificationModal({ open: true, bookingId, type: 'start', studentName });
+  };
+
+  const handleVerifiedStart = async (code: string, lat: number | null, lng: number | null) => {
+    const { error } = await supabase.rpc('start_lesson', {
+      p_booking_id: verificationModal.bookingId,
+      p_code: code,
+      p_lat: lat,
+      p_lng: lng,
+    });
+    if (error) throw error;
+    toast.success('Aula iniciada!');
+    fetchDashboardData();
   };
 
   const handleFinishLesson = (bookingId: string, studentName: string) => {
-    setFeedbackModal({ open: true, bookingId, studentName });
+    setVerificationModal({ open: true, bookingId, type: 'finish', studentName });
+  };
+
+  const handleVerifiedFinish = async (code: string, lat: number | null, lng: number | null) => {
+    // Store code/GPS for use in feedback modal
+    setVerificationModal(prev => ({ ...prev, open: false }));
+    setFeedbackModal({
+      open: true,
+      bookingId: verificationModal.bookingId,
+      studentName: verificationModal.studentName,
+      code,
+      lat,
+      lng,
+    });
   };
 
   const getStatusBadge = (status: string) => {
