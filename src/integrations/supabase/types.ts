@@ -504,6 +504,7 @@ export type Database = {
           balance: number | null
           balance_pending: number | null
           city: string | null
+          cpf: string | null
           created_at: string | null
           fraud_score: number | null
           full_name: string | null
@@ -524,6 +525,7 @@ export type Database = {
           balance?: number | null
           balance_pending?: number | null
           city?: string | null
+          cpf?: string | null
           created_at?: string | null
           fraud_score?: number | null
           full_name?: string | null
@@ -544,6 +546,7 @@ export type Database = {
           balance?: number | null
           balance_pending?: number | null
           city?: string | null
+          cpf?: string | null
           created_at?: string | null
           fraud_score?: number | null
           full_name?: string | null
