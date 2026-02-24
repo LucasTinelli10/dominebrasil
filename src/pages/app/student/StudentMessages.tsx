@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Send, Calendar, Clock, Car, ArrowLeft } from 'lucide-react';
+import { Send, Calendar, Clock, Car, ArrowLeft, Archive } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -74,6 +74,13 @@ export default function StudentMessages() {
 
   const fetchConversations = async () => {
     try {
+      // Get archived conversation IDs
+      const { data: archivedData } = await supabase
+        .from('archived_conversations')
+        .select('participant_id')
+        .eq('user_id', user?.id);
+      const archivedIds = new Set(archivedData?.map(a => a.participant_id) || []);
+
       // Get unique conversations with last message
       const { data: sentMessages } = await supabase
         .from('messages')
@@ -95,6 +102,8 @@ export default function StudentMessages() {
       // Fetch instructor details and build conversations
       const convos: Conversation[] = [];
       for (const instructorId of instructorIds) {
+        if (archivedIds.has(instructorId)) continue;
+        
         const { data: profile } = await supabase
           .from('profiles')
           .select('id, full_name, avatar_url')
@@ -245,6 +254,21 @@ export default function StudentMessages() {
     }
   };
 
+  const handleArchiveConversation = async () => {
+    if (!selectedConversation) return;
+    const { error } = await supabase
+      .from('archived_conversations')
+      .insert({
+        user_id: user?.id,
+        participant_id: selectedConversation.instructor_id,
+      });
+    if (!error) {
+      toast.success('Conversa arquivada');
+      setSelectedConversation(null);
+      fetchConversations();
+    }
+  };
+
   const formatTime = (dateStr: string) => {
     return new Date(dateStr).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   };
@@ -332,6 +356,15 @@ export default function StudentMessages() {
                     <p className="font-semibold">{selectedConversation.instructor_name}</p>
                     <p className="text-xs text-muted-foreground">Instrutor</p>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-destructive"
+                    onClick={handleArchiveConversation}
+                  >
+                    <Archive className="h-4 w-4 mr-1" />
+                    Arquivar
+                  </Button>
                 </div>
 
                 {/* Lesson Info Card */}

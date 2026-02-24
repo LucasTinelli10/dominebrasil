@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Search, Send, MessageSquare } from 'lucide-react';
+import { Search, Send, MessageSquare, Archive } from 'lucide-react';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -51,6 +52,13 @@ export default function InstructorMessages() {
 
   const fetchConversations = async () => {
     try {
+      // Get archived conversation IDs
+      const { data: archivedData } = await supabase
+        .from('archived_conversations')
+        .select('participant_id')
+        .eq('user_id', user?.id);
+      const archivedIds = new Set(archivedData?.map(a => a.participant_id) || []);
+
       // Get unique conversation partners
       const { data: sentMessages } = await supabase
         .from('messages')
@@ -70,6 +78,8 @@ export default function InstructorMessages() {
 
       const convos: Conversation[] = [];
       for (const participantId of participantIds) {
+        if (archivedIds.has(participantId)) continue;
+        
         const { data: profile } = await supabase
           .from('profiles')
           .select('id, full_name, avatar_url')
@@ -171,6 +181,21 @@ export default function InstructorMessages() {
     }
   };
 
+  const handleArchiveConversation = async () => {
+    if (!selectedConversation) return;
+    const { error } = await supabase
+      .from('archived_conversations')
+      .insert({
+        user_id: user?.id,
+        participant_id: selectedConversation.participant_id,
+      });
+    if (!error) {
+      toast.success('Conversa arquivada');
+      setSelectedConversation(null);
+      fetchConversations();
+    }
+  };
+
   const formatTime = (dateStr: string) => {
     const date = new Date(dateStr);
     const now = new Date();
@@ -262,10 +287,19 @@ export default function InstructorMessages() {
                   {selectedConversation.participant_name.charAt(0)}
                 </AvatarFallback>
               </Avatar>
-              <div>
+              <div className="flex-1">
                 <p className="font-medium text-foreground">{selectedConversation.participant_name}</p>
                 <p className="text-xs text-muted-foreground">Aluno</p>
               </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-destructive"
+                onClick={handleArchiveConversation}
+              >
+                <Archive className="h-4 w-4 mr-1" />
+                Arquivar
+              </Button>
             </div>
 
             <ScrollArea className="flex-1 p-4">
