@@ -324,6 +324,7 @@ const InstructorSearch = () => {
         onOpenChange={setIsProfileModalOpen}
         instructor={selectedInstructor}
         onBookNow={() => handleBookInstructor(selectedInstructor!)}
+        onBuyPackage={handleBuyPackage}
       />
     </div>
   );
