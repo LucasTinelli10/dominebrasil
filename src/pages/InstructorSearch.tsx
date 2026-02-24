@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, MapPin, Star, Shield, ArrowLeft, CalendarDays, User } from 'lucide-react';
+import { Search, MapPin, Star, Shield, ArrowLeft, CalendarDays, User, Package } from 'lucide-react';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { BookingModal } from '@/components/booking/BookingModal';
 import { InstructorProfileModal } from '@/components/instructor/InstructorProfileModal';
