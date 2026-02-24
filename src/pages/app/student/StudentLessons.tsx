@@ -145,13 +145,18 @@ export default function StudentLessons() {
                       <div>
                         <h3 className="font-semibold text-lg">{lesson.instructor?.full_name}</h3>
                         <Badge variant="outline" className={
-                          (lesson as any).status === 'in_progress' 
+                          lesson.status === 'in_progress' 
                             ? 'border-success text-success bg-success/10 animate-pulse'
-                            : (lesson as any).status === 'confirmed' 
-                              ? 'border-student text-student' 
-                              : 'border-warning text-warning'
+                            : lesson.status === 'confirmed' && lesson.notes?.includes('Aguardando pagamento')
+                              ? 'border-warning text-warning'
+                              : lesson.status === 'confirmed' 
+                                ? 'border-student text-student' 
+                                : 'border-warning text-warning'
                         }>
-                          {(lesson as any).status === 'in_progress' ? 'Em Andamento' : (lesson as any).status === 'confirmed' ? 'Confirmada' : 'Aguardando Pagamento'}
+                          {lesson.status === 'in_progress' ? 'Em Andamento' 
+                            : lesson.status === 'confirmed' && lesson.notes?.includes('Aguardando pagamento') ? 'Aguardando Pagamento'
+                            : lesson.status === 'confirmed' ? 'Confirmada' 
+                            : 'Pendente'}
                         </Badge>
                       </div>
                       <p className="text-lg font-bold text-student">
