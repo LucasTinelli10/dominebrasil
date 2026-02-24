@@ -60,11 +60,9 @@ export default function StudentLessons() {
       const { data, error } = await supabase
         .from('bookings')
         .select(`
-          id,
-          date,
-          time_slot,
-          total_price,
-          status,
+          id, date, time_slot, total_price, status, notes,
+          instructor:profiles!bookings_instructor_id_fkey(id, full_name, avatar_url),
+          car:cars!bookings_car_id_fkey(model, plate)
           instructor:profiles!bookings_instructor_id_fkey(id, full_name, avatar_url),
           car:cars!bookings_car_id_fkey(model, plate)
         `)
