@@ -179,15 +179,24 @@ export default function StudentLessons() {
                       )}
                     </div>
 
-                    <div className="flex gap-2 mt-4">
+                    <div className="flex gap-2 mt-4 flex-wrap">
+                      {lesson.status === 'confirmed' && lesson.notes?.includes('Aguardando pagamento') && (
+                        <Button
+                          className="bg-warning hover:bg-warning/90 text-warning-foreground"
+                          onClick={() => navigate(`/app/student/checkout/${lesson.id}`)}
+                        >
+                          <CreditCard className="h-4 w-4 mr-2" />
+                          Pagar
+                        </Button>
+                      )}
                       <Button
-                        className="bg-student hover:bg-student/90"
+                        variant="outline"
                         onClick={() => handleOpenChat(lesson.instructor?.id)}
                       >
                         <MessageSquare className="h-4 w-4 mr-2" />
                         Chat
                       </Button>
-                      {(lesson as any).status === 'confirmed' && (
+                      {lesson.status === 'confirmed' && !lesson.notes?.includes('Aguardando pagamento') && (
                         <Button
                           variant="outline"
                           className="border-student text-student hover:bg-student/10"
