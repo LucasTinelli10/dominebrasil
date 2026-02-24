@@ -287,10 +287,19 @@ export default function InstructorMessages() {
                   {selectedConversation.participant_name.charAt(0)}
                 </AvatarFallback>
               </Avatar>
-              <div>
+              <div className="flex-1">
                 <p className="font-medium text-foreground">{selectedConversation.participant_name}</p>
                 <p className="text-xs text-muted-foreground">Aluno</p>
               </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-destructive"
+                onClick={handleArchiveConversation}
+              >
+                <Archive className="h-4 w-4 mr-1" />
+                Arquivar
+              </Button>
             </div>
 
             <ScrollArea className="flex-1 p-4">
