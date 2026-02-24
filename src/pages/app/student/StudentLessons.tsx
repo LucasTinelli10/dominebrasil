@@ -32,6 +32,7 @@ export default function StudentLessons() {
   const [searchParams] = useSearchParams();
   const [lessons, setLessons] = useState<ConfirmedLesson[]>([]);
   const [loading, setLoading] = useState(true);
+  const [codeModal, setCodeModal] = useState<{ open: boolean; bookingId: string; type: 'start' | 'finish' }>({ open: false, bookingId: '', type: 'start' });
 
   useEffect(() => {
     // Check for payment success redirect
