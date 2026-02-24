@@ -382,11 +382,13 @@ export type Database = {
       }
       lesson_verifications: {
         Row: {
+          blocked_until: string | null
           booking_id: string
           code: string
           created_at: string | null
           distance_meters: number | null
           expires_at: string
+          failed_attempts: number | null
           id: string
           instructor_lat: number | null
           instructor_lng: number | null
@@ -396,11 +398,13 @@ export type Database = {
           verified: boolean | null
         }
         Insert: {
+          blocked_until?: string | null
           booking_id: string
           code: string
           created_at?: string | null
           distance_meters?: number | null
           expires_at: string
+          failed_attempts?: number | null
           id?: string
           instructor_lat?: number | null
           instructor_lng?: number | null
@@ -410,11 +414,13 @@ export type Database = {
           verified?: boolean | null
         }
         Update: {
+          blocked_until?: string | null
           booking_id?: string
           code?: string
           created_at?: string | null
           distance_meters?: number | null
           expires_at?: string
+          failed_attempts?: number | null
           id?: string
           instructor_lat?: number | null
           instructor_lng?: number | null
@@ -849,6 +855,10 @@ export type Database = {
             }
             Returns: undefined
           }
+      verify_lesson_code: {
+        Args: { p_booking_id: string; p_code: string; p_type: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "student" | "instructor" | "investor" | "admin"

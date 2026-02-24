@@ -22,6 +22,7 @@ import {
   User,
   Search,
   BookOpen,
+  History,
   Car,
   Wallet,
   Settings,
@@ -44,6 +45,7 @@ const studentMenuItems: MenuItem[] = [
   { title: 'Início', url: '/app/student', icon: Home },
   { title: 'Buscar Instrutor', url: '/app/student/search', icon: Search },
   { title: 'Minhas Aulas', url: '/app/student/lessons', icon: BookOpen },
+  { title: 'Histórico', url: '/app/student/history', icon: History },
   { title: 'Progresso', url: '/app/student/progress', icon: PieChart },
   { title: 'Mensagens', url: '/app/student/messages', icon: MessageSquare },
 ];

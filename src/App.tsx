@@ -38,6 +38,7 @@ import InvestorFinances from "./pages/app/investor/InvestorFinances";
 import StudentHome from "./pages/app/student/StudentHome";
 import StudentLessons from "./pages/app/student/StudentLessons";
 import StudentProgress from "./pages/app/student/StudentProgress";
+import StudentHistory from "./pages/app/student/StudentHistory";
 import StudentMessages from "./pages/app/student/StudentMessages";
 import PaymentSuccess from "./pages/app/student/PaymentSuccess";
 
@@ -73,6 +74,7 @@ const App = () => (
               <Route path="student/search" element={<ProtectedRoute allowedRoles={['student']}><InstructorSearch /></ProtectedRoute>} />
               <Route path="student/lessons" element={<ProtectedRoute allowedRoles={['student']}><StudentLessons /></ProtectedRoute>} />
               <Route path="student/progress" element={<ProtectedRoute allowedRoles={['student']}><StudentProgress /></ProtectedRoute>} />
+              <Route path="student/history" element={<ProtectedRoute allowedRoles={['student']}><StudentHistory /></ProtectedRoute>} />
               <Route path="student/messages" element={<ProtectedRoute allowedRoles={['student']}><StudentMessages /></ProtectedRoute>} />
               <Route path="student/settings" element={<ProtectedRoute allowedRoles={['student']}><Settings /></ProtectedRoute>} />
 

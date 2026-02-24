@@ -16,6 +16,8 @@ export default function VerificationCodeModal({ open, onOpenChange, type, onSubm
   const [code, setCode] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [gpsStatus, setGpsStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [attempts, setAttempts] = useState(0);
+  const [blocked, setBlocked] = useState(false);
 
   const handleSubmit = async () => {
     if (code.length !== 4) {
@@ -48,8 +50,16 @@ export default function VerificationCodeModal({ open, onOpenChange, type, onSubm
       await onSubmit(code, lat, lng);
       onOpenChange(false);
       setCode('');
+      setAttempts(0);
+      setBlocked(false);
     } catch (error: any) {
-      toast.error(error.message || 'Erro na verificação');
+      const msg = error.message || 'Erro na verificação';
+      if (msg.includes('bloqueado') || msg.includes('Bloqueado')) {
+        setBlocked(true);
+      } else if (msg.includes('incorreto') || msg.includes('Incorreto')) {
+        setAttempts(prev => prev + 1);
+      }
+      toast.error(msg);
     } finally {
       setSubmitting(false);
       setGpsStatus('idle');
@@ -60,6 +70,8 @@ export default function VerificationCodeModal({ open, onOpenChange, type, onSubm
     if (!open) {
       setCode('');
       setGpsStatus('idle');
+      setAttempts(0);
+      setBlocked(false);
     }
     onOpenChange(open);
   };
@@ -98,10 +110,26 @@ export default function VerificationCodeModal({ open, onOpenChange, type, onSubm
             </div>
           </div>
 
+          {attempts > 0 && !blocked && (
+            <div className="p-3 rounded-lg bg-warning/10 border border-warning/20">
+              <p className="text-xs text-warning text-center font-medium">
+                ⚠️ {attempts}/3 tentativas usadas. Após 3 erros o código será bloqueado.
+              </p>
+            </div>
+          )}
+
+          {blocked && (
+            <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+              <p className="text-xs text-destructive text-center font-medium">
+                🔒 Código bloqueado. Peça ao aluno para gerar um novo código.
+              </p>
+            </div>
+          )}
+
           <Button
             className="w-full bg-instructor hover:bg-instructor/90"
             onClick={handleSubmit}
-            disabled={submitting || code.length !== 4}
+            disabled={submitting || code.length !== 4 || blocked}
           >
             {submitting ? (gpsStatus === 'loading' ? 'Obtendo localização...' : 'Verificando...') : 'Verificar e Continuar'}
           </Button>
