@@ -34,6 +34,8 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 
 interface MenuItem {
   title: string;
