@@ -34,6 +34,8 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
+import { useUnreadMessages } from '@/hooks/useUnreadMessages';
 
 interface MenuItem {
   title: string;
@@ -102,6 +104,7 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
+  const unreadCount = useUnreadMessages();
 
   const role = (profile?.role || 'student') as UserRole;
   const config = roleConfig[role];
@@ -150,7 +153,9 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {config.menuItems.map((item) => (
+              {config.menuItems.map((item) => {
+                const showBadge = item.icon === MessageSquare && unreadCount > 0;
+                return (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
                     <NavLink
@@ -166,22 +171,33 @@ export function AppSidebar() {
                         )
                       )}
                     >
-                      <item.icon className={cn(
-                        'h-5 w-5',
-                        isActive(item.url) ? config.colorClass : 'text-muted-foreground'
-                      )} />
+                      <div className="relative">
+                        <item.icon className={cn(
+                          'h-5 w-5',
+                          isActive(item.url) ? config.colorClass : 'text-muted-foreground'
+                        )} />
+                        {showBadge && collapsed && (
+                          <span className={cn('absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full', config.bgClass)} />
+                        )}
+                      </div>
                       {!collapsed && (
                         <span className={cn(
-                          'font-medium',
+                          'font-medium flex-1',
                           isActive(item.url) ? 'text-foreground' : 'text-muted-foreground'
                         )}>
                           {item.title}
                         </span>
                       )}
+                      {showBadge && !collapsed && (
+                        <Badge className={cn('h-5 min-w-[20px] px-1.5 text-[10px] text-white', config.bgClass)}>
+                          {unreadCount > 99 ? '99+' : unreadCount}
+                        </Badge>
+                      )}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              ))}
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
