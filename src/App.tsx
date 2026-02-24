@@ -42,6 +42,7 @@ import StudentHistory from "./pages/app/student/StudentHistory";
 import StudentMessages from "./pages/app/student/StudentMessages";
 import PaymentSuccess from "./pages/app/student/PaymentSuccess";
 import Checkout from "./pages/app/student/Checkout";
+import PackageCheckout from "./pages/app/student/PackageCheckout";
 
 // Settings
 import Settings from "./pages/app/Settings";
@@ -102,6 +103,7 @@ const App = () => (
 
             {/* Checkout & Payment Success (outside AppLayout) */}
             <Route path="/app/student/checkout/:bookingId" element={<ProtectedRoute allowedRoles={['student']}><Checkout /></ProtectedRoute>} />
+            <Route path="/app/student/checkout/package/:packageId" element={<ProtectedRoute allowedRoles={['student']}><PackageCheckout /></ProtectedRoute>} />
             <Route path="/app/student/payment-success" element={<ProtectedRoute allowedRoles={['student']}><PaymentSuccess /></ProtectedRoute>} />
 
             {/* Legacy Routes (redirect support) */}

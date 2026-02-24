@@ -73,20 +73,128 @@ serve(async (req) => {
       });
     }
 
-    const bookingId = payment.external_reference;
-    if (!bookingId) {
-      logStep("No booking ID in external_reference");
+    const externalRef = payment.external_reference;
+    if (!externalRef) {
+      logStep("No external_reference in payment");
       return new Response(JSON.stringify({ received: true }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
     }
 
+    // Determine if this is a package or a single booking payment
+    const isPackage = externalRef.startsWith("pkg_");
+    const bookingId = isPackage ? null : externalRef;
+
+    // ======== PACKAGE PAYMENT ========
+    if (isPackage) {
+      const metadata = payment.metadata || {};
+      const packageId = metadata.package_id;
+      const studentId = metadata.student_id;
+      const instructorId = metadata.instructor_id;
+      const subtotal = parseFloat(metadata.subtotal || payment.transaction_amount?.toString() || "0");
+      const gatewayFee = parseFloat(metadata.gateway_fee || "0");
+      const paymentMethodUsed = metadata.payment_method || "pix";
+      const lessonCount = parseInt(metadata.lesson_count || "1");
+      const includesExam = metadata.includes_exam === "true";
+      const useOwnCar = metadata.use_own_car === "true";
+
+      logStep("Processing PACKAGE payment", { packageId, studentId, instructorId, subtotal });
+
+      // Idempotency: check if transactions already exist for this external_reference
+      const { data: existingTx } = await supabaseAdmin
+        .from("transactions")
+        .select("id")
+        .eq("reference_id", packageId)
+        .eq("type", "lesson_income")
+        .eq("user_id", instructorId)
+        .limit(1);
+
+      if (existingTx && existingTx.length > 0) {
+        logStep("Package already processed, idempotent skip", { packageId });
+        return new Response(JSON.stringify({ received: true }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+
+      // Split logic on subtotal
+      const platformFee = subtotal * PLATFORM_FEE_PERCENTAGE;
+      const examHours = includesExam ? 4 : 0;
+      const rentalHours = lessonCount + examHours;
+      const carRentalFee = useOwnCar ? 0 : rentalHours * CAR_RENTAL_PRICE_PER_HOUR;
+      const instructorNetProfit = subtotal - platformFee - carRentalFee;
+
+      logStep("Package split calculated", { subtotal, platformFee, carRentalFee, instructorNetProfit });
+
+      // Create transaction records
+      await supabaseAdmin.from("transactions").insert({
+        user_id: instructorId,
+        type: "lesson_income",
+        amount: instructorNetProfit,
+        status: "completed",
+        description: `Pacote "${metadata.package_name || 'Pacote'}" - ${lessonCount} aulas - Líquido`,
+        reference_id: packageId,
+      });
+
+      await supabaseAdmin.from("transactions").insert({
+        user_id: instructorId,
+        type: "platform_fee",
+        amount: platformFee,
+        status: "completed",
+        description: `Taxa da plataforma (15%) - Pacote`,
+        reference_id: packageId,
+      });
+
+      if (carRentalFee > 0) {
+        await supabaseAdmin.from("transactions").insert({
+          user_id: instructorId,
+          type: "car_rental_fee",
+          amount: carRentalFee,
+          status: "completed",
+          description: `Aluguel de veículo pacote (${rentalHours}h x R$50)`,
+          reference_id: packageId,
+        });
+      }
+
+      if (gatewayFee > 0) {
+        await supabaseAdmin.from("transactions").insert({
+          user_id: studentId,
+          type: "gateway_fee",
+          amount: gatewayFee,
+          status: "completed",
+          description: `Taxa do gateway (${paymentMethodUsed}) - Pacote`,
+          reference_id: packageId,
+        });
+      }
+
+      // Update instructor pending balance
+      const { data: instrProfile } = await supabaseAdmin
+        .from("profiles")
+        .select("balance_pending")
+        .eq("id", instructorId)
+        .single();
+
+      const currentPending = Number(instrProfile?.balance_pending) || 0;
+      await supabaseAdmin
+        .from("profiles")
+        .update({ balance_pending: currentPending + instructorNetProfit })
+        .eq("id", instructorId);
+
+      logStep("Package payment processed successfully", { packageId });
+
+      return new Response(JSON.stringify({ received: true }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
+    // ======== SINGLE BOOKING PAYMENT ========
     // Check if booking already processed
     const { data: existingBooking } = await supabaseAdmin
       .from("bookings")
       .select("id, status")
-      .eq("id", bookingId)
+      .eq("id", bookingId!)
       .single();
 
     if (!existingBooking) {
@@ -130,7 +238,7 @@ serve(async (req) => {
     const { data: bookingFull } = await supabaseAdmin
       .from("bookings")
       .select("car_id, date, time_slot")
-      .eq("id", bookingId)
+      .eq("id", bookingId!)
       .single();
 
     const hasRentalCar = bookingFull?.car_id && bookingFull.car_id.length > 0;
@@ -152,7 +260,7 @@ serve(async (req) => {
         status: "confirmed",
         notes: `Pagamento confirmado via Mercado Pago (${paymentMethodUsed.toUpperCase()}). Payment ID: ${paymentId}`,
       })
-      .eq("id", bookingId);
+      .eq("id", bookingId!);
 
     logStep("Booking confirmed", { bookingId });
 
