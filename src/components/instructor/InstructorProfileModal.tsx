@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Star,
   Shield,
@@ -16,8 +18,14 @@ import {
   CalendarDays,
   Award,
   Car,
+  Package,
+  BookOpen,
+  FileCheck,
+  ShoppingCart,
+  Loader2,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/businessRules";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Instructor {
   id: string;
@@ -31,11 +39,20 @@ interface Instructor {
   badges: string[] | null;
 }
 
+interface InstructorPackage {
+  id: string;
+  name: string;
+  price: number;
+  lesson_count: number;
+  includes_exam: boolean;
+}
+
 interface InstructorProfileModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   instructor: Instructor | null;
   onBookNow: () => void;
+  onBuyPackage?: (packageId: string) => void;
 }
 
 const BADGE_LABELS: Record<string, string> = {
@@ -54,7 +71,35 @@ export function InstructorProfileModal({
   onOpenChange,
   instructor,
   onBookNow,
+  onBuyPackage,
 }: InstructorProfileModalProps) {
+  const [packages, setPackages] = useState<InstructorPackage[]>([]);
+  const [loadingPackages, setLoadingPackages] = useState(false);
+
+  useEffect(() => {
+    if (open && instructor) {
+      fetchPackages(instructor.id);
+    } else {
+      setPackages([]);
+    }
+  }, [open, instructor?.id]);
+
+  const fetchPackages = async (instructorId: string) => {
+    setLoadingPackages(true);
+    try {
+      const { data, error } = await supabase.rpc('get_instructor_packages', {
+        p_instructor_id: instructorId,
+      });
+      if (!error && data) {
+        setPackages(data as InstructorPackage[]);
+      }
+    } catch (e) {
+      console.error('Error fetching packages:', e);
+    } finally {
+      setLoadingPackages(false);
+    }
+  };
+
   if (!instructor) return null;
 
   return (
@@ -137,11 +182,69 @@ export function InstructorProfileModal({
 
         <Separator />
 
+        {/* Packages Section */}
+        {loadingPackages ? (
+          <div className="py-4 flex items-center justify-center gap-2 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-sm">Carregando pacotes...</span>
+          </div>
+        ) : packages.length > 0 ? (
+          <div className="py-4">
+            <h3 className="font-semibold mb-3 flex items-center gap-2">
+              <Package className="h-4 w-4 text-teal-600" />
+              Pacotes Disponíveis
+            </h3>
+            <div className="space-y-2">
+              {packages.map((pkg) => (
+                <Card key={pkg.id} className="border-border/60">
+                  <CardContent className="p-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{pkg.name}</p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                          <span className="flex items-center gap-1">
+                            <BookOpen className="h-3 w-3" />
+                            {pkg.lesson_count} aula(s)
+                          </span>
+                          {pkg.includes_exam && (
+                            <span className="flex items-center gap-1">
+                              <FileCheck className="h-3 w-3" />
+                              Exame
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="font-bold text-teal-600 text-sm">
+                          {formatCurrency(pkg.price)}
+                        </p>
+                        {onBuyPackage && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="mt-1 h-7 text-xs border-teal-300 text-teal-700 hover:bg-teal-50"
+                            onClick={() => onBuyPackage(pkg.id)}
+                          >
+                            <ShoppingCart className="h-3 w-3 mr-1" />
+                            Comprar
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {packages.length > 0 && <Separator />}
+
         {/* Pricing & CTA */}
         <div className="pt-4 space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">Valor da aula</p>
+              <p className="text-sm text-muted-foreground">Aula avulsa</p>
               <div className="flex items-baseline gap-1">
                 <span className="text-3xl font-bold text-teal-600">
                   {formatCurrency(instructor.price_per_hour)}
@@ -160,7 +263,7 @@ export function InstructorProfileModal({
             onClick={onBookNow}
           >
             <CalendarDays className="h-4 w-4 mr-2" />
-            Agendar Aula
+            Agendar Aula Avulsa
           </Button>
 
           <p className="text-xs text-center text-muted-foreground">
