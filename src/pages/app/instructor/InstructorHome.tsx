@@ -44,7 +44,7 @@ export default function InstructorHome() {
   });
   const [earningsData, setEarningsData] = useState<EarningsData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [feedbackModal, setFeedbackModal] = useState<{ open: boolean; bookingId: string; studentName: string }>({
+  const [feedbackModal, setFeedbackModal] = useState<{ open: boolean; bookingId: string; studentName: string; code?: string; lat?: number | null; lng?: number | null }>({
     open: false, bookingId: '', studentName: '',
   });
   const [verificationModal, setVerificationModal] = useState<{ open: boolean; bookingId: string; type: 'start' | 'finish'; studentName: string }>({
