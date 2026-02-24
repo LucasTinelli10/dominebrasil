@@ -44,7 +44,7 @@ export default function InstructorHome() {
   });
   const [earningsData, setEarningsData] = useState<EarningsData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [feedbackModal, setFeedbackModal] = useState<{ open: boolean; bookingId: string; studentName: string; code?: string; lat?: number | null; lng?: number | null }>({
+  const [feedbackModal, setFeedbackModal] = useState<{ open: boolean; bookingId: string; studentName: string }>({
     open: false, bookingId: '', studentName: '',
   });
   const [verificationModal, setVerificationModal] = useState<{ open: boolean; bookingId: string; type: 'start' | 'finish'; studentName: string }>({
@@ -180,19 +180,11 @@ export default function InstructorHome() {
   };
 
   const handleFinishLesson = (bookingId: string, studentName: string) => {
-    setVerificationModal({ open: true, bookingId, type: 'finish', studentName });
-  };
-
-  const handleVerifiedFinish = async (code: string, lat: number | null, lng: number | null) => {
-    // Store code/GPS for use in feedback modal
-    setVerificationModal(prev => ({ ...prev, open: false }));
+    // No verification code needed for finish — go straight to feedback
     setFeedbackModal({
       open: true,
-      bookingId: verificationModal.bookingId,
-      studentName: verificationModal.studentName,
-      code,
-      lat,
-      lng,
+      bookingId,
+      studentName,
     });
   };
 
@@ -404,7 +396,7 @@ export default function InstructorHome() {
         open={verificationModal.open}
         onOpenChange={(open) => setVerificationModal(prev => ({ ...prev, open }))}
         type={verificationModal.type}
-        onSubmit={verificationModal.type === 'start' ? handleVerifiedStart : handleVerifiedFinish}
+        onSubmit={handleVerifiedStart}
       />
 
       {/* Feedback Modal */}
@@ -413,9 +405,6 @@ export default function InstructorHome() {
         onOpenChange={(open) => setFeedbackModal(prev => ({ ...prev, open }))}
         bookingId={feedbackModal.bookingId}
         studentName={feedbackModal.studentName}
-        verificationCode={feedbackModal.code}
-        verificationLat={feedbackModal.lat}
-        verificationLng={feedbackModal.lng}
         onCompleted={fetchDashboardData}
       />
     </div>
