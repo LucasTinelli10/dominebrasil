@@ -47,6 +47,9 @@ export default function InstructorHome() {
   const [feedbackModal, setFeedbackModal] = useState<{ open: boolean; bookingId: string; studentName: string }>({
     open: false, bookingId: '', studentName: '',
   });
+  const [verificationModal, setVerificationModal] = useState<{ open: boolean; bookingId: string; type: 'start' | 'finish'; studentName: string }>({
+    open: false, bookingId: '', type: 'start', studentName: '',
+  });
 
   useEffect(() => {
     if (profile && profile.verification_status !== 'approved') {
