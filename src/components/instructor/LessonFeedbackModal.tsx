@@ -13,6 +13,9 @@ interface LessonFeedbackModalProps {
   onOpenChange: (open: boolean) => void;
   bookingId: string;
   studentName: string;
+  verificationCode?: string;
+  verificationLat?: number | null;
+  verificationLng?: number | null;
   onCompleted: () => void;
 }
 
