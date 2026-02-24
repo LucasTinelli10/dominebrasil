@@ -5,6 +5,7 @@ import { Loader2, DollarSign, TrendingUp, Users, Calendar } from 'lucide-react';
 import AdminLayout from '@/components/layouts/AdminLayout';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 interface RevenueStats {
   totalRevenue: number;
@@ -13,6 +14,12 @@ interface RevenueStats {
   completedBookings: number;
   monthlyRevenue: number;
   monthlyCommission: number;
+}
+
+interface MonthlyData {
+  month: string;
+  revenue: number;
+  commission: number;
 }
 
 export default function AdminRevenue() {
@@ -24,6 +31,7 @@ export default function AdminRevenue() {
     monthlyRevenue: 0,
     monthlyCommission: 0,
   });
+  const [monthlyData, setMonthlyData] = useState<MonthlyData[]>([]);
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -34,7 +42,6 @@ export default function AdminRevenue() {
   const fetchRevenue = async () => {
     setLoading(true);
     try {
-      // Fetch all completed bookings
       const { data: bookings } = await supabase
         .from('bookings')
         .select('*')
@@ -44,7 +51,6 @@ export default function AdminRevenue() {
       const totalRevenue = allBookings.reduce((sum, b) => sum + Number(b.total_price), 0);
       const platformCommission = totalRevenue * 0.15;
 
-      // Monthly
       const now = new Date();
       const monthStart = startOfMonth(now);
       const monthEnd = endOfMonth(now);
@@ -54,7 +60,6 @@ export default function AdminRevenue() {
       });
       const monthlyRevenue = monthBookings.reduce((sum, b) => sum + Number(b.total_price), 0);
 
-      // Total bookings count (all statuses)
       const { count: totalCount } = await supabase
         .from('bookings')
         .select('*', { count: 'exact', head: true });
@@ -68,7 +73,25 @@ export default function AdminRevenue() {
         monthlyCommission: monthlyRevenue * 0.15,
       });
 
-      // Recent transactions (lesson_income type to see platform activity)
+      // Build last 6 months chart data
+      const chartData: MonthlyData[] = [];
+      for (let i = 5; i >= 0; i--) {
+        const monthDate = subMonths(now, i);
+        const mStart = startOfMonth(monthDate);
+        const mEnd = endOfMonth(monthDate);
+        const mBookings = allBookings.filter(b => {
+          const d = new Date(b.date);
+          return d >= mStart && d <= mEnd;
+        });
+        const rev = mBookings.reduce((sum, b) => sum + Number(b.total_price), 0);
+        chartData.push({
+          month: format(monthDate, 'MMM/yy', { locale: ptBR }),
+          revenue: rev,
+          commission: rev * 0.15,
+        });
+      }
+      setMonthlyData(chartData);
+
       const { data: transactions } = await supabase
         .from('transactions')
         .select('*')
@@ -93,6 +116,9 @@ export default function AdminRevenue() {
     );
   }
 
+  const formatCurrency = (value: number) =>
+    `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+
   return (
     <AdminLayout>
       <div className="mb-6">
@@ -110,9 +136,7 @@ export default function AdminRevenue() {
               </div>
               <div>
                 <p className="text-slate-400 text-xs">Receita Total (Bruto)</p>
-                <p className="text-2xl font-bold text-white">
-                  R$ {stats.totalRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </p>
+                <p className="text-2xl font-bold text-white">{formatCurrency(stats.totalRevenue)}</p>
               </div>
             </div>
           </CardContent>
@@ -126,9 +150,7 @@ export default function AdminRevenue() {
               </div>
               <div>
                 <p className="text-slate-400 text-xs">Comissão da Plataforma (15%)</p>
-                <p className="text-2xl font-bold text-white">
-                  R$ {stats.platformCommission.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </p>
+                <p className="text-2xl font-bold text-white">{formatCurrency(stats.platformCommission)}</p>
               </div>
             </div>
           </CardContent>
@@ -142,9 +164,7 @@ export default function AdminRevenue() {
               </div>
               <div>
                 <p className="text-slate-400 text-xs">Receita Este Mês</p>
-                <p className="text-2xl font-bold text-white">
-                  R$ {stats.monthlyRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </p>
+                <p className="text-2xl font-bold text-white">{formatCurrency(stats.monthlyRevenue)}</p>
               </div>
             </div>
           </CardContent>
@@ -167,6 +187,41 @@ export default function AdminRevenue() {
         </Card>
       </div>
 
+      {/* Revenue Evolution Chart */}
+      <Card className="bg-slate-800/50 border-slate-700 mb-8">
+        <CardHeader>
+          <CardTitle className="text-white text-lg">Evolução do Faturamento (Últimos 6 Meses)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-72">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={monthlyData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 12 }} />
+                <YAxis
+                  tick={{ fill: '#94a3b8', fontSize: 12 }}
+                  tickFormatter={(v) => `R$${(v / 1000).toFixed(0)}k`}
+                />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: 8 }}
+                  labelStyle={{ color: '#f8fafc' }}
+                  formatter={(value: number, name: string) => [
+                    formatCurrency(value),
+                    name === 'revenue' ? 'Receita Bruta' : 'Comissão (15%)',
+                  ]}
+                />
+                <Legend
+                  formatter={(value) => (value === 'revenue' ? 'Receita Bruta' : 'Comissão (15%)')}
+                  wrapperStyle={{ color: '#94a3b8' }}
+                />
+                <Bar dataKey="revenue" fill="#22c55e" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="commission" fill="#14b8a6" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Comissão mensal */}
       <Card className="bg-slate-800/50 border-slate-700 mb-8">
         <CardHeader>
@@ -176,16 +231,12 @@ export default function AdminRevenue() {
           <div className="flex items-center gap-4">
             <div className="flex-1 bg-slate-700/50 rounded-lg p-4">
               <p className="text-slate-400 text-sm">Faturamento Bruto</p>
-              <p className="text-xl font-bold text-white">
-                R$ {stats.monthlyRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-              </p>
+              <p className="text-xl font-bold text-white">{formatCurrency(stats.monthlyRevenue)}</p>
             </div>
             <div className="text-2xl text-slate-500">→</div>
             <div className="flex-1 bg-teal-500/10 border border-teal-500/30 rounded-lg p-4">
               <p className="text-teal-400 text-sm">Sua Comissão (15%)</p>
-              <p className="text-xl font-bold text-teal-300">
-                R$ {stats.monthlyCommission.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-              </p>
+              <p className="text-xl font-bold text-teal-300">{formatCurrency(stats.monthlyCommission)}</p>
             </div>
           </div>
         </CardContent>

@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.create-package-checkout]
 verify_jwt = true
+
+[functions.process-pix-withdrawal]
+verify_jwt = false
