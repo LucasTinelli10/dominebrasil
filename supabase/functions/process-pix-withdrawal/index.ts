@@ -86,27 +86,52 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Call Mercado Pago PIX Transfer API
-    const mpResponse = await fetch("https://api.mercadopago.com/v1/payments", {
+    // Call Mercado Pago PIX Payout API (transaction-intents)
+    const mpResponse = await fetch("https://api.mercadopago.com/v1/transaction-intents/process", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${mpAccessToken}`,
         "Content-Type": "application/json",
         "X-Idempotency-Key": withdrawal_id,
+        "x-enforce-signature": "false",
       },
       body: JSON.stringify({
-        transaction_amount: Number(withdrawal.net_amount),
-        description: `Saque Domine - ${withdrawal_id.substring(0, 8)}`,
-        payment_method_id: "pix",
-        payer: {
-          email: "pagamentos@domine.com.br",
-        },
+        external_reference: withdrawal_id,
         point_of_interaction: {
-          type: "PIX_TRANSFER",
+          type: "PIX",
           transaction_data: {
-            pix_key: pixKey,
+            first_time_use: false,
+            subscription_id: null,
+            subscription_sequence: null,
+            invoice_period: null,
           },
         },
+        seller_configuration: {
+          notification_url: null,
+        },
+        from: {
+          accounts: [
+            {
+              amount: Number(withdrawal.net_amount),
+            },
+          ],
+        },
+        to: {
+          accounts: [
+            {
+              type: "current",
+              owner: {
+                identification: {
+                  type: "PIX",
+                  number: pixKey,
+                },
+              },
+              amount: Number(withdrawal.net_amount),
+              chave_id: pixKey,
+            },
+          ],
+        },
+        description: `Saque Domine - ${withdrawal_id.substring(0, 8)}`,
       }),
     });
 
