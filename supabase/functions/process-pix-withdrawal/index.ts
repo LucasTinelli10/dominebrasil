@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
       .from("withdrawals")
       .select("*")
       .eq("id", withdrawal_id)
-      .eq("status", "pending")
+      .in("status", ["pending", "processing"])
       .single();
 
     if (wErr || !withdrawal) {
