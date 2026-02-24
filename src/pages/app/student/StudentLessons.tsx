@@ -15,6 +15,8 @@ interface ConfirmedLesson {
   date: string;
   time_slot: string;
   total_price: number;
+  status: string;
+  notes: string | null;
   instructor: {
     id: string;
     full_name: string;
