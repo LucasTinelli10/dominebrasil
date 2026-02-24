@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { Resend } from "https://esm.sh/resend@2.0.0";
 
@@ -7,9 +6,6 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-const MIN_LESSON_PRICE = 90;
-const MAX_LESSON_PRICE = 10000;
 
 const logStep = (step: string, details?: any) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -25,13 +21,9 @@ serve(async (req) => {
     logStep("Function started");
 
     const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-
     if (!resendApiKey) throw new Error("RESEND_API_KEY not configured");
-    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY not configured");
 
     const resend = new Resend(resendApiKey);
-    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -59,10 +51,9 @@ serve(async (req) => {
 
     const studentId = (booking.student as any).id;
     const studentName = (booking.student as any).full_name || "Aluno";
-    const instructorId = (booking.instructor as any).id;
     const instructorName = (booking.instructor as any).full_name || "Instrutor";
 
-    logStep("Booking data", { studentId, studentName, instructorId, instructorName });
+    logStep("Booking data", { studentId, studentName, instructorName });
 
     // Get student email
     const { data: authData, error: authError } = await supabaseAdmin.auth.admin.getUserById(studentId);
@@ -73,73 +64,17 @@ serve(async (req) => {
     }
 
     const studentEmail = authData.user.email;
-    logStep("Student email", { studentEmail });
-
-    // Use the total_price from booking (already calculated as price_per_hour * duration)
     const totalPrice = Number(booking.total_price);
-    if (totalPrice < MIN_LESSON_PRICE || totalPrice > MAX_LESSON_PRICE * 10) {
-      throw new Error(`Preço fora do limite permitido`);
-    }
-
-    // Get instructor price_per_hour to calculate duration reliably
-    const { data: instructorDetails } = await supabaseAdmin
-      .from("instructors_details")
-      .select("price_per_hour")
-      .eq("profile_id", instructorId)
-      .single();
-
-    const pricePerHour = Number(instructorDetails?.price_per_hour) || totalPrice;
-    const duration = pricePerHour > 0 ? Math.round(totalPrice / pricePerHour) : 1;
 
     // Parse lesson type from notes
     const lessonType = booking.notes?.includes("perder_medo") ? "perder_medo" : "primeira_cnh";
     const lessonTypeLabel = lessonType === "primeira_cnh" ? "1ª CNH" : "Perder o Medo";
 
-    logStep("Using booking total_price", { totalPrice, pricePerHour, duration, lessonType });
+    logStep("Preparing checkout link", { totalPrice, lessonType });
 
-    // Create Stripe checkout session
-    const customers = await stripe.customers.list({ email: studentEmail, limit: 1 });
-    let customerId;
-    if (customers.data.length > 0) {
-      customerId = customers.data[0].id;
-    }
-
+    // Build checkout URL that redirects to the in-app checkout page
     const origin = "https://dominebrasil.lovable.app";
-
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      customer_email: customerId ? undefined : studentEmail,
-      payment_method_types: ["card"],
-      line_items: [
-        {
-          price_data: {
-            currency: "brl",
-            product_data: {
-              name: `Aula Prática com ${instructorName} (${lessonTypeLabel})`,
-              description: `${duration}h de aula em ${booking.date} às ${booking.time_slot}`,
-            },
-            unit_amount: Math.round(totalPrice * 100),
-          },
-          quantity: 1,
-        },
-      ],
-      mode: "payment",
-      success_url: `${origin}/app/student/payment-success`,
-      cancel_url: `${origin}/app/student/lessons?payment=canceled`,
-      metadata: {
-        booking_type: "lesson",
-        booking_id: bookingId,
-        student_id: studentId,
-        instructor_id: instructorId,
-        lesson_date: booking.date,
-        lesson_time: booking.time_slot,
-        duration: duration.toString(),
-        total_price: totalPrice.toString(),
-        lesson_type: lessonType,
-      },
-    });
-
-    logStep("Stripe session created", { sessionId: session.id, url: session.url });
+    const checkoutUrl = `${origin}/app/student/checkout/${bookingId}`;
 
     // Format date
     const formattedDate = new Date(booking.date + 'T00:00:00').toLocaleDateString('pt-BR', {
@@ -149,7 +84,7 @@ serve(async (req) => {
       year: 'numeric'
     });
 
-    // Send email to student
+    // Send email to student with link to checkout page
     const { data: emailData, error: emailError } = await resend.emails.send({
       from: "DomineBrasil <onboarding@resend.dev>",
       to: [studentEmail],
@@ -169,6 +104,10 @@ serve(async (req) => {
             .value { font-weight: 600; color: #22c55e; }
             .price { font-size: 28px; color: #22c55e; font-weight: 700; text-align: center; margin: 20px 0; }
             .cta-button { display: inline-block; background: #22c55e; color: white; padding: 18px 40px; text-decoration: none; border-radius: 8px; font-weight: 700; font-size: 18px; margin-top: 20px; }
+            .methods { background: white; padding: 15px; border-radius: 8px; margin-top: 15px; text-align: center; }
+            .methods-title { font-weight: 600; margin-bottom: 8px; }
+            .methods-list { display: flex; justify-content: center; gap: 20px; }
+            .method-item { text-align: center; font-size: 13px; color: #666; }
             .warning { background: #fef3c7; border: 1px solid #f59e0b; padding: 15px; border-radius: 8px; margin-top: 20px; }
             .footer { text-align: center; margin-top: 30px; color: #666; font-size: 12px; }
           </style>
@@ -202,18 +141,27 @@ serve(async (req) => {
               </div>
             </div>
             
-             <div class="price">
-              R$ ${totalPrice.toFixed(2)}
+            <div class="price">
+              A partir de R$ ${totalPrice.toFixed(2)}
+            </div>
+
+            <div class="methods">
+              <div class="methods-title">💳 Formas de pagamento disponíveis</div>
+              <p style="font-size: 13px; color: #666; margin: 5px 0;">
+                <strong>PIX:</strong> sem taxa adicional &nbsp;|&nbsp; 
+                <strong>Débito:</strong> +1.99% &nbsp;|&nbsp; 
+                <strong>Crédito:</strong> +4.98%
+              </p>
             </div>
             
             <div style="text-align: center;">
-              <a href="${session.url}" class="cta-button">
-                💳 Pagar Agora
+              <a href="${checkoutUrl}" class="cta-button">
+                💳 Escolher Pagamento
               </a>
             </div>
             
             <div class="warning">
-              <strong>⚠️ Atenção:</strong> Efetue o pagamento para garantir sua vaga. Após o pagamento, você terá acesso ao chat para conversar diretamente com o instrutor.
+              <strong>⚠️ Atenção:</strong> Efetue o pagamento para garantir sua vaga. Você poderá escolher entre PIX, Débito ou Crédito na próxima tela.
             </div>
             
             <div class="footer">
@@ -232,16 +180,16 @@ serve(async (req) => {
 
     logStep("Email sent successfully", { emailId: emailData?.id });
 
-    // Update booking notes with payment link info
+    // Update booking notes
     await supabaseAdmin
       .from("bookings")
       .update({ 
-        notes: `Aguardando pagamento. Tipo: ${lessonType}. Session: ${session.id}`,
+        notes: `Aguardando pagamento via Mercado Pago. Tipo: ${lessonType}.`,
         status: "pending"
       })
       .eq("id", bookingId);
 
-    return new Response(JSON.stringify({ success: true, checkoutUrl: session.url }), {
+    return new Response(JSON.stringify({ success: true, checkoutUrl }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });
