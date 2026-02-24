@@ -208,6 +208,14 @@ export default function StudentHistory() {
           ))}
         </div>
       )}
+
+      <StudentRatingModal
+        open={ratingModal.open}
+        onOpenChange={(open) => setRatingModal(prev => ({ ...prev, open }))}
+        bookingId={ratingModal.bookingId}
+        instructorName={ratingModal.instructorName}
+        onCompleted={fetchHistory}
+      />
     </div>
   );
 }
