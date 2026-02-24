@@ -103,6 +103,7 @@ const App = () => (
 
             {/* Checkout & Payment Success (outside AppLayout) */}
             <Route path="/app/student/checkout/:bookingId" element={<ProtectedRoute allowedRoles={['student']}><Checkout /></ProtectedRoute>} />
+            <Route path="/app/student/checkout/package/:packageId" element={<ProtectedRoute allowedRoles={['student']}><PackageCheckout /></ProtectedRoute>} />
             <Route path="/app/student/payment-success" element={<ProtectedRoute allowedRoles={['student']}><PaymentSuccess /></ProtectedRoute>} />
 
             {/* Legacy Routes (redirect support) */}
