@@ -13,9 +13,6 @@ interface LessonFeedbackModalProps {
   onOpenChange: (open: boolean) => void;
   bookingId: string;
   studentName: string;
-  verificationCode?: string;
-  verificationLat?: number | null;
-  verificationLng?: number | null;
   onCompleted: () => void;
 }
 
@@ -42,9 +39,6 @@ export default function LessonFeedbackModal({
   onOpenChange,
   bookingId,
   studentName,
-  verificationCode,
-  verificationLat,
-  verificationLng,
   onCompleted,
 }: LessonFeedbackModalProps) {
   const [rating, setRating] = useState(5);
@@ -66,9 +60,6 @@ export default function LessonFeedbackModal({
         p_feedback: feedback || null,
         p_strengths: strengths.length > 0 ? strengths : null,
         p_areas_to_improve: improvements.length > 0 ? improvements : null,
-        p_code: verificationCode || null,
-        p_lat: verificationLat ?? null,
-        p_lng: verificationLng ?? null,
       });
 
       if (error) throw error;
