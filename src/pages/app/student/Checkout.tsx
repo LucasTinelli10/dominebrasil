@@ -210,6 +210,16 @@ export default function Checkout() {
                         Sem taxa
                       </Badge>
                     )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">{method.description}</p>
+                </div>
+                <div className="text-right">
+                  {fee > 0 ? (
+                    <span className="text-xs text-muted-foreground">+{formatCurrency(fee)}</span>
+                  ) : (
+                    <CheckCircle2 className="h-4 w-4 text-student" />
+                  )}
+                </div>
               </button>
             );
           })}
