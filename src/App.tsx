@@ -49,6 +49,8 @@ import Settings from "./pages/app/Settings";
 import InstructorOnboarding from "./pages/instructor/Onboarding";
 import AdminVerifications from "./pages/admin/Verifications";
 import AdminDashboard from "./pages/admin/Dashboard";
+import AdminRevenue from "./pages/admin/Revenue";
+import AdminWithdrawals from "./pages/admin/Withdrawals";
 
 const queryClient = new QueryClient();
 
@@ -132,6 +134,8 @@ const App = () => (
             <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/dashboard" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/verifications" element={<ProtectedRoute allowedRoles={['admin']}><AdminVerifications /></ProtectedRoute>} />
+            <Route path="/admin/revenue" element={<ProtectedRoute allowedRoles={['admin']}><AdminRevenue /></ProtectedRoute>} />
+            <Route path="/admin/withdrawals" element={<ProtectedRoute allowedRoles={['admin']}><AdminWithdrawals /></ProtectedRoute>} />
             <Route path="/admin/*" element={<ProtectedRoute allowedRoles={['admin']}><Navigate to="/admin" replace /></ProtectedRoute>} />
 
             <Route path="*" element={<NotFound />} />
