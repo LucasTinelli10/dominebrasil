@@ -104,6 +104,7 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
+  const unreadCount = useUnreadMessages();
 
   const role = (profile?.role || 'student') as UserRole;
   const config = roleConfig[role];
