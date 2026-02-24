@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
@@ -8,8 +7,15 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const GATEWAY_FEES: Record<string, number> = {
+  pix: 0,
+  debit: 1.99,
+  credit: 4.98,
+};
+
 const PackageCheckoutSchema = z.object({
   packageId: z.string().uuid("ID do pacote inválido"),
+  paymentMethod: z.enum(["pix", "debit", "credit"]),
 });
 
 const logStep = (step: string, details?: any) => {
@@ -22,30 +28,29 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabaseClient = createClient(
-    Deno.env.get("SUPABASE_URL") ?? "",
-    Deno.env.get("SUPABASE_ANON_KEY") ?? ""
-  );
-
   try {
     logStep("Function started");
 
+    // Auth
+    const supabaseClient = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+    );
     const authHeader = req.headers.get("Authorization")!;
     const token = authHeader.replace("Bearer ", "");
-    const { data } = await supabaseClient.auth.getUser(token);
-    const user = data.user;
-    if (!user?.email) throw new Error("User not authenticated");
+    const { data: authData } = await supabaseClient.auth.getUser(token);
+    const user = authData.user;
+    if (!user?.email) throw new Error("Usuário não autenticado");
     logStep("User authenticated", { email: user.email });
 
+    // Validate input
     const rawInput = await req.json();
-    const validationResult = PackageCheckoutSchema.safeParse(rawInput);
-
-    if (!validationResult.success) {
-      const errorMessages = validationResult.error.errors.map(e => e.message).join(", ");
-      throw new Error(`Dados inválidos: ${errorMessages}`);
+    const validation = PackageCheckoutSchema.safeParse(rawInput);
+    if (!validation.success) {
+      throw new Error(`Dados inválidos: ${validation.error.errors.map(e => e.message).join(", ")}`);
     }
 
-    const { packageId } = validationResult.data;
+    const { packageId, paymentMethod } = validation.data;
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -75,66 +80,100 @@ serve(async (req) => {
     const instructorName = profileData?.full_name || "Instrutor";
     logStep("Package found", { name: pkg.name, price: pkg.price, instructorName });
 
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
-      apiVersion: "2025-08-27.basil",
-    });
+    const subtotal = Number(pkg.price);
+    const feePercentage = GATEWAY_FEES[paymentMethod] || 0;
+    const gatewayFee = Math.round((subtotal * feePercentage / 100) * 100) / 100;
+    const totalAmount = subtotal + gatewayFee;
 
-    // Check for existing Stripe customer
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
-    let customerId;
-    if (customers.data.length > 0) {
-      customerId = customers.data[0].id;
+    logStep("Calculated amounts", { subtotal, gatewayFee, totalAmount, paymentMethod });
+
+    // Map payment method to MP excluded types
+    const excludedPaymentMethods: { id: string }[] = [];
+    if (paymentMethod === "pix") {
+      excludedPaymentMethods.push({ id: "credit_card" }, { id: "debit_card" }, { id: "ticket" });
+    } else if (paymentMethod === "debit") {
+      excludedPaymentMethods.push({ id: "credit_card" }, { id: "ticket" });
+    } else if (paymentMethod === "credit") {
+      excludedPaymentMethods.push({ id: "debit_card" }, { id: "ticket" });
     }
 
-    const origin = req.headers.get("origin") || "http://localhost:3000";
+    const mpAccessToken = Deno.env.get("MERCADOPAGO_ACCESS_TOKEN");
+    if (!mpAccessToken) throw new Error("MERCADOPAGO_ACCESS_TOKEN não configurado");
 
+    const origin = "https://dominebrasil.lovable.app";
     const examLabel = pkg.includes_exam ? " + Exame" : "";
     const description = `${pkg.lesson_count} aula(s) de 50min${examLabel} com ${instructorName}`;
 
-    const session = await stripe.checkout.sessions.create({
-      customer: customerId,
-      customer_email: customerId ? undefined : user.email,
-      payment_method_types: ["card", "boleto", "pix"],
-      line_items: [
+    const preferenceBody = {
+      items: [
         {
-          price_data: {
-            currency: "brl",
-            product_data: {
-              name: `${pkg.name} — ${instructorName}`,
-              description,
-            },
-            unit_amount: Math.round(pkg.price * 100),
-          },
+          title: `${pkg.name} — ${instructorName}`,
+          description,
           quantity: 1,
+          currency_id: "BRL",
+          unit_price: totalAmount,
         },
       ],
-      mode: "payment",
-      success_url: `${origin}/app/student/lessons?payment=success`,
-      cancel_url: `${origin}/app/student/search?payment=canceled`,
+      payer: {
+        email: user.email,
+      },
+      payment_methods: {
+        excluded_payment_types: excludedPaymentMethods,
+      },
+      back_urls: {
+        success: `${origin}/app/student/payment-success`,
+        failure: `${origin}/app/student/checkout/package/${packageId}?payment=failed`,
+        pending: `${origin}/app/student/checkout/package/${packageId}?payment=pending`,
+      },
+      auto_return: "approved",
+      external_reference: `pkg_${packageId}_${user.id}`,
       metadata: {
         booking_type: "package",
         student_id: user.id,
         instructor_id: pkg.instructor_id,
         package_id: packageId,
         package_name: pkg.name,
-        total_price: pkg.price.toString(),
+        subtotal: subtotal.toString(),
+        gateway_fee: gatewayFee.toString(),
+        total_amount: totalAmount.toString(),
+        payment_method: paymentMethod,
         lesson_count: pkg.lesson_count.toString(),
         includes_exam: pkg.includes_exam.toString(),
+        use_own_car: pkg.use_own_car.toString(),
       },
+      notification_url: `${Deno.env.get("SUPABASE_URL")}/functions/v1/mp-webhook`,
+    };
+
+    logStep("Creating MP preference", { items: preferenceBody.items });
+
+    const mpResponse = await fetch("https://api.mercadopago.com/checkout/preferences", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${mpAccessToken}`,
+      },
+      body: JSON.stringify(preferenceBody),
     });
 
-    logStep("Checkout session created", { sessionId: session.id });
+    const mpData = await mpResponse.json();
 
-    return new Response(JSON.stringify({ url: session.url }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
+    if (!mpResponse.ok) {
+      logStep("MP error response", mpData);
+      throw new Error(`Erro do Mercado Pago: ${mpData.message || JSON.stringify(mpData)}`);
+    }
+
+    logStep("MP preference created", { id: mpData.id, init_point: mpData.init_point });
+
+    return new Response(
+      JSON.stringify({ init_point: mpData.init_point, preference_id: mpData.id }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
+    );
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     logStep("ERROR", { message });
-    return new Response(JSON.stringify({ error: message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    return new Response(
+      JSON.stringify({ error: message }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 }
+    );
   }
 });

@@ -42,6 +42,7 @@ import StudentHistory from "./pages/app/student/StudentHistory";
 import StudentMessages from "./pages/app/student/StudentMessages";
 import PaymentSuccess from "./pages/app/student/PaymentSuccess";
 import Checkout from "./pages/app/student/Checkout";
+import PackageCheckout from "./pages/app/student/PackageCheckout";
 
 // Settings
 import Settings from "./pages/app/Settings";
