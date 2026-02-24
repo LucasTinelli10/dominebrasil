@@ -36,8 +36,8 @@ export function useBookingRealtime() {
             });
           } else if (newStatus === 'completed') {
             toast.success('✅ Sua aula foi finalizada!', {
-              description: 'Confira seu progresso e o feedback do instrutor.',
-              duration: 8000,
+              description: 'Avalie seu instrutor no Histórico de Aulas.',
+              duration: 10000,
             });
           }
         }
