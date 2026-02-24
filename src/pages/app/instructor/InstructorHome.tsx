@@ -40,7 +40,7 @@ export default function InstructorHome() {
   const [chartPeriod, setChartPeriod] = useState<'daily' | 'weekly' | 'monthly'>('weekly');
   const [upcomingLessons, setUpcomingLessons] = useState<UpcomingLesson[]>([]);
   const [stats, setStats] = useState({
-    grossRevenue: 0, netProfit: 0, lessonsCompleted: 0, averageRating: 5.0, pendingRequests: 0,
+    grossRevenue: 0, netProfit: 0, lessonsCompleted: 0, averageRating: null as number | null, pendingRequests: 0,
   });
   const [earningsData, setEarningsData] = useState<EarningsData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -92,11 +92,12 @@ export default function InstructorHome() {
       const { data: ratings } = await supabase
         .from('lesson_feedback')
         .select('rating')
-        .eq('instructor_id', user?.id);
+        .eq('instructor_id', user?.id)
+        .not('rating', 'is', null);
 
       const avgRating = ratings && ratings.length > 0
         ? ratings.reduce((sum, r) => sum + (r.rating || 0), 0) / ratings.length
-        : 5.0;
+        : null;
 
       setStats({
         grossRevenue, netProfit,
@@ -274,7 +275,7 @@ export default function InstructorHome() {
               <div>
                 <p className="text-sm text-muted-foreground">Avaliação Média</p>
                 <p className="text-2xl font-bold text-foreground mt-1 flex items-center gap-1">
-                  {stats.averageRating.toFixed(1)}
+                  {stats.averageRating !== null ? stats.averageRating.toFixed(1) : '—'}
                   <Star className="h-5 w-5 text-warning fill-warning" />
                 </p>
               </div>
