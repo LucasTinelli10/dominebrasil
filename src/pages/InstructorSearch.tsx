@@ -91,12 +91,25 @@ const InstructorSearch = () => {
     }
   };
 
-  // After auth, open booking modal
+  const handleBuyPackage = (packageId: string) => {
+    if (!user) {
+      setPendingPackageId(packageId);
+      setIsAuthModalOpen(true);
+    } else {
+      setIsProfileModalOpen(false);
+      navigate(`/app/student/checkout/package/${packageId}`);
+    }
+  };
+
+  // After auth, open booking modal or redirect to package checkout
   useEffect(() => {
-    if (user && selectedInstructor && !isBookingModalOpen && !isAuthModalOpen && !isProfileModalOpen) {
+    if (user && pendingPackageId) {
+      setPendingPackageId(null);
+      navigate(`/app/student/checkout/package/${pendingPackageId}`);
+    } else if (user && selectedInstructor && !isBookingModalOpen && !isAuthModalOpen && !isProfileModalOpen) {
       setIsBookingModalOpen(true);
     }
-  }, [user, selectedInstructor]);
+  }, [user, selectedInstructor, pendingPackageId]);
 
   return (
     <div className={isInsideApp ? "" : "min-h-screen bg-gradient-to-b from-slate-50 to-white"}>
