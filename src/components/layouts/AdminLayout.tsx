@@ -3,7 +3,8 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { 
-  Shield, LayoutDashboard, UserCheck, LogOut, ChevronRight, Home 
+  Shield, LayoutDashboard, UserCheck, LogOut, ChevronRight, Home,
+  DollarSign, ArrowDownCircle
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -13,6 +14,8 @@ interface AdminLayoutProps {
 const navItems = [
   { path: '/admin', label: 'Dashboard', icon: LayoutDashboard },
   { path: '/admin/verifications', label: 'Verificações', icon: UserCheck },
+  { path: '/admin/revenue', label: 'Faturamento', icon: DollarSign },
+  { path: '/admin/withdrawals', label: 'Saques', icon: ArrowDownCircle },
 ];
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
