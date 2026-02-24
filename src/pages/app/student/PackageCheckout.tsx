@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   CreditCard, Smartphone, Banknote, Loader2, Shield,
   Package, ArrowLeft, CheckCircle2, BookOpen, FileCheck
@@ -49,6 +51,14 @@ const PAYMENT_METHODS: { id: PaymentMethod; label: string; icon: typeof CreditCa
   },
 ];
 
+function formatCpf(value: string): string {
+  const digits = value.replace(/\D/g, '').slice(0, 11);
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+  if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+}
+
 export default function PackageCheckout() {
   const { packageId } = useParams<{ packageId: string }>();
   const navigate = useNavigate();
@@ -56,10 +66,25 @@ export default function PackageCheckout() {
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod>('pix');
+  const [cpf, setCpf] = useState('');
+  const [cpfSaved, setCpfSaved] = useState(false);
 
   useEffect(() => {
     if (packageId) fetchPackage();
   }, [packageId]);
+
+  useEffect(() => {
+    const loadCpf = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase.from('profiles').select('cpf').eq('id', user.id).single();
+      if (data?.cpf) {
+        setCpf(formatCpf(data.cpf));
+        setCpfSaved(true);
+      }
+    };
+    loadCpf();
+  }, []);
 
   const fetchPackage = async () => {
     try {
@@ -74,7 +99,6 @@ export default function PackageCheckout() {
 
       if (error) throw error;
 
-      // Fetch instructor profile
       const { data: profile } = await supabase
         .rpc('get_public_instructor_profile', { instructor_id: data.instructor_id });
 
@@ -98,9 +122,24 @@ export default function PackageCheckout() {
 
   const handlePayment = async () => {
     if (!pkg) return;
+
+    const cpfDigits = cpf.replace(/\D/g, '');
+    if (cpfDigits.length !== 11) {
+      toast.error('Informe um CPF válido com 11 dígitos');
+      return;
+    }
+
     setProcessing(true);
 
     try {
+      if (!cpfSaved) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from('profiles').update({ cpf: cpfDigits } as any).eq('id', user.id);
+          setCpfSaved(true);
+        }
+      }
+
       const { data, error } = await supabase.functions.invoke('create-package-checkout', {
         body: {
           packageId: pkg.id,
@@ -136,6 +175,7 @@ export default function PackageCheckout() {
   const subtotal = pkg.price;
   const gatewayFee = calculateGatewayFee(subtotal, selectedMethod);
   const total = calculateTotalWithSurcharge(subtotal, selectedMethod);
+  const cpfValid = cpf.replace(/\D/g, '').length === 11;
 
   return (
     <div className="max-w-lg mx-auto space-y-6 animate-fade-in">
@@ -179,6 +219,27 @@ export default function PackageCheckout() {
               </span>
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* CPF Field */}
+      <Card>
+        <CardContent className="p-4">
+          <Label htmlFor="cpf" className="text-sm font-medium">CPF do pagador</Label>
+          <Input
+            id="cpf"
+            placeholder="000.000.000-00"
+            value={cpf}
+            onChange={(e) => setCpf(formatCpf(e.target.value))}
+            className="mt-1.5"
+            maxLength={14}
+            disabled={cpfSaved}
+          />
+          {cpfSaved && (
+            <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+              <CheckCircle2 className="h-3 w-3 text-student" /> CPF salvo
+            </p>
+          )}
         </CardContent>
       </Card>
 
@@ -266,7 +327,7 @@ export default function PackageCheckout() {
       <Button
         className="w-full h-12 bg-student hover:bg-student/90 text-lg"
         onClick={handlePayment}
-        disabled={processing}
+        disabled={processing || !cpfValid}
       >
         {processing ? (
           <>

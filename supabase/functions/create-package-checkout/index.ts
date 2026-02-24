@@ -80,7 +80,7 @@ serve(async (req) => {
     // Fetch student profile for payer info
     const { data: studentProfile } = await supabaseAdmin
       .from("profiles")
-      .select("full_name")
+      .select("full_name, cpf")
       .eq("id", user.id)
       .single();
 
@@ -125,6 +125,10 @@ serve(async (req) => {
         email: user.email,
         first_name: studentProfile?.full_name?.split(" ")[0] || "",
         last_name: studentProfile?.full_name?.split(" ").slice(1).join(" ") || "",
+        identification: studentProfile?.cpf ? {
+          type: "CPF",
+          number: studentProfile.cpf.replace(/\D/g, ""),
+        } : undefined,
       },
       payment_methods: {
         excluded_payment_types: excludedPaymentMethods,
