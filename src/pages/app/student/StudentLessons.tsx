@@ -3,11 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MessageSquare, Calendar, Clock, Car, CheckCircle2 } from 'lucide-react';
+import { MessageSquare, Calendar, Clock, Car, CheckCircle2, Shield } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import LessonCodeModal from '@/components/student/LessonCodeModal';
 
 interface ConfirmedLesson {
   id: string;
