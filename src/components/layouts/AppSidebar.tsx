@@ -106,7 +106,8 @@ export function AppSidebar() {
   const collapsed = state === 'collapsed';
   const unreadCount = useUnreadMessages();
 
-  const role = (profile?.role || 'student') as UserRole;
+  const rawRole = profile?.role || 'student';
+  const role: UserRole = (rawRole in roleConfig) ? rawRole as UserRole : 'student';
   const config = roleConfig[role];
 
   const handleSignOut = async () => {
