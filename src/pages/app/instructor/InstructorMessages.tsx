@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Search, Send, MessageSquare } from 'lucide-react';
+import { Search, Send, MessageSquare, Archive } from 'lucide-react';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -51,6 +52,13 @@ export default function InstructorMessages() {
 
   const fetchConversations = async () => {
     try {
+      // Get archived conversation IDs
+      const { data: archivedData } = await supabase
+        .from('archived_conversations')
+        .select('participant_id')
+        .eq('user_id', user?.id);
+      const archivedIds = new Set(archivedData?.map(a => a.participant_id) || []);
+
       // Get unique conversation partners
       const { data: sentMessages } = await supabase
         .from('messages')
@@ -70,6 +78,8 @@ export default function InstructorMessages() {
 
       const convos: Conversation[] = [];
       for (const participantId of participantIds) {
+        if (archivedIds.has(participantId)) continue;
+        
         const { data: profile } = await supabase
           .from('profiles')
           .select('id, full_name, avatar_url')
