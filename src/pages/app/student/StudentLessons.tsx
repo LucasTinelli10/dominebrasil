@@ -174,13 +174,29 @@ export default function StudentLessons() {
                       )}
                     </div>
 
-                    <Button
-                      className="mt-4 bg-student hover:bg-student/90"
-                      onClick={() => handleOpenChat(lesson.instructor?.id)}
-                    >
-                      <MessageSquare className="h-4 w-4 mr-2" />
-                      Chat com Instrutor
-                    </Button>
+                    <div className="flex gap-2 mt-4">
+                      <Button
+                        className="bg-student hover:bg-student/90"
+                        onClick={() => handleOpenChat(lesson.instructor?.id)}
+                      >
+                        <MessageSquare className="h-4 w-4 mr-2" />
+                        Chat
+                      </Button>
+                      {((lesson as any).status === 'confirmed' || (lesson as any).status === 'in_progress') && (
+                        <Button
+                          variant="outline"
+                          className="border-student text-student hover:bg-student/10"
+                          onClick={() => setCodeModal({
+                            open: true,
+                            bookingId: lesson.id,
+                            type: (lesson as any).status === 'confirmed' ? 'start' : 'finish',
+                          })}
+                        >
+                          <Shield className="h-4 w-4 mr-2" />
+                          Gerar Código
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </CardContent>
