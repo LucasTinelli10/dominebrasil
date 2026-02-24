@@ -356,6 +356,15 @@ export default function StudentMessages() {
                     <p className="font-semibold">{selectedConversation.instructor_name}</p>
                     <p className="text-xs text-muted-foreground">Instrutor</p>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-destructive"
+                    onClick={handleArchiveConversation}
+                  >
+                    <Archive className="h-4 w-4 mr-1" />
+                    Arquivar
+                  </Button>
                 </div>
 
                 {/* Lesson Info Card */}
