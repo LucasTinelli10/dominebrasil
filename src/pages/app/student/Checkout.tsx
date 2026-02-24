@@ -206,20 +206,10 @@ export default function Checkout() {
                   <div className="flex items-center gap-2">
                     <span className="font-medium">{method.label}</span>
                     {method.id === 'pix' && (
-                      <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-200 text-[10px]">
+                      <Badge variant="secondary" className="text-[10px]">
                         Sem taxa
                       </Badge>
                     )}
-                  </div>
-                  <p className="text-xs text-muted-foreground">{method.description}</p>
-                </div>
-                <div className="text-right">
-                  {fee > 0 ? (
-                    <span className="text-xs text-muted-foreground">+{formatCurrency(fee)}</span>
-                  ) : (
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                  )}
-                </div>
               </button>
             );
           })}
