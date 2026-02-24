@@ -3,7 +3,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -41,7 +40,6 @@ export default function LessonFeedbackModal({
   studentName,
   onCompleted,
 }: LessonFeedbackModalProps) {
-  const [rating, setRating] = useState(5);
   const [feedback, setFeedback] = useState('');
   const [strengths, setStrengths] = useState<string[]>([]);
   const [improvements, setImprovements] = useState<string[]>([]);
@@ -56,7 +54,6 @@ export default function LessonFeedbackModal({
     try {
       const { error } = await supabase.rpc('complete_lesson', {
         p_booking_id: bookingId,
-        p_rating: rating,
         p_feedback: feedback || null,
         p_strengths: strengths.length > 0 ? strengths : null,
         p_areas_to_improve: improvements.length > 0 ? improvements : null,
@@ -84,27 +81,6 @@ export default function LessonFeedbackModal({
         </DialogHeader>
 
         <div className="space-y-5">
-          {/* Rating */}
-          <div>
-            <p className="text-sm font-medium mb-2">Avaliação Geral</p>
-            <div className="flex gap-1">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <button
-                  key={star}
-                  onClick={() => setRating(star)}
-                  className="p-1 transition-transform hover:scale-110"
-                >
-                  <Star
-                    className={cn(
-                      'h-8 w-8 transition-colors',
-                      star <= rating ? 'text-warning fill-warning' : 'text-muted-foreground'
-                    )}
-                  />
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Strengths */}
           <div>
             <p className="text-sm font-medium mb-2">Pontos Fortes</p>
