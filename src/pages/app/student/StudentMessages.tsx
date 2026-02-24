@@ -254,6 +254,21 @@ export default function StudentMessages() {
     }
   };
 
+  const handleArchiveConversation = async () => {
+    if (!selectedConversation) return;
+    const { error } = await supabase
+      .from('archived_conversations')
+      .insert({
+        user_id: user?.id,
+        participant_id: selectedConversation.instructor_id,
+      });
+    if (!error) {
+      toast.success('Conversa arquivada');
+      setSelectedConversation(null);
+      fetchConversations();
+    }
+  };
+
   const formatTime = (dateStr: string) => {
     return new Date(dateStr).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
   };
