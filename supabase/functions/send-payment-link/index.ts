@@ -75,26 +75,19 @@ serve(async (req) => {
     const studentEmail = authData.user.email;
     logStep("Student email", { studentEmail });
 
-    // Get instructor price
-    const { data: instructorDetails, error: instructorError } = await supabaseAdmin
-      .from("instructors_details")
-      .select("price_per_hour")
-      .eq("profile_id", instructorId)
-      .single();
-
-    if (instructorError || !instructorDetails) {
-      logStep("Error fetching instructor details", { error: instructorError?.message });
-      throw new Error("Detalhes do instrutor não encontrados");
-    }
-
-    const lessonPrice = Number(instructorDetails.price_per_hour);
-    if (lessonPrice < MIN_LESSON_PRICE || lessonPrice > MAX_LESSON_PRICE) {
+    // Use the total_price from booking (already calculated as price_per_hour * duration)
+    const totalPrice = Number(booking.total_price);
+    if (totalPrice < MIN_LESSON_PRICE || totalPrice > MAX_LESSON_PRICE * 10) {
       throw new Error(`Preço fora do limite permitido`);
     }
 
-    // Parse lesson type from notes if available
+    // Parse lesson type and duration from notes
     const lessonType = booking.notes?.includes("perder_medo") ? "perder_medo" : "primeira_cnh";
     const lessonTypeLabel = lessonType === "primeira_cnh" ? "1ª CNH" : "Perder o Medo";
+    const durationMatch = booking.notes?.match(/Duração:\s*(\d+)h/);
+    const duration = durationMatch ? parseInt(durationMatch[1]) : 1;
+
+    logStep("Using booking total_price", { totalPrice, duration, lessonType });
 
     // Create Stripe checkout session
     const customers = await stripe.customers.list({ email: studentEmail, limit: 1 });
@@ -115,9 +108,9 @@ serve(async (req) => {
             currency: "brl",
             product_data: {
               name: `Aula Prática com ${instructorName} (${lessonTypeLabel})`,
-              description: `1h de aula em ${booking.date} às ${booking.time_slot}`,
+              description: `${duration}h de aula em ${booking.date} às ${booking.time_slot}`,
             },
-            unit_amount: Math.round(lessonPrice * 100),
+            unit_amount: Math.round(totalPrice * 100),
           },
           quantity: 1,
         },
@@ -132,8 +125,8 @@ serve(async (req) => {
         instructor_id: instructorId,
         lesson_date: booking.date,
         lesson_time: booking.time_slot,
-        duration: "1",
-        total_price: lessonPrice.toString(),
+        duration: duration.toString(),
+        total_price: totalPrice.toString(),
         lesson_type: lessonType,
       },
     });
@@ -201,8 +194,8 @@ serve(async (req) => {
               </div>
             </div>
             
-            <div class="price">
-              R$ ${lessonPrice.toFixed(2)}
+             <div class="price">
+              R$ ${totalPrice.toFixed(2)}
             </div>
             
             <div style="text-align: center;">
