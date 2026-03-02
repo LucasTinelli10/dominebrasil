@@ -10,8 +10,8 @@ const steps = [
     icon: FileText,
     title: 'Cadastro no Gov.br',
     description: 'O primeiro passo é ter sua conta Prata ou Ouro no Governo Federal e iniciar o processo no Detran do seu estado. Com a CNH Digital, o processo ficou muito mais simples.',
-    link: 'https://www.gov.br/pt-br/servicos/obter-a-carteira-nacional-de-habilitacao',
-    linkText: 'Acessar Gov.br',
+    link: null,
+    linkText: null,
   },
   {
     step: 2,
@@ -26,13 +26,8 @@ const steps = [
     icon: BookOpen,
     title: 'Aulas Teóricas',
     description: 'Estude a legislação de trânsito. Com a nova lei, você pode estudar por conta própria usando material oficial ou fazer curso em CFC (Centro de Formação de Condutores).',
-    links: [
-      { url: 'https://www.detran.df.gov.br/wp-content/uploads/2020/01/ATUALIZACAO-MANUAL-OBTENCAO-CNH-Maio-2021-Encarte.pdf', label: 'Manual CNH (DETRAN-DF)' },
-      { url: 'https://www.detran.am.gov.br/wp-content/uploads/2015/04/ctb.pdf', label: 'Código de Trânsito Brasileiro' },
-      { url: 'https://servonline.detran.ms.gov.br/cfc/download/Curso-Primeira-CNH.pdf', label: 'Apostila Primeira CNH (DETRAN-MS)' },
-    ],
-    linkText: 'Baixar Apostilas Oficiais',
-    hasMultipleLinks: true,
+    link: 'https://www.gov.br/transportes/pt-br/cnh-do-brasil',
+    linkText: 'Acessar Conteúdo Oficial',
   },
   {
     step: 4,
@@ -60,7 +55,6 @@ const steps = [
     linkText: null,
   },
 ];
-
 interface JornadaCNHSectionProps {
   onOpenAuth?: () => void;
 }
