@@ -10,8 +10,8 @@ const steps = [
     icon: FileText,
     title: 'Cadastro no Gov.br',
     description: 'O primeiro passo é ter sua conta Prata ou Ouro no Governo Federal e iniciar o processo no Detran do seu estado. Com a CNH Digital, o processo ficou muito mais simples.',
-    link: 'https://www.gov.br/pt-br/servicos/obter-a-carteira-nacional-de-habilitacao',
-    linkText: 'Acessar Gov.br',
+    link: null,
+    linkText: null,
   },
   {
     step: 2,
@@ -26,13 +26,8 @@ const steps = [
     icon: BookOpen,
     title: 'Aulas Teóricas',
     description: 'Estude a legislação de trânsito. Com a nova lei, você pode estudar por conta própria usando material oficial ou fazer curso em CFC (Centro de Formação de Condutores).',
-    links: [
-      { url: 'https://www.detran.df.gov.br/wp-content/uploads/2020/01/ATUALIZACAO-MANUAL-OBTENCAO-CNH-Maio-2021-Encarte.pdf', label: 'Manual CNH (DETRAN-DF)' },
-      { url: 'https://www.detran.am.gov.br/wp-content/uploads/2015/04/ctb.pdf', label: 'Código de Trânsito Brasileiro' },
-      { url: 'https://servonline.detran.ms.gov.br/cfc/download/Curso-Primeira-CNH.pdf', label: 'Apostila Primeira CNH (DETRAN-MS)' },
-    ],
-    linkText: 'Baixar Apostilas Oficiais',
-    hasMultipleLinks: true,
+    link: 'https://www.gov.br/transportes/pt-br/cnh-do-brasil',
+    linkText: 'Acessar Conteúdo Oficial',
   },
   {
     step: 4,
@@ -60,7 +55,6 @@ const steps = [
     linkText: null,
   },
 ];
-
 interface JornadaCNHSectionProps {
   onOpenAuth?: () => void;
 }
@@ -135,36 +129,19 @@ export const JornadaCNHSection: React.FC<JornadaCNHSectionProps> = ({ onOpenAuth
                         {step.linkText}
                         <Car className="w-4 h-4 ml-2" />
                       </Button>
-                    ) : step.hasMultipleLinks && step.links ? (
-                      <div className="flex flex-wrap gap-2">
-                        {step.links.map((link, linkIndex) => (
-                          <Button
-                            key={linkIndex}
-                            variant="outline"
-                            size="sm"
-                            asChild
-                            className="border-primary/50 text-primary hover:bg-primary/10 text-xs"
-                          >
-                            <a href={link.url} target="_blank" rel="noopener noreferrer">
-                              {link.label}
-                              <ExternalLink className="w-3 h-3 ml-1" />
-                            </a>
-                          </Button>
-                        ))}
-                      </div>
-                    ) : (
+                    ) : step.link ? (
                       <Button
                         variant="outline"
                         size="sm"
                         asChild
                         className="border-primary/50 text-primary hover:bg-primary/10"
                       >
-                        <a href={step.link!} target="_blank" rel="noopener noreferrer">
+                        <a href={step.link} target="_blank" rel="noopener noreferrer">
                           {step.linkText}
                           <ExternalLink className="w-4 h-4 ml-2" />
                         </a>
                       </Button>
-                    )
+                    ) : null
                   )}
                 </div>
               </motion.div>
