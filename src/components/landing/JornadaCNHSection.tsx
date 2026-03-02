@@ -129,36 +129,19 @@ export const JornadaCNHSection: React.FC<JornadaCNHSectionProps> = ({ onOpenAuth
                         {step.linkText}
                         <Car className="w-4 h-4 ml-2" />
                       </Button>
-                    ) : step.hasMultipleLinks && step.links ? (
-                      <div className="flex flex-wrap gap-2">
-                        {step.links.map((link, linkIndex) => (
-                          <Button
-                            key={linkIndex}
-                            variant="outline"
-                            size="sm"
-                            asChild
-                            className="border-primary/50 text-primary hover:bg-primary/10 text-xs"
-                          >
-                            <a href={link.url} target="_blank" rel="noopener noreferrer">
-                              {link.label}
-                              <ExternalLink className="w-3 h-3 ml-1" />
-                            </a>
-                          </Button>
-                        ))}
-                      </div>
-                    ) : (
+                    ) : step.link ? (
                       <Button
                         variant="outline"
                         size="sm"
                         asChild
                         className="border-primary/50 text-primary hover:bg-primary/10"
                       >
-                        <a href={step.link!} target="_blank" rel="noopener noreferrer">
+                        <a href={step.link} target="_blank" rel="noopener noreferrer">
                           {step.linkText}
                           <ExternalLink className="w-4 h-4 ml-2" />
                         </a>
                       </Button>
-                    )
+                    ) : null
                   )}
                 </div>
               </motion.div>
