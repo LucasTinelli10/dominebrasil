@@ -18,8 +18,8 @@ const steps = [
     icon: Stethoscope,
     title: 'Aptidão Física e Mental',
     description: 'Agende seus exames médicos e psicotécnicos na clínica indicada pelo Detran. Os exames avaliam sua capacidade física e mental para conduzir veículos com segurança.',
-    link: null,
-    linkText: null,
+    link: 'https://www.meudetran.ms.gov.br/atendimento-presencial/realizar-agendamento',
+    linkText: 'Agendar Exames',
   },
   {
     step: 3,
