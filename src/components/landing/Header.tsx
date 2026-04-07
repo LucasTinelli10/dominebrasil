@@ -6,9 +6,10 @@ import { useNavigate } from 'react-router-dom';
 
 interface HeaderProps {
   onOpenAuth: () => void;
+  onOpenSignup: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenAuth }) => {
+export const Header: React.FC<HeaderProps> = ({ onOpenAuth, onOpenSignup }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user, profile, signOut } = useAuth();
