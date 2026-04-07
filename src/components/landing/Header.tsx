@@ -103,8 +103,15 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAuth }) => {
                 </Button>
               </>
             ) : (
-              <Button onClick={onOpenAuth} variant="default">
+              <Button onClick={onOpenAuth} variant="outline">
                 Login
+              </Button>
+              <Button onClick={() => {
+                onOpenAuth();
+                // Trigger signup mode via custom event
+                window.dispatchEvent(new CustomEvent('auth-signup-mode'));
+              }} variant="default">
+                Cadastre-se
               </Button>
             )}
           </div>
