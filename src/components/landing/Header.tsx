@@ -6,9 +6,10 @@ import { useNavigate } from 'react-router-dom';
 
 interface HeaderProps {
   onOpenAuth: () => void;
+  onOpenSignup: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenAuth }) => {
+export const Header: React.FC<HeaderProps> = ({ onOpenAuth, onOpenSignup }) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { user, profile, signOut } = useAuth();
@@ -103,9 +104,14 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAuth }) => {
                 </Button>
               </>
             ) : (
-              <Button onClick={onOpenAuth} variant="default">
-                Login
-              </Button>
+              <>
+                <Button onClick={onOpenAuth} variant="outline">
+                  Login
+                </Button>
+                <Button onClick={onOpenSignup} variant="default">
+                  Cadastre-se
+                </Button>
+              </>
             )}
           </div>
 
@@ -153,9 +159,14 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAuth }) => {
                     </Button>
                   </div>
                 ) : (
-                  <Button onClick={onOpenAuth} className="w-full">
-                    Entrar / Cadastrar
-                  </Button>
+                  <div className="flex flex-col gap-2">
+                    <Button onClick={onOpenAuth} variant="outline" className="w-full">
+                      Login
+                    </Button>
+                    <Button onClick={onOpenSignup} className="w-full">
+                      Cadastre-se
+                    </Button>
+                  </div>
                 )}
               </div>
             </nav>
