@@ -159,9 +159,14 @@ export const Header: React.FC<HeaderProps> = ({ onOpenAuth, onOpenSignup }) => {
                     </Button>
                   </div>
                 ) : (
-                  <Button onClick={onOpenAuth} className="w-full">
-                    Entrar / Cadastrar
-                  </Button>
+                  <div className="flex flex-col gap-2">
+                    <Button onClick={onOpenAuth} variant="outline" className="w-full">
+                      Login
+                    </Button>
+                    <Button onClick={onOpenSignup} className="w-full">
+                      Cadastre-se
+                    </Button>
+                  </div>
                 )}
               </div>
             </nav>
