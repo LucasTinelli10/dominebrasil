@@ -43,6 +43,12 @@ const Index = () => {
     setIsAuthModalOpen(true);
   };
 
+  const handleOpenSignup = () => {
+    setPreselectedRole(undefined);
+    setAuthDefaultMode('signup');
+    setIsAuthModalOpen(true);
+  };
+
   // Instructor button - opens in signup mode
   const handleOpenInstructorAuth = () => {
     setPreselectedRole('instructor');
@@ -67,7 +73,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header onOpenAuth={handleOpenAuth} />
+      <Header onOpenAuth={handleOpenAuth} onOpenSignup={handleOpenSignup} />
       <main>
         <HeroSection 
           onOpenAuth={handleOpenAuth} 
