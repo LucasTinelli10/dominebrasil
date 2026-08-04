@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "13.0.5"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -93,6 +93,66 @@ export type Database = {
           {
             foreignKeyName: "bookings_student_id_fkey"
             columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      car_maintenance: {
+        Row: {
+          car_id: string
+          cost: number
+          created_at: string
+          date: string
+          description: string | null
+          id: string
+          km: number | null
+          next_date: string | null
+          next_km: number | null
+          owner_id: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          car_id: string
+          cost?: number
+          created_at?: string
+          date?: string
+          description?: string | null
+          id?: string
+          km?: number | null
+          next_date?: string | null
+          next_km?: number | null
+          owner_id: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          car_id?: string
+          cost?: number
+          created_at?: string
+          date?: string
+          description?: string | null
+          id?: string
+          km?: number | null
+          next_date?: string | null
+          next_km?: number | null
+          owner_id?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "car_maintenance_car_id_fkey"
+            columns: ["car_id"]
+            isOneToOne: false
+            referencedRelation: "cars"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "car_maintenance_owner_id_fkey"
+            columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
