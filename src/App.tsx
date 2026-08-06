@@ -72,6 +72,8 @@ const App = () => (
             <Route path="/ajuda" element={<HelpCenter />} />
             <Route path="/privacidade" element={<PrivacyPolicy />} />
             <Route path="/termos" element={<TermsOfUse />} />
+            <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
+
 
             {/* App Routes with Sidebar Layout */}
             <Route path="/app" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
