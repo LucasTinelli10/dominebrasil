@@ -14,6 +14,8 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
 import NotFound from "./pages/NotFound";
 import VerificationStatus from "./pages/VerificationStatus";
+import OAuthConsent from "./pages/OAuthConsent";
+
 
 // App Layout
 import { AppLayout } from "./components/layouts/AppLayout";
