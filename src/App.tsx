@@ -14,6 +14,8 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfUse from "./pages/TermsOfUse";
 import NotFound from "./pages/NotFound";
 import VerificationStatus from "./pages/VerificationStatus";
+import OAuthConsent from "./pages/OAuthConsent";
+
 
 // App Layout
 import { AppLayout } from "./components/layouts/AppLayout";
@@ -70,6 +72,8 @@ const App = () => (
             <Route path="/ajuda" element={<HelpCenter />} />
             <Route path="/privacidade" element={<PrivacyPolicy />} />
             <Route path="/termos" element={<TermsOfUse />} />
+            <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
+
 
             {/* App Routes with Sidebar Layout */}
             <Route path="/app" element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
